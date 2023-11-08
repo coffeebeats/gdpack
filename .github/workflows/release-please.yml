@@ -1,0 +1,91 @@
+name: "🚀 Release: 'gdpack'"
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  # This is required to use the 'gh' CLI in actions.
+  GH_TOKEN: ${{ github.token }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    outputs:
+      release-created: ${{ steps.release.outputs.releases_created }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          # NOTE: A PAT is used so that workflows can run on the new, automatically
+          # created pull requests. This circumvents GitHub's recursive workflow
+          # protections, which block automated pull requests from triggering workflows
+          # under the same default GitHub Actions token.
+          token: ${{ secrets.RELEASE_PLEASE }}
+
+          # NOTE: To handle releases on specific branches (e.g. a '1.X' release branch),
+          # simply change the "branches" filter in the workflow's on-"push" trigger.
+          default-branch: ${{ github.ref_name }}
+          release-type: "go"
+
+          package-name: "gdpack"
+
+          # TODO: Remove this after the first release.
+          release-as: "0.0.1"
+
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: true
+          include-v-in-tag: true
+
+          pull-request-title-pattern: "chore: release v${version}"
+          changelog-notes-type: "github"
+
+          extra-files: |
+            cmd/gdpack/main.go
+            scripts/install.ps1
+            scripts/install.sh
+
+  publish:
+    needs: ["release-please"]
+    if: needs.release-please.outputs.release-created
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Required by 'goreleaser' so tags are fetched; see
+          # https://goreleaser.com/ci/actions/#workflow.
+          fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.release-tag }}
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          args: release --clean --skip=publish
+          distribution: goreleaser
+          version: latest
+
+      - name: Attach assets to release
+        shell: bash
+        run: |
+          ASSETS=(dist/gdpack-${{ needs.release-please.outputs.release-tag }}* dist/checksums.txt)
+          for asset in "${ASSETS[@]}"; do
+            gh release upload \
+              --clobber \
+              ${{ needs.release-please.outputs.release-tag }} \
+              $asset
+          done
