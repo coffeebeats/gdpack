@@ -39,6 +39,9 @@ jobs:
 
           package-name: "gdpack"
 
+          # TODO: Remove this after the first release.
+          release-as: "0.0.1"
+
           bump-minor-pre-major: true
           bump-patch-for-minor-pre-major: true
           include-v-in-tag: true
