@@ -93,8 +93,8 @@ Once `gdpack` is installed a few things need to be configured. Follow the instru
 1. Export the `GDPACK_HOME` environment variable using the following:
 
     ```sh
-    $GdEnvHomePath = "${env:LOCALAPPDATA}\gdpack" # Replace with whichever path you'd like.
-    [System.Environment]::SetEnvironmentVariable("GDPACK_HOME", $GdEnvHomePath, "User")
+    $GdPackHomePath = "${env:LOCALAPPDATA}\gdpack" # Replace with whichever path you'd like.
+    [System.Environment]::SetEnvironmentVariable("GDPACK_HOME", $GdPackHomePath, "User")
     ```
 
 2. Add `$GDPACK_HOME/bin` to your `PATH` environment variable:

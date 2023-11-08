@@ -154,7 +154,7 @@ func newStyleWithColor(name string, ansiColor int) lipgloss.Style {
 /*                          Function: versionPrinter                          */
 /* -------------------------------------------------------------------------- */
 
-// versionPrinter prints a 'gdenv' version string to the terminal.
+// versionPrinter prints a 'gdpack' version string to the terminal.
 func versionPrinter(cCtx *cli.Context) {
-	log.Printf("gdenv %s\n", cCtx.App.Version)
+	log.Printf("gdpack %s\n", cCtx.App.Version)
 }
