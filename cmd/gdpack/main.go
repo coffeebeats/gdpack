@@ -25,8 +25,6 @@ const (
 	colorYellowBright  = 11
 )
 
-var ErrUnrecognizedLevel = errors.New("unrecognized level")
-
 func main() {
 	cli.VersionPrinter = versionPrinter
 
