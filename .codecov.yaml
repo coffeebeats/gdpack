@@ -1,0 +1,5 @@
+flags:
+  gdpack:
+    carryforward: true
+    paths:
+      - "*"
