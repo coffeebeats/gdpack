@@ -1,0 +1,43 @@
+before:
+  hooks:
+    - go mod tidy
+
+# ----------------------------------- Build ---------------------------------- #
+
+builds:
+  - id: gdpack
+    main: ./cmd/gdpack
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    env:
+      - CGO_ENABLED=0
+      - GODEBUG=tarinsecurepath=0,zipinsecurepath=0
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - windows_amd64
+
+# --------------------------------- Release --------------------------------- #
+
+archives:
+  - id: gdpack
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}-v{{ .Version }}-
+
+      {{- if eq .Os "darwin" }}macos
+      {{- else }}{{ .Os }}{{ end }}-
+
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+
+changelog:
+  skip: true
+
+checksum:
+  name_template: checksums.txt
+  ids:
+    - gdpack
