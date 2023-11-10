@@ -21,6 +21,6 @@
   "go.lintTool": "golangci-lint",
   "gopls": {
     "formatting.gofumpt": false,
-    "formatting.local": "github.com/coffeebeats/gdenv"
+    "formatting.local": "github.com/coffeebeats/gdpack"
   }
 }
