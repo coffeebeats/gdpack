@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.2 (2023-11-10)
+
+## What's Changed
+* chore(ci): remove version pin from release action by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/4
+* fix(docs,tools): correct Windows installation command; remove `tools.go` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/9
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.1...v0.0.2
+
 ## 0.0.1 (2023-11-08)
 
 ## What's Changed

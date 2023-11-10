@@ -30,7 +30,7 @@ func main() {
 
 	app := &cli.App{
 		Name:    "gdpack",
-		Version: "v0.0.1", // x-release-please-version
+		Version: "v0.0.2", // x-release-please-version
 
 		Suggest:                true,
 		UseShortOptionHandling: true,
