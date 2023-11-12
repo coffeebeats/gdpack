@@ -25,7 +25,7 @@ const (
 	colorYellowBright  = 11
 )
 
-func main() {
+func main() { //nolint:funlen
 	cli.VersionPrinter = versionPrinter
 
 	app := &cli.App{
@@ -35,7 +35,25 @@ func main() {
 		Suggest:                true,
 		UseShortOptionHandling: true,
 
-		Commands: []*cli.Command{},
+		Commands: []*cli.Command{
+			/* ---------------------------------- Init ---------------------------------- */
+
+			NewInit(),
+
+			/* --------------------------------- Install -------------------------------- */
+
+			NewInstall(),
+			NewVendor(),
+
+			/* ------------------------------ Dependencies ------------------------------ */
+
+			NewAdd(),
+			NewPatch(),
+			NewPatchCommit(),
+			NewRemove(),
+			NewReplace(),
+			NewUpdate(),
+		},
 	}
 
 	// Call 'os.Exit' as the first-in/last-out defer; ensures an exit code is
