@@ -140,6 +140,27 @@ Replace a dependency with one at the provided `URI`; can be a filepath or a URL 
     - `../third_party/godot-next/addons/godot-next`
     - `https://github.com/godot-extended-libraries/godot-next`
 
+## **gdpack `update`**
+
+> ❕ **NOTE:** This only applies to `git`-backed dependencies specified with "branch" or "commit" references. A future update may allow this command to locate newer dependency versions.
+
+Update one or more remote addon dependencies to their latest version.
+
+### Usage
+
+`gdpack update [OPTIONS] [NAME]`
+
+### Options
+
+- `-p`, `--path <PATH>` — a `PATH` to the Godot project containing the manifest
+- `-t`, `--target <TARGET>` — update dependencies only for `TARGET` (can be specified more than once)
+
+### Arguments
+
+- `[NAME]` — the name of an addon to update (if omitted, all addons are updated)
+  - Example values:
+    - `godot-next`
+
 ## **gdpack `vendor`**
 
 Vendor remote addon dependencies into the specified directory.
