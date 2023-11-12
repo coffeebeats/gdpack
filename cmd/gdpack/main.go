@@ -48,13 +48,11 @@ func main() { //nolint:funlen
 			/* ------------------------------ Dependencies ------------------------------ */
 
 			NewAdd(),
-			NewRemove(),
-			NewReplace(),
-
-			/* ---------------------------------- Patch --------------------------------- */
-
 			NewPatch(),
 			NewPatchCommit(),
+			NewRemove(),
+			NewReplace(),
+			NewUpdate(),
 		},
 	}
 
