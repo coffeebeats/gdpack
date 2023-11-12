@@ -5,6 +5,10 @@ import "github.com/urfave/cli/v2"
 const (
 	flagDev  = "development"
 	flagName = "name"
+
+	flagBranch = "branch"
+	flagCommit = "commit"
+	flagTag    = "tag"
 )
 
 // NewAdd adds the specified dependency to a 'gdpack.toml' manifest.
@@ -57,15 +61,15 @@ func NewAdd() *cli.Command {
 func gitRevisionFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:  "branch",
+			Name:  flagBranch,
 			Usage: "use a git 'BRANCH' version (only used with a git repository 'URI')",
 		},
 		&cli.StringFlag{
-			Name:  "commit",
+			Name:  flagCommit,
 			Usage: "use a git 'COMMIT' version (only used with a git repository 'URI')",
 		},
 		&cli.StringFlag{
-			Name:  "tag",
+			Name:  flagTag,
 			Usage: "use a git 'TAG' version (only used with a git repository 'URI')",
 		},
 	}
