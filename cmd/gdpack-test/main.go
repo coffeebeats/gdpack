@@ -10,9 +10,15 @@ import (
 func main() {
 	m := manifest.Manifest{}
 
-	m.Add("manifest", manifest.Local{Path: "./pkg/manifest"})
+	a := manifest.Spec{Local: manifest.Local{Path: "./pkg/manifest"}}
+	if err := m.Add("manifest", a); err != nil {
+		panic(err)
+	}
 
-	if err := manifest.Write(m, "./manifest.toml"); err != nil {
+	log.Println(m)
+	log.Println("--")
+
+	if err := manifest.Write(&m, "./manifest.toml"); err != nil {
 		panic(err)
 	}
 
@@ -26,8 +32,12 @@ func main() {
 	log.Println("Parsed manifest from './manifest.toml'")
 
 	if !reflect.DeepEqual(parsed, &m) {
+		log.Println(parsed)
+		log.Println("--")
+		log.Println(&m)
+
 		log.Fatal("mismatch")
 	}
 
-	log.Printf("%#v", parsed)
+	log.Printf("%#v", parsed.List())
 }

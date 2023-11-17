@@ -8,7 +8,7 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 )
 
-func Write(m Manifest, out string) error {
+func Write(m *Manifest, out string) error {
 	f, err := os.Create(out)
 	if err != nil {
 		return err

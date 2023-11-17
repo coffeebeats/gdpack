@@ -1,35 +1,29 @@
 package manifest
 
-import "encoding/json"
-
 type Manifest struct {
-	dependencies map[string]map[string]string `toml:"dependencies"`
+	Dependencies map[string]Spec `toml:"dependencies"`
+}
+
+type Dependency struct {
+	Name string
+	Spec Spec
 }
 
 func (m *Manifest) Add(name string, spec Spec) error {
-	bb, err := json.Marshal(spec)
-	if err != nil {
-		return err
+	if m.Dependencies == nil {
+		m.Dependencies = make(map[string]Spec)
 	}
 
-	s := make(map[string]string)
-	if err := json.Unmarshal(bb, &s); err != nil {
-		return err
-	}
-
-	m.dependencies[name] = s
+	m.Dependencies[name] = spec
 
 	return nil
 }
 
-func (m *Manifest) List() []Spec {
-	out := make([]Spec, len(m.dependencies))
+func (m *Manifest) List() []Dependency {
+	out := make([]Dependency, 0, len(m.Dependencies))
 
-	for name, d := range m.dependencies {
-		if a := (Asset{}); As(d, &a) {
-			out[i] = a
-			continue
-		}
+	for name, s := range m.Dependencies {
+		out = append(out, Dependency{Name: name, Spec: s})
 	}
 
 	return out

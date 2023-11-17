@@ -1,32 +1,28 @@
 package manifest
 
-import "github.com/pelletier/go-toml/v2"
+import toml "github.com/pelletier/go-toml/v2"
 
-type Spec interface {
-	spec()
+type Spec struct {
+	Asset
+	Git
+	Local
 }
 
 type Asset struct {
-	Asset uint `toml:"asset"`
+	Asset uint `toml:"asset,omitempty"`
 }
-
-func (a Asset) spec() {}
 
 type Git struct {
 	Git string `toml:"git"`
 
-	Branch string `toml:"branch"`
-	Tag    string `toml:"tag"`
-	Rev    string `toml:"rev"`
+	Branch string `toml:"branch,omitempty"`
+	Tag    string `toml:"tag,omitempty"`
+	Rev    string `toml:"rev,omitempty"`
 }
-
-func (g Git) spec() {}
 
 type Local struct {
-	Path string `toml:"path"`
+	Path string `toml:"path,omitempty"`
 }
-
-func (l Local) spec() {}
 
 func As(data map[string]string, target Spec) bool {
 	bb, err := toml.Marshal(data)
