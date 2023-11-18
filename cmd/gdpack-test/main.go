@@ -44,5 +44,6 @@ func main() {
 		log.Fatal("mismatch")
 	}
 
-	log.Printf("%#v", parsed.List())
+	log.Printf("%#v", parsed.Dependencies)
+	log.Printf("%#v", parsed.DevDependencies)
 }
