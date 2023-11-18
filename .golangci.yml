@@ -49,6 +49,7 @@ linters-settings:
       - "^github.com/urfave/cli/v2.StringFlag$"
       - "^github.com/urfave/cli/v2.StringSliceFlag$"
       - "^github.com/coffeebeats/gdpack/pkg/manifest.Asset$"
+      - "^github.com/coffeebeats/gdpack/pkg/manifest.Dependencies$"
       - "^github.com/coffeebeats/gdpack/pkg/manifest.Git$"
       - "^github.com/coffeebeats/gdpack/pkg/manifest.Local$"
       - "^github.com/coffeebeats/gdpack/pkg/manifest.Manifest$"
