@@ -1,7 +1,8 @@
 package manifest
 
 type Manifest struct {
-	Dependencies map[string]Spec `toml:"dependencies"`
+	Dependencies    map[string]Spec `json:"dependencies,omitempty"`
+	DevDependencies map[string]Spec `json:"devDependencies,omitempty"`
 }
 
 type Dependency struct {
@@ -15,6 +16,16 @@ func (m *Manifest) Add(name string, spec Spec) error {
 	}
 
 	m.Dependencies[name] = spec
+
+	return nil
+}
+
+func (m *Manifest) AddDev(name string, spec Spec) error {
+	if m.DevDependencies == nil {
+		m.DevDependencies = make(map[string]Spec)
+	}
+
+	m.DevDependencies[name] = spec
 
 	return nil
 }

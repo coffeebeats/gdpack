@@ -2,10 +2,9 @@ package manifest
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"os"
-
-	toml "github.com/pelletier/go-toml/v2"
 )
 
 func Write(m *Manifest, out string) error {
@@ -16,7 +15,7 @@ func Write(m *Manifest, out string) error {
 
 	defer f.Close()
 
-	bb, err := toml.Marshal(m)
+	bb, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -31,7 +30,7 @@ func Write(m *Manifest, out string) error {
 func Parse(contents []byte) (*Manifest, error) {
 	var m Manifest
 
-	if err := toml.Unmarshal(contents, &m); err != nil {
+	if err := json.Unmarshal(contents, &m); err != nil {
 		return nil, err
 	}
 

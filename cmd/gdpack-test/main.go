@@ -10,26 +10,31 @@ import (
 func main() {
 	m := manifest.Manifest{}
 
-	a := manifest.Spec{Local: manifest.Local{Path: "./pkg/manifest"}}
+	a := manifest.Spec{Local: &manifest.Local{Path: "./pkg/manifest"}}
 	if err := m.Add("manifest", a); err != nil {
+		panic(err)
+	}
+
+	b := manifest.Spec{Git: &manifest.Git{Git: "git@github.com:coffeebeats/gdpack.git", Branch: "main"}}
+	if err := m.AddDev("gdpack", b); err != nil {
 		panic(err)
 	}
 
 	log.Println(m)
 	log.Println("--")
 
-	if err := manifest.Write(&m, "./manifest.toml"); err != nil {
+	if err := manifest.Write(&m, "./manifest.json"); err != nil {
 		panic(err)
 	}
 
-	log.Println("Wrote manifest contents to './manifest.toml'")
+	log.Println("Wrote manifest contents to './manifest.json'")
 
-	parsed, err := manifest.ParseFile("./manifest.toml")
+	parsed, err := manifest.ParseFile("./manifest.json")
 	if err != nil {
 		panic(err)
 	}
 
-	log.Println("Parsed manifest from './manifest.toml'")
+	log.Println("Parsed manifest from './manifest.json'")
 
 	if !reflect.DeepEqual(parsed, &m) {
 		log.Println(parsed)
