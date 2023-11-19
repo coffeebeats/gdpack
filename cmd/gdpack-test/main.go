@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"reflect"
 
 	"github.com/coffeebeats/gdpack/pkg/manifest"
 )
@@ -45,13 +46,13 @@ func main() {
 
 	log.Println("Parsed manifest from './manifest.json'")
 
-	// if !reflect.DeepEqual(parsed, &m) {
-	// 	log.Printf("%#v\n", parsed)
-	// 	log.Println("--")
-	// 	log.Printf("%#v\n", &m)
+	if !reflect.DeepEqual(parsed, &m) {
+		log.Printf("%#v\n", parsed)
+		log.Println("--")
+		log.Printf("%#v\n", &m)
 
-	// 	log.Fatal("mismatch")
-	// }
+		log.Fatal("mismatch")
+	}
 
 	deps := parsed.List(manifest.WithTarget("x86_64"))
 	devDeps := parsed.List(manifest.WithTarget("x86_64"), manifest.WithDevEnvironment())
