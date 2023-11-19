@@ -19,7 +19,10 @@ func main() { //nolint:funlen
 		panic(err)
 	}
 
-	b := manifest.Spec{Git: &manifest.Git{Git: "git@github.com:coffeebeats/gdpack.git", Rev: "47d63298ef2134797792c6bd65e1b7ce122779d1"}}
+	b := manifest.Spec{Git: &manifest.Git{
+		Git: "git@github.com:coffeebeats/gdpack.git",
+		Rev: "47d63298ef2134797792c6bd65e1b7ce122779d1"},
+	}
 	if err := m.Add("gdpack", b, manifest.WithDevEnvironment()); err != nil {
 		panic(err)
 	}
