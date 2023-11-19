@@ -4,6 +4,7 @@ package manifest
 /*                              Enum: environment                             */
 /* -------------------------------------------------------------------------- */
 
+// environment is the set of possible dependency installation environments.
 type environment int
 
 const (
@@ -15,6 +16,7 @@ const (
 /*                                Struct: query                               */
 /* -------------------------------------------------------------------------- */
 
+// query is the configuration allowed by 'Manifest' operations.
 type query struct {
 	env    environment
 	target string
@@ -24,10 +26,12 @@ type query struct {
 /*                              Function: Option                              */
 /* -------------------------------------------------------------------------- */
 
+// Option defines a functional option for 'Manifest' operatons.
 type Option func(*query)
 
 /* ---------------------- Function: WithDevEnvironment ---------------------- */
 
+// WithTarget specifies development-only dependencies.
 func WithDevEnvironment() Option {
 	return func(q *query) {
 		q.env = development
@@ -36,6 +40,7 @@ func WithDevEnvironment() Option {
 
 /* ---------------------- Function: WithProdEnvironment --------------------- */
 
+// WithTarget specifies production dependencies.
 func WithProdEnvironment() Option {
 	return func(q *query) {
 		q.env = production
@@ -44,6 +49,7 @@ func WithProdEnvironment() Option {
 
 /* -------------------------- Function: WithTarget -------------------------- */
 
+// WithTarget specifies a target under which 'Manifest' operations apply.
 func WithTarget(target string) Option {
 	return func(q *query) {
 		q.target = target

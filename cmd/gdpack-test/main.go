@@ -57,6 +57,6 @@ func main() {
 	deps := parsed.List(manifest.WithTarget("x86_64"))
 	devDeps := parsed.List(manifest.WithTarget("x86_64"), manifest.WithDevEnvironment())
 
-	log.Printf("%#v", deps)
-	log.Printf("%#v", devDeps)
+	log.Printf("%v", deps)
+	log.Printf("%v", devDeps)
 }
