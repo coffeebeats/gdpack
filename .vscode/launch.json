@@ -9,7 +9,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/cmd/gdpack",
+      "program": "${workspaceFolder}/cmd/gdpack-test",
       "args": [],
       "env": {
         "GDPACK_HOME": "${workspaceFolder}/.gdpack"

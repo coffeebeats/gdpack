@@ -25,3 +25,6 @@ dist
 
 # gdpack-related ignores
 .gdpack
+manifest.json
+manifest.toml
+manifest.yaml
