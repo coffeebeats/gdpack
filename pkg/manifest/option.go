@@ -30,7 +30,7 @@ type Option func(*query)
 
 func WithDevEnvironment() Option {
 	return func(q *query) {
-		q.env = production
+		q.env = development
 	}
 }
 

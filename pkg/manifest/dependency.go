@@ -22,58 +22,40 @@ type Dependencies struct {
 
 /* ------------------------------- Method: add ------------------------------ */
 
-// add records the provided named specification as a production dependency in
-// the 'Dependencies' struct. If 'name' already exists then the 'Spec' will be
-// overwritten.
-func (d *Dependencies) add(name string, spec Spec) error {
-	delete(d.Dev, name)
+// add records the provided named specification as a dependency for the
+// environment. If 'name' already exists then the 'Spec' will be overwritten.
+func (d *Dependencies) add(name string, spec Spec, env environment) error {
+	addTo := &d.Prod
+	removeFrom := d.Dev
 
-	if d.Prod == nil {
-		d.Prod = make(map[string]Spec)
+	if env == development {
+		addTo = &d.Dev
+		removeFrom = d.Prod
 	}
 
-	d.Prod[name] = spec
+	delete(removeFrom, name)
 
-	return nil
-}
-
-/* ----------------------------- Method: addDev ----------------------------- */
-
-// addDev records the provided named specification as a development dependency
-// in the 'Dependencies' struct. If 'name' already exists then the 'Spec' will
-// be overwritten.
-func (d *Dependencies) addDev(name string, spec Spec) error {
-	delete(d.Prod, name)
-
-	if d.Dev == nil {
-		d.Dev = make(map[string]Spec)
+	if *addTo == nil {
+		*addTo = make(map[string]Spec)
 	}
 
-	d.Dev[name] = spec
+	(*addTo)[name] = spec
 
 	return nil
 }
 
 /* ------------------------------ Method: list ------------------------------ */
 
-// list returns the set of production dependencies in 'Dependencies'.
-func (d *Dependencies) list() []Dependency {
-	deps := make([]Dependency, 0, len(d.Prod))
-
-	for name, spec := range d.Prod {
-		deps = append(deps, Dependency{Name: name, Spec: spec})
+// list returns the set of dependencies for the specified environment.
+func (d *Dependencies) list(env environment) []Dependency {
+	m := d.Prod
+	if env == development {
+		m = d.Dev
 	}
 
-	return deps
-}
+	deps := make([]Dependency, 0, len(m))
 
-/* ----------------------------- Method: listDev ---------------------------- */
-
-// listDev returns the set of development dependencies in 'Dependencies'.
-func (d *Dependencies) listDev() []Dependency {
-	deps := make([]Dependency, 0, len(d.Prod))
-
-	for name, spec := range d.Prod {
+	for name, spec := range m {
 		deps = append(deps, Dependency{Name: name, Spec: spec})
 	}
 

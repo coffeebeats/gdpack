@@ -29,16 +29,7 @@ func (m *Manifest) Add(name string, spec Spec, opts ...Option) error {
 		opt(&q)
 	}
 
-	deps := m.dependencies(q)
-
-	switch q.env {
-	case production:
-		return deps.add(name, spec)
-	case development:
-		return deps.addDev(name, spec)
-	}
-
-	return nil
+	return m.dependencies(q).add(name, spec, q.env)
 }
 
 /* ------------------------------ Method: List ------------------------------ */
@@ -50,28 +41,14 @@ func (m *Manifest) List(opts ...Option) []Dependency {
 		opt(&q)
 	}
 
-	deps := m.dependencies(q)
-
 	depset := make(map[string]Dependency)
 
-	switch q.env {
-	case production:
-		for _, d := range m.dependencies(query{env: production, target: ""}).list() {
-			depset[d.Name] = d
-		}
+	for _, d := range m.dependencies(query{env: production, target: ""}).list(q.env) {
+		depset[d.Name] = d
+	}
 
-		for _, d := range deps.list() {
-			depset[d.Name] = d
-		}
-
-	case development:
-		for _, d := range m.dependencies(query{env: development, target: ""}).listDev() {
-			depset[d.Name] = d
-		}
-
-		for _, d := range deps.listDev() {
-			depset[d.Name] = d
-		}
+	for _, d := range m.dependencies(q).list(q.env) {
+		depset[d.Name] = d
 	}
 
 	out := make([]Dependency, 0, len(depset))
@@ -82,47 +59,18 @@ func (m *Manifest) List(opts ...Option) []Dependency {
 	return out
 }
 
-func (m *Manifest) ListDevWithTarget(target string) ([]Dependency, error) {
-	if target == "" {
-		return nil, ErrMissingTarget
-	}
-
-	depset := make(map[string]Dependency)
-
-	if m.Dependencies != nil {
-		for _, d := range m.Dependencies.listDev() {
-			depset[d.Name] = d
-		}
-	}
-
-	if m.Target != nil {
-		targetDeps := m.Target[target]
-
-		for _, d := range targetDeps.listDev() {
-			depset[d.Name] = d
-		}
-	}
-
-	deps := make([]Dependency, 0, len(depset))
-
-	for _, d := range depset {
-		deps = append(deps, d)
-	}
-
-	return deps, nil
-}
-
 /* ----------------------------- Method: Remove ----------------------------- */
 
 // Remove deletes the specified addon as a dependency, production or
 // development, in the 'Manifest'. This method is a no-op if the addon does not
 // exist in either dependency set.
-func (m *Manifest) Remove(name string) error {
-	if m.Dependencies == nil {
-		m.Dependencies = &Dependencies{}
+func (m *Manifest) Remove(name string, opts ...Option) error {
+	q := query{env: production, target: ""}
+	for _, opt := range opts {
+		opt(&q)
 	}
 
-	return m.Dependencies.remove(name)
+	return m.dependencies(q).remove(name)
 }
 
 /* -------------------------- Method: dependencies -------------------------- */
