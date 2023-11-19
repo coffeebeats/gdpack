@@ -15,17 +15,17 @@ func main() {
 	}
 
 	b := manifest.Spec{Git: &manifest.Git{Git: "git@github.com:coffeebeats/gdpack.git", Branch: "main"}}
-	if err := m.AddDev("gdpack", b); err != nil {
+	if err := m.Add("gdpack", b, manifest.WithDevEnvironment()); err != nil {
 		panic(err)
 	}
 
-	// c := manifest.Spec{Git: &manifest.Git{Git: "git@github.com:coffeebeats/gdpack.git", Branch: "next"}}
-	// if err := m.AddDevWithTarget("gdpack", c, "x86_64"); err != nil {
-	// 	panic(err)
-	// }
+	c := manifest.Spec{Git: &manifest.Git{Git: "git@github.com:coffeebeats/gdpack.git", Branch: "next"}}
+	if err := m.Add("gdpack", c, manifest.WithDevEnvironment(), manifest.WithTarget("aarch64")); err != nil {
+		panic(err)
+	}
 
 	d := manifest.Spec{Local: &manifest.Local{Path: "./pkg/manifest/next"}}
-	if err := m.AddWithTarget("gdpack", d, "x86_64"); err != nil {
+	if err := m.Add("gdpack", d, manifest.WithTarget("x86_64")); err != nil {
 		panic(err)
 	}
 
@@ -53,15 +53,8 @@ func main() {
 	// 	log.Fatal("mismatch")
 	// }
 
-	deps, err := parsed.ListWithTarget("x86_64")
-	if err != nil {
-		panic(err)
-	}
-
-	devDeps, err := parsed.ListDevWithTarget("x86_64")
-	if err != nil {
-		panic(err)
-	}
+	deps := parsed.List(manifest.WithTarget("x86_64"))
+	devDeps := parsed.List(manifest.WithTarget("x86_64"), manifest.WithDevEnvironment())
 
 	log.Printf("%#v", deps)
 	log.Printf("%#v", devDeps)
