@@ -2,6 +2,8 @@
 
 A small, single-purpose CLI application for managing Godot addons.
 
+> ⚠️ **WARNING:** This project is in a very early stage. API instability, missing features, and bugs are to be expected for now.
+
 ## **How it works**
 
 TODO
