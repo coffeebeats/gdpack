@@ -31,7 +31,7 @@ type Option func(*query)
 
 /* ---------------------- Function: WithDevEnvironment ---------------------- */
 
-// WithTarget specifies development-only dependencies.
+// WithDevEnvironment specifies development-only dependencies.
 func WithDevEnvironment() Option {
 	return func(q *query) {
 		q.env = development
@@ -40,7 +40,7 @@ func WithDevEnvironment() Option {
 
 /* ---------------------- Function: WithProdEnvironment --------------------- */
 
-// WithTarget specifies production dependencies.
+// WithProdEnvironment specifies production dependencies.
 func WithProdEnvironment() Option {
 	return func(q *query) {
 		q.env = production
