@@ -40,30 +40,41 @@ The following instructions outline how to get the project set up for local devel
 
 When submitting code for review, ensure the following requirements are met:
 
-> ❕ **NOTE:** These instructions do not persist the tools to your development environment. When regular use is required, follow each tool's individual instructions to install permanent versions.
-
-1. The project is correctly formatted using [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports):
+1. The project is correctly formatted using [rustfmt](https://github.com/rust-lang/rustfmt):
 
     ```sh
-    go run golang.org/x/tools/cmd/goimports@latest -w .
+    cargo fmt
     ```
 
-2. All [golangci-lint](https://golangci-lint.run/) linter warnings are addressed:
+2. All [clippy](https://github.com/rust-lang/rust-clippy) linter warnings are addressed:
 
     ```sh
-    go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run ./...
+    cargo clippy \
+        --all-features \
+        --all-targets \
+        --no-deps \
+        -- \
+            --deny=warnings
     ```
 
-3. All unit tests pass and no data races are found:
+3. All unit tests pass:
 
     ```sh
-    go test -race ./...
+    cargo test \
+        --all-features \
+        --all-targets \
+        --frozen \
+        --release
     ```
 
-4. The `gdpack` binary successfully compiles with [goreleaser](https://goreleaser.com/) (release artifacts will be available at `./dist`):
+4. The `gdpack` binary successfully compiles using [Cross](https://github.com/cross-rs/cross) (release artifacts will be available in `./target`):
 
     ```sh
-    go run github.com/goreleaser/goreleaser@latest release --clean --skip=publish --snapshot
+    cross build \
+        --manifest-path=Cargo.toml \
+        --profile=release \
+        --frozen \
+        --all-targets
     ```
 
 ## **Contributing**
