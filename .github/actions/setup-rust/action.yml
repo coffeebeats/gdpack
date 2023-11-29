@@ -5,7 +5,7 @@ inputs:
   version:
     description: "The toolchain version string to pass to 'rustup' (e.g. 1.68.2 or nightly)."
     required: true
-  manifest-file:
+  version-file:
     description: "Parse the rust version from the provided 'Cargo.toml' manifest file."
     required: false
     default: ""
@@ -41,19 +41,19 @@ runs:
   using: "composite"
   steps:
     - uses: "./.github/actions/parse-rust-version"
-      if: inputs.manifest-file != ""
+      if: inputs.version-file != ""
       id: parse-config
       with:
-        manifest: inputs.manifest-file
+        manifest: inputs.version-file
         strict: true
 
     - name: Install rust (stable)
       shell: bash
       run: |
         VERSION="${{ inputs.version }}"
-        if [[ ! -z "${{ inputs.manifest-file }}" ]]; then
+        if [[ ! -z "${{ inputs.version-file }}" ]]; then
           if [[ ! -z "${{ inputs.version }}" ]]; then
-            echo "cannot specify both 'version' and 'manifest-file'"
+            echo "cannot specify both 'version' and 'version-file'"
             exit 1
           fi
 
@@ -61,7 +61,7 @@ runs:
         fi
 
         if [[ -z "$VERSION" ]]; then
-          echo "missing Rust version; specify either 'version' or 'manifest-file'"
+          echo "missing Rust version; specify either 'version' or 'version-file'"
           exit 1
         fi
 
