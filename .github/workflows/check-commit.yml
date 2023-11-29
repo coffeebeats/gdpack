@@ -162,7 +162,12 @@ jobs:
 
       - name: Test source code
         shell: bash
-        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
+        run: |
+          cargo test \
+            --all-features \
+            --all-targets \
+            --frozen \
+            --release
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
