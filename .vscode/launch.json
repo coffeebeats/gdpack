@@ -5,15 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "cmd/gdpack",
-      "type": "go",
+      "type": "lldb",
       "request": "launch",
-      "mode": "auto",
-      "program": "${workspaceFolder}/cmd/gdpack-test",
+      "name": "Debug",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib"],
+        "filter": {
+          "name": "gdpack",
+          "kind": "rlib"
+        }
+      },
       "args": [],
-      "env": {
-        "GDPACK_HOME": "${workspaceFolder}/.gdpack"
-      }
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

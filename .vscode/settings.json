@@ -1,26 +1,3 @@
 {
-  "git.branchProtection": ["main"],
-
-  /* ------------------------------ Language: Go ------------------------------ */
-
-  "[go]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": true
-    }
-  },
-  "[go.mod]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": true
-    }
-  },
-
-  /* ----------------------------- Extensions: Go ----------------------------- */
-
-  "go.lintTool": "golangci-lint",
-  "gopls": {
-    "formatting.gofumpt": false,
-    "formatting.local": "github.com/coffeebeats/gdpack"
-  }
+  "git.branchProtection": ["main"]
 }
