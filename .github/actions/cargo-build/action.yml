@@ -1,4 +1,4 @@
-name: "Compile crate/workspace"
+name: "🏗️ Compile: Rust crate/workspace"
 description: "Uses 'cargo' to compile the root project with caching enabled."
 
 inputs:

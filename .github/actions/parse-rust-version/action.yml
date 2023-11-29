@@ -1,5 +1,5 @@
-name: "Set up 'Rust' toolchain"
-description: "Overrides the Rust environment installed to the runner."
+name: "🗒️ Parse: Rust version"
+description: "Parse the rust version specified from a 'Cargo.toml' manifest file."
 
 inputs:
   manifest:
@@ -18,7 +18,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Parse 'rust' version from 'Cargo.toml'
+    - name: Parse Rust version from 'Cargo.toml'
       id: parse-config
       shell: bash
       run: |

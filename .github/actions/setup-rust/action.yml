@@ -1,4 +1,4 @@
-name: "Set up 'Rust' toolchain"
+name: "🦀 Set up: Rust toolchain"
 description: "Overrides the Rust environment installed to the runner."
 
 inputs:
