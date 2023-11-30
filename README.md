@@ -32,7 +32,7 @@ See [docs/commands.md](./docs/commands.md) for a detailed reference on how to us
 
 The following instructions outline how to get the project set up for local development:
 
-1. [Follow the instructions](https://go.dev/doc/install) to install Go (see [go.mod](./go.mod) for the minimum required version).
+1. [Follow the instructions](https://www.rust-lang.org/tools/install) to install Rust (see [Cargo.toml](./Cargo.toml) for the minimum required version).
 2. Clone the [coffeebeats/gdpack](https://github.com/coffeebeats/gdpack) repository.
 3. Install the tools [used below](#code-submission) by following each of their specific installation instructions.
 
