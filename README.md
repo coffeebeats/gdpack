@@ -67,7 +67,7 @@ When submitting code for review, ensure the following requirements are met:
         --release
     ```
 
-4. The `gdpack` binary successfully compiles using [Cross](https://github.com/cross-rs/cross) (release artifacts will be available in `./target`):
+4. The `gdpack` binary successfully compiles using [Cross](https://github.com/cross-rs/cross) (release artifacts will be available in `./target`). Follow the [installation instructions](https://github.com/cross-rs/cross#installation) to ensure `cross` is installed on the development system.
 
     ```sh
     cross build \
