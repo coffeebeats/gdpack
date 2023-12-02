@@ -5,10 +5,6 @@ on:
     branches:
       - main
 
-env:
-  # This is required to use the 'gh' CLI in actions.
-  GH_TOKEN: ${{ github.token }}
-
 permissions:
   contents: write
   pull-requests: write
@@ -78,6 +74,9 @@ jobs:
 
       - name: Attach assets to release
         shell: bash
+        env:
+          # This is required to use the 'gh' CLI in actions.
+          GH_TOKEN: ${{ github.token }}
         run: |
           ASSETS=(dist/gdpack-${{ needs.release-please.outputs.release-tag }}* dist/checksums.txt)
           for asset in "${ASSETS[@]}"; do
