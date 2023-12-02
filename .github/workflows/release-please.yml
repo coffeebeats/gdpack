@@ -47,7 +47,6 @@ jobs:
           changelog-notes-type: "github"
 
           extra-files: |
-            src/main.rs
             scripts/install.ps1
             scripts/install.sh
 
