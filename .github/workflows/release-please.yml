@@ -47,6 +47,7 @@ jobs:
           changelog-notes-type: "github"
 
           extra-files: |
+            docs/installation.md
             scripts/install.ps1
             scripts/install.sh
 
