@@ -47,6 +47,7 @@ runs:
         manifest: ${{ inputs.version-file }}
 
     - name: Install rust (stable)
+      id: install
       shell: bash
       run: |
         VERSION="${{ inputs.version }}"
@@ -63,6 +64,8 @@ runs:
           echo "missing Rust version; specify either 'version' or 'version-file'"
           exit 1
         fi
+
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
         CMD=("rustup toolchain install $VERSION")
 
@@ -82,13 +85,13 @@ runs:
       shell: bash
       run: |
         for t in $(printf "${{ inputs.targets }}" | tr ',' \\n); do
-          rustup target add --toolchain ${{ inputs.version }} $t
+          rustup target add --toolchain ${{ steps.install.outputs.version }} $t
         done
 
     - name: Activate the installed toolchain
       if: inputs.override != 'false'
       shell: bash
-      run: rustup override set ${{ inputs.version }}
+      run: rustup override set ${{ steps.install.outputs.version }}
 
     - name: Display the active toolchain
       id: check-active-toolchain
