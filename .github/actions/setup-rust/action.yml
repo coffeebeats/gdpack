@@ -41,7 +41,7 @@ runs:
   using: "composite"
   steps:
     - uses: "./.github/actions/parse-rust-version"
-      if: inputs.version-file != ""
+      if: inputs.version-file != ''
       id: parse-config
       with:
         manifest: inputs.version-file
