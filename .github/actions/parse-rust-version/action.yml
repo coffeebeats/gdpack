@@ -8,7 +8,7 @@ inputs:
   strict:
     description: "Whether to fail if 'rust_version' is not specified."
     required: false
-    default: false
+    default: true
 
 outputs:
   version:

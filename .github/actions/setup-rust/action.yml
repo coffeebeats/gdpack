@@ -45,7 +45,6 @@ runs:
       id: parse-config
       with:
         manifest: ${{ inputs.version-file }}
-        strict: true
 
     - name: Install rust (stable)
       shell: bash
