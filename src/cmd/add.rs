@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use clap::value_parser;
 use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
@@ -14,15 +15,24 @@ pub struct Args {
     #[arg(short, long)]
     pub dev: bool,
 
-    /// Install the addon named `NAME` from a multi-addon dependency; if
-    /// omitted, assumed to be repository name or filepath base name.
-    #[arg(short, long, value_name = "NAME")]
-    pub name: Option<String>,
+    /// A `PATH` to the Godot project containing the manifest.
+    #[arg(short, long, value_name = "PATH", value_parser = value_parser!(PathBuf))]
+    pub project: Option<String>,
 
-    /// Add the dependency only for `TARGET` (can be specified more than once).
-    #[arg(short, long, value_name = "TARGET")]
-    pub target: Option<String>,
+    /// Add the dependency only for `TARGET` (can be specified more than once
+    /// and accepts multiple values delimited by `,`).
+    #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
+    pub target: Option<Vec<String>>,
 
+    #[clap(flatten)]
+    pub uri: SourceArgs,
+}
+
+/* --------------------------- Struct: SourceArgs --------------------------- */
+
+/// SourceArgs specifies the location and version of a Godot addon to install.
+#[derive(clap::Args, Debug)]
+pub struct SourceArgs {
     /// A URI to a directory or Git repository containing the addon to install.
     /// `gdpack` will search for a `plugin.cfg` and use the following selection
     /// strategy:
@@ -36,10 +46,15 @@ pub struct Args {
     ///        directory/repository, in that order. Note that in the latter
     ///        case (ii), `gdpack` will only install non-Git and non-`.`-
     ///        prefixed files into the project.
-    #[arg(index = 1, required = true, value_name = "URI", value_parser = parse_source)]
-    pub uri: Option<Source>,
+    #[arg(value_name = "URI", value_parser = parse_source)]
+    pub uri: Source,
 
-    #[command(flatten)]
+    /// Install the addon named `NAME` from a multi-addon dependency; if
+    /// omitted, assumed to be repository name or filepath base name.
+    #[arg(short, long, value_name = "NAME")]
+    pub name: Option<String>,
+
+    #[clap(flatten)]
     pub commit: GitCommitArgs,
 }
 
@@ -66,7 +81,8 @@ pub struct GitCommitArgs {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(_: Args) -> anyhow::Result<()> {
+pub fn handle(a: Args) -> anyhow::Result<()> {
+    println!("{:?}", a.target);
     Ok(())
 }
 
@@ -85,8 +101,8 @@ pub enum Source {
 
 /// parse_source attempts to parse either a URL or a filepath from the provided
 /// string.
-fn parse_source(s: &str) -> Result<Source, anyhow::Error> {
-    // NOTE: Parse a 'Url' first as it's more specific than a 'PathBuf'.
+pub(in crate::cmd) fn parse_source(s: &str) -> Result<Source, anyhow::Error> {
+    // NOTE: Parse a `Url` first as it's more specific than a `PathBuf`.
     if let Ok(u) = Url::parse(s) {
         return Ok(Source::Url(u));
     }

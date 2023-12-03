@@ -14,7 +14,7 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum Commands {
     /* ----------------------- Category: Dependencies ----------------------- */
-    /// Add the dependency at the provided 'URI'; can be a filepath or a URL to
+    /// Add the dependency at the provided `URI`; can be a filepath or a URL to
     /// a Git repository.
     Add(add::Args),
     /// Remove the specified dependency.
@@ -30,5 +30,6 @@ pub enum Commands {
 
     /* -------------------------- Category: Install ------------------------- */
     /// Install addon dependencies into the Godot project's addons/ directory.
+    #[clap(alias = "i")]
     Install(install::Args),
 }
