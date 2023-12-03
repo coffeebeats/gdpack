@@ -1,7 +1,3 @@
 # Target 'GLIBC 2.17' using 'zig cc' as a cross-compiler
-[target.aarch64-unknown-linux-gnu]
-zig = "2.17"
-
-# Target 'GLIBC 2.17' using 'zig cc' as a cross-compiler
 [target.x86_64-unknown-linux-gnu]
 zig = "2.17"
