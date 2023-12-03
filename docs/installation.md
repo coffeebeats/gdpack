@@ -2,7 +2,7 @@
 
 The easiest way to install `gdpack` is by using the pre-built binaries. These can be manually downloaded and configured, but automated installation scripts are provided and recommended.
 
-Alternatively, you can install `gdpack` from source using the latest supported version of [Go](https://go.dev/). See [Install from source](#install-from-source) for more details.
+Alternatively, you can install `gdpack` from source using the latest supported version of [Rust](https://www.rust-lang.org/tools/install). See [Install from source](#install-from-source) for more details.
 
 ## **Pre-built binaries (recommended)**
 
@@ -66,10 +66,10 @@ Invoke-WebRequest `
 
 ## **Install from source**
 
-`gdpack` is a Go project and can be installed using `go install`. This option is not recommended as it requires having the Go toolchain installed, it's slower than downloading a prebuilt binary, and there may be instability due to using a different version of Go than it was developed with.
+`gdpack` is a Rust project and can be installed using `cargo build`. This option is not recommended as it requires having the Rust toolchain installed, it's slower than downloading a prebuilt binary, and there may be instability due to using a different version of Rust than it was developed with.
 
 ```sh
-go install github.com/coffeebeats/gdpack/cmd/gdpack@latest
+cargo install --git github.com/coffeebeats/gdpack/cmd/gdpack --tag v0.0.2 # x-release-please-version
 ```
 
 Once `gdpack` is installed a few things need to be configured. Follow the instructions below based on your operating system.
