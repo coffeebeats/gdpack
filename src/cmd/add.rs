@@ -81,8 +81,7 @@ pub struct GitCommitArgs {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(a: Args) -> anyhow::Result<()> {
-    println!("{:?}", a.target);
+pub fn handle(_: Args) -> anyhow::Result<()> {
     Ok(())
 }
 
@@ -120,5 +119,5 @@ pub(in crate::cmd) fn parse_source(s: &str) -> Result<Source, anyhow::Error> {
         return Ok(Source::Path(p));
     }
 
-    return Err(anyhow!("could not parse source: {}", s));
+    Err(anyhow!("could not parse source: {}", s))
 }
