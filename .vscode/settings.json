@@ -1,26 +1,14 @@
 {
+  /* ----------------------------- Settings: Debug ---------------------------- */
+
+  "debug.allowBreakpointsEverywhere": true,
+
+  /* ------------------------------ Settings: Git ----------------------------- */
+
   "git.branchProtection": ["main"],
 
-  /* ------------------------------ Language: Go ------------------------------ */
+  /* ------------------------- Settings: rust-analyzer ------------------------ */
 
-  "[go]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": true
-    }
-  },
-  "[go.mod]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": true
-    }
-  },
-
-  /* ----------------------------- Extensions: Go ----------------------------- */
-
-  "go.lintTool": "golangci-lint",
-  "gopls": {
-    "formatting.gofumpt": false,
-    "formatting.local": "github.com/coffeebeats/gdpack"
-  }
+  "rust-analyzer.imports.granularity.enforce": true,
+  "rust-analyzer.imports.granularity.group": "item"
 }
