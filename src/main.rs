@@ -5,7 +5,7 @@ use clap::Parser;
 use cmd::Commands;
 
 #[derive(Parser)]
-#[command(name = "gvm", author, version, about)]
+#[command(name = "gdpack", author, version, about)]
 #[command(arg_required_else_help = true)]
 struct Cli {
     #[command(subcommand)]

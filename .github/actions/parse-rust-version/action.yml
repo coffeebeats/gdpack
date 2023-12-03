@@ -24,7 +24,7 @@ runs:
       run: |
         RUST_VERSION=$(
           cargo metadata --manifest-path ${{ inputs.manifest }} --format-version 1 |
-          python3 -c "import json,sys;print(next(filter(lambda p: p.get('name', '') == 'gvm', json.load(sys.stdin)['packages']))['rust_version'])"
+          python3 -c "import json,sys;print(next(filter(lambda p: p.get('name', '') == 'gdpack', json.load(sys.stdin)['packages']))['rust_version'])"
         )
 
         if [[ "${{ inputs.strict }}" == "true" && -z "$RUST_VERSION" ]]; then
