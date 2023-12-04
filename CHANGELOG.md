@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.8 (2023-12-04)
+
+## What's Changed
+* fix(ci): use correct working directory when publishing release artifacts by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/39
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.7...v0.0.8
+
 ## 0.0.7 (2023-12-04)
 
 ## What's Changed
