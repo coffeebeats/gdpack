@@ -102,12 +102,13 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             ARCHIVE_NAME="$ARCHIVE_NAME.zip"
 
-            python3 -c "$(cat <<- EOM
+            cat > $CMD_ZIP <<- EOM
             from zipfile import ZipFile
             with ZipFile("$ARCHIVE_NAME", mode="w") as a:
               a.write("target/${{ matrix.target }}/release/gdpack.exe", arcname="gdpack.exe")
             EOM
-            )"
+
+            python3 -c "$CMD_ZIP"
           else
             ARCHIVE_NAME="$ARCHIVE_NAME.tar.gz"
 
