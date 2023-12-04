@@ -26,7 +26,8 @@ jobs:
       - uses: google-github-actions/release-please-action@v4
         id: release
         with:
-          config-file: .release-please.json
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
 
           # NOTE: A PAT is used so that workflows can run on the new, automatically
           # created pull requests. This circumvents GitHub's recursive workflow
