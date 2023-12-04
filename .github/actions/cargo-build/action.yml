@@ -54,6 +54,8 @@ runs:
       with:
         key: cache-cargo-home-${{ runner.os }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('.github/workflows/**') }}
         path: |
+          ~/.cargo/.crates.toml
+          ~/.cargo/.crates2.json
           ~/.cargo/bin
         restore-keys: |
           cache-cargo-home-${{ runner.os }}-${{ steps.rs-props.outputs.rustc }}-
