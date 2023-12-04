@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.5 (2023-12-04)
+
+## What's Changed
+* fix(ci): improve artifact archive steps in release workflow by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/33
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.4...v0.0.5
+
 ## 0.0.4 (2023-12-04)
 
 ## What's Changed
