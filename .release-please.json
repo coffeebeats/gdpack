@@ -1,14 +1,23 @@
 {
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "include-v-in-tag": true,
 
   "pull-request-title-pattern": "chore: release v${version}",
-  "changelog-notes-type": "github",
+  "changelog-type": "github",
 
-  "extra-files": [
-    "docs/installation.md",
-    "scripts/install.ps1",
-    "scripts/install.sh"
-  ]
+  "packages": {
+    ".": {
+      "release-type": "rust",
+      "package-name": "gdpack",
+
+      "extra-files": [
+        "docs/installation.md",
+        "scripts/install.ps1",
+        "scripts/install.sh"
+      ]
+    }
+  }
 }
