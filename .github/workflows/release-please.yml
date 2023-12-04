@@ -41,7 +41,7 @@ jobs:
 
   build:
     needs: ["release-please"]
-    if: needs.release-please.outputs.release-created
+    if: needs.release-please.outputs.release-created == 'true'
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 8
@@ -102,9 +102,12 @@ jobs:
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             ARCHIVE_NAME="$ARCHIVE_NAME.zip"
 
-            zip \
-              $ARCHIVE_NAME \
-              "target/${{ matrix.target }}/release/gdpack.exe"
+            python3 -c "$(cat <<- EOM
+            from zipfile import ZipFile
+            with ZipFile("$ARCHIVE_NAME", mode="w") as a:
+              a.write("target/${{ matrix.target }}/release/gdpack.exe", arcname="gdpack.exe")
+            EOM
+            )"
           else
             ARCHIVE_NAME="$ARCHIVE_NAME.tar.gz"
 
@@ -124,7 +127,7 @@ jobs:
 
   publish:
     needs: ["release-please", "build"]
-    if: needs.release-please.outputs.release-created
+    if: needs.release-please.outputs.release-created == 'true'
 
     runs-on: ubuntu-latest
     timeout-minutes: 4
