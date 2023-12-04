@@ -198,15 +198,11 @@ jobs:
       - name: Archive executable (Default)
         if: runner.os == 'Windows'
         run: |
-          read -r -d '' CMD  << EOM
+          cat  <<- EOM | python3 -c "$(</dev/stdin)"
           from zipfile import ZipFile
           with ZipFile("${{ env.archive }}", mode="w") as a:
             a.write("target/${{ env.target }}/release/gdpack.exe", arcname="gdpack.exe")
           EOM
-
-          echo "CMD:\n$CMD"
-
-          python3 -c "$CMD"
 
       - uses: actions/upload-artifact@v3
         with:
