@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.7 (2023-12-04)
+
+## What's Changed
+* fix(ci): checkout repository during release asset publish job by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/37
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.6...v0.0.7
+
 ## 0.0.6 (2023-12-04)
 
 ## What's Changed
