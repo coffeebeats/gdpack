@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.4 (2023-12-04)
+
+## What's Changed
+* fix(ci): correct syntax error when archiving gdpack.exe by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/31
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.3...v0.0.4
+
 ## 0.0.3 (2023-12-04)
 
 ## What's Changed
