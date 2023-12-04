@@ -150,12 +150,15 @@ jobs:
           done
 
       - name: Attach assets to release
-        working-directory: ${{ runner.temp }}/assets
         env:
           # This is required to use the 'gh' CLI in actions.
           GH_TOKEN: ${{ github.token }}
         run: |
-          ASSETS=(*/gdpack-${{ needs.release-please.outputs.release-tag }}* checksums.txt)
+          ASSETS=(
+            ${{ runner.temp }}/assets/*/gdpack-${{ needs.release-please.outputs.release-tag }}*
+            ${{ runner.temp }}/assets/checksums.txt
+          )
+
           for asset in "${ASSETS[@]}"; do
             gh release upload \
               --clobber \
