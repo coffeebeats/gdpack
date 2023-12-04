@@ -176,10 +176,54 @@ jobs:
           flags: gdpack
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 4
+
+    env:
+      archive: gdpack-0.0.5-windows-x86_64.zip
+      target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: "./.github/actions/setup-rust"
+        id: setup-rust
+        with:
+          profile: minimal
+          version-file: Cargo.toml
+          targets: ${{ env.target }}
+
+      - uses: "./.github/actions/cargo-build"
+        with:
+          profile: release
+          platform: ${{ env.target }}
+          targets: bins
+          use_cross: ""
+
+      - name: Archive executable (Default)
+        if: runner.os == 'Windows'
+        run: |
+          read -r -d '' CMD  << EOM
+          from zipfile import ZipFile
+          with ZipFile("${{ env.archive }}", mode="w") as a:
+            a.write("target/${{ env.target }}/release/gdpack.exe", arcname="gdpack.exe")
+          EOM
+
+          echo "CMD:\n$CMD"
+
+          python3 -c "$CMD"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.target }}
+          path: ${{ env.archive }}
+          if-no-files-found: error
+
   # Used to ensure all branch protection requirements are met. This is a workaround until
   # https://github.com/github-community/community/discussions/4324 is addressed.
   branch_protection:
-    needs: ["build", "format", "lint", "test"]
+    needs: ["build", "format", "lint", "test", "windows"]
     if: ${{ always() }}
 
     runs-on: ubuntu-latest
@@ -195,6 +239,14 @@ jobs:
           always() &&
           needs.build.result == 'failure' ||
           needs.build.result == 'cancelled'
+        shell: bash
+        run: exit 1
+
+      - name: Verify 'windows' status
+        if: |
+          always() &&
+          needs.windows.result == 'failure' ||
+          needs.windows.result == 'cancelled'
         shell: bash
         run: exit 1
 
