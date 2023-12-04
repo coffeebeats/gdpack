@@ -51,22 +51,22 @@ jobs:
       matrix:
         include:
           # Apple
-          - target: aarch64-apple-darwin
-            label: macos-arm64
+          - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-macos-arm64.tar.gz
+            target: aarch64-apple-darwin
             os: macos-latest
-          - target: x86_64-apple-darwin
-            label: macos-x86_64
+          - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-macos-x86_64.tar.gz
+            target: x86_64-apple-darwin
             os: macos-latest
 
           # Linux
-          - target: x86_64-unknown-linux-gnu
-            label: linux-x86_64
+          - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-linux-x86_64.tar.gz
+            target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             use_cross: true
 
           # Windows
-          - target: x86_64-pc-windows-msvc
-            label: windows-x86_64
+          - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-windows-x86_64.zip
+            target: x86_64-pc-windows-msvc
             os: windows-latest
 
     steps:
@@ -94,36 +94,29 @@ jobs:
           targets: bins
           use_cross: ${{ matrix.use_cross }}
 
-      - name: Create asset
-        id: create-archive
+      - name: Archive executable (Default)
+        if: runner.os != 'Windows'
         run: |
-          ARCHIVE_NAME="gdpack-${{ needs.release-please.outputs.release-tag }}-${{ matrix.label }}"
+          tar \
+            -C "target/${{ matrix.target }}/release" \
+            -czf ${{ matrix.archive }} \
+            "gdpack"
 
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            ARCHIVE_NAME="$ARCHIVE_NAME.zip"
+      - name: Archive executable (Default)
+        if: runner.os == 'Windows'
+        run: |
+          read -r -d '' CMD  <<- EOM
+          from zipfile import ZipFile
+          with ZipFile("${{ matrix.archive }}", mode="w") as a:
+            a.write("target/${{ matrix.target }}/release/gdpack.exe", arcname="gdpack.exe")
+          EOM
 
-            cat > $CMD_ZIP <<- EOM
-            from zipfile import ZipFile
-            with ZipFile("$ARCHIVE_NAME", mode="w") as a:
-              a.write("target/${{ matrix.target }}/release/gdpack.exe", arcname="gdpack.exe")
-            EOM
-
-            python3 -c "$CMD_ZIP"
-          else
-            ARCHIVE_NAME="$ARCHIVE_NAME.tar.gz"
-
-            tar \
-              -C "target/${{ matrix.target }}/release" \
-              -czf $ARCHIVE_NAME \
-              "gdpack"
-          fi
-
-          echo "name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+          python3 -c "$CMD"
 
       - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target }}
-          path: ${{ steps.create-archive.outputs.name }}
+          path: ${{ matrix.archive }}
           if-no-files-found: error
 
   publish:
@@ -137,7 +130,7 @@ jobs:
       FILENAME_CHECKSUMS: "checksums.txt"
 
     steps:
-      - uses: actions/download-artifact@v3.0.2
+      - uses: actions/download-artifact@v3
         with:
           path: ${{ runner.temp }}/assets
 
