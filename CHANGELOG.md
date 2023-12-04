@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.6 (2023-12-04)
+
+## What's Changed
+* fix(ci): update executable archive step on Windows by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/35
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.5...v0.0.6
+
 ## 0.0.5 (2023-12-04)
 
 ## What's Changed
