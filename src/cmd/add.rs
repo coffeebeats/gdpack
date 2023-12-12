@@ -1,8 +1,12 @@
 use anyhow::anyhow;
-use clap::value_parser;
 use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
+
+use crate::addon::git;
+use crate::addon::Addon;
+use crate::addon::Spec;
+use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -16,8 +20,8 @@ pub struct Args {
     pub dev: bool,
 
     /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH", value_parser = value_parser!(PathBuf))]
-    pub project: Option<String>,
+    #[arg(short, long, value_name = "PATH")]
+    pub project: Option<PathBuf>,
 
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
@@ -25,7 +29,7 @@ pub struct Args {
     pub target: Option<Vec<String>>,
 
     #[clap(flatten)]
-    pub uri: SourceArgs,
+    pub source: SourceArgs,
 }
 
 /* --------------------------- Struct: SourceArgs --------------------------- */
@@ -77,12 +81,67 @@ pub struct GitCommitArgs {
     pub tag: Option<String>,
 }
 
+/* ------------------------------- Impl: Into ------------------------------- */
+
+impl Into<Spec> for SourceArgs {
+    fn into(self) -> Spec {
+        match self.uri {
+            Source::Path(path) => Spec::Path(path),
+            Source::Url(repo) => Spec::Git(git::Spec::new(repo, self.commit.into())),
+        }
+    }
+}
+
+impl Into<git::Commit> for GitCommitArgs {
+    fn into(self) -> git::Commit {
+        match self {
+            GitCommitArgs {
+                branch: None,
+                rev: None,
+                tag: None,
+            } => git::Commit::Default,
+            GitCommitArgs {
+                branch: Some(b),
+                rev: None,
+                tag: None,
+            } => git::Commit::Branch(b),
+            GitCommitArgs {
+                branch: None,
+                rev: Some(r),
+                tag: None,
+            } => git::Commit::Rev(r),
+            GitCommitArgs {
+                branch: None,
+                rev: None,
+                tag: Some(t),
+            } => git::Commit::Tag(t),
+            _ => unreachable!(),
+        }
+    }
+}
+
 /* -------------------------------------------------------------------------- */
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(_: Args) -> anyhow::Result<()> {
-    Ok(())
+pub fn handle(args: Args) -> anyhow::Result<()> {
+    let path = super::parse_project(args.project)?;
+
+    let mut m = manifest::parse_from(&path)?;
+
+    let section = match args.dev {
+        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
+        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
+    };
+
+    let spec: Spec = args.source.into();
+    let addon: Addon = spec.into();
+
+    if let Some(_) = m.add(section, &addon) {
+        println!("updated dependency: '{}'", addon.name())
+    }
+
+    manifest::write_to(&m, &path)
 }
 
 /* -------------------------------------------------------------------------- */

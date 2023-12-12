@@ -33,3 +33,27 @@ pub enum Commands {
     #[clap(alias = "i")]
     Install(install::Args),
 }
+
+/* -------------------------------------------------------------------------- */
+/*                           Function: parse_project                          */
+/* -------------------------------------------------------------------------- */
+
+use anyhow::anyhow;
+use std::path::PathBuf;
+
+fn parse_project(project: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+    let path: PathBuf;
+    if let Some(project) = project {
+        if !project.is_dir() {
+            return Err(anyhow!(
+                "invalid argument: expected a directory for 'project'"
+            ));
+        }
+
+        path = project
+    } else {
+        path = std::env::current_dir()?;
+    }
+
+    Ok(path.join(crate::manifest::MANIFEST_FILENAME))
+}

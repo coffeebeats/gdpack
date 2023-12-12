@@ -1,5 +1,6 @@
-use clap::value_parser;
 use std::path::PathBuf;
+
+use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -8,8 +9,8 @@ use std::path::PathBuf;
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH", value_parser = value_parser!(PathBuf))]
-    pub project: Option<String>,
+    #[arg(short, long, value_name = "PATH")]
+    pub project: Option<PathBuf>,
 
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
@@ -25,6 +26,20 @@ pub struct Args {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(_: Args) -> anyhow::Result<()> {
+pub fn handle(args: Args) -> anyhow::Result<()> {
+    let path = super::parse_project(args.project)?;
+
+    let mut m = manifest::parse_from(&path)?;
+
+    if let Some(_) = m.remove(manifest::MANIFEST_SECTION_KEY_ADDONS_DEV, &args.name) {
+        println!("removed dependency: '{}'", &args.name);
+        return Ok(());
+    }
+
+    if let Some(_) = m.remove(manifest::MANIFEST_SECTION_KEY_ADDONS, &args.name) {
+        println!("removed dependency: '{}'", &args.name);
+        return Ok(());
+    }
+
     Ok(())
 }

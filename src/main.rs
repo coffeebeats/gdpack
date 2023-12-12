@@ -1,4 +1,6 @@
+mod addon;
 mod cmd;
+mod manifest;
 
 use anyhow::Result;
 use clap::Parser;
