@@ -8,6 +8,11 @@ use crate::manifest;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Add a development-only dependency (will not be propagated to dependents'
+    /// installs).
+    #[arg(short, long)]
+    pub dev: bool,
+
     /// A `PATH` to the Godot project containing the manifest.
     #[arg(short, long, value_name = "PATH")]
     pub project: Option<PathBuf>,
@@ -31,15 +36,14 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let mut m = manifest::parse_from(&path)?;
 
-    if let Some(_) = m.remove(manifest::MANIFEST_SECTION_KEY_ADDONS_DEV, &args.name) {
+    let section = match args.dev {
+        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
+        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
+    };
+
+    if let Some(_) = m.remove(section, &args.name) {
         println!("removed dependency: '{}'", &args.name);
-        return Ok(());
     }
 
-    if let Some(_) = m.remove(manifest::MANIFEST_SECTION_KEY_ADDONS, &args.name) {
-        println!("removed dependency: '{}'", &args.name);
-        return Ok(());
-    }
-
-    Ok(())
+    manifest::write_to(&m, &path)
 }
