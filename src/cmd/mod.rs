@@ -3,7 +3,6 @@ pub mod init;
 pub mod install;
 pub mod remove;
 pub mod replace;
-pub mod update;
 
 /* -------------------------------------------------------------------------- */
 /*                               Enum: Commands                               */
@@ -21,8 +20,6 @@ pub enum Commands {
     Remove(remove::Args),
     /// Replace a dependency with one at the provided URI; can be a filepath or a URL to a git repository.
     Replace(replace::Args),
-    /// Update one or more remote addon dependencies to their latest version.
-    Update(update::Args),
 
     /* --------------------------- Category: Init --------------------------- */
     /// Create a new `gdpack.toml` manifest for the Godot project.

@@ -30,7 +30,6 @@ fn main() -> Result<()> {
         Commands::Add(args) => cmd::add::handle(args),
         Commands::Remove(args) => cmd::remove::handle(args),
         Commands::Replace(args) => cmd::replace::handle(args),
-        Commands::Update(args) => cmd::update::handle(args),
 
         /* ------------------------- Category: Init ------------------------- */
         Commands::Init(args) => cmd::init::handle(args),
