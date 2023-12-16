@@ -2,11 +2,11 @@ use std::path::PathBuf;
 
 use crate::manifest;
 
-const STR_HELP: &'static str = "
+const STR_USAGE: &'static str = "
 Use `gdpack add` to add plugin dependencies to your project.
 
 For example:
-   gdpack add dialogic https://github.com/coppolaemilio/dialogic --tag 1.4.5
+   gdpack add https://github.com/bitwes/Gut --tag 9.1.1
 ";
 
 /* -------------------------------------------------------------------------- */
@@ -29,7 +29,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     manifest::write_to(&manifest::Manifest::default(), &path)?;
 
-    println!("{}", STR_HELP);
+    println!("{}", STR_USAGE);
 
     Ok(())
 }
