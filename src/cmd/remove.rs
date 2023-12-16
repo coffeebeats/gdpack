@@ -41,7 +41,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         false => manifest::MANIFEST_SECTION_KEY_ADDONS,
     };
 
-    if let Some(_) = m.remove(section, &args.name) {
+    if m.remove(section, &args.name).is_some() {
         println!("removed dependency: '{}'", &args.name);
     }
 

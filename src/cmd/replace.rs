@@ -55,7 +55,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         let _ = addon.replace.take();
     }
 
-    if let Some(_) = m.add(section, &addon) {
+    if m.add(section, &addon).is_some() {
         println!("updated dependency: '{}'", addon.name())
     }
 

@@ -11,11 +11,11 @@ use crate::addon::git;
 use crate::addon::Addon;
 use crate::addon::Spec;
 
-impl Into<toml_edit::InlineTable> for &Addon {
-    fn into(self) -> toml_edit::InlineTable {
+impl From<&Addon> for toml_edit::InlineTable {
+    fn from(value: &Addon) -> Self {
         let mut table = toml_edit::InlineTable::new();
 
-        match &self.spec {
+        match &value.spec {
             Spec::Path(p) => {
                 table.insert(
                     "path",
@@ -45,7 +45,7 @@ impl Into<toml_edit::InlineTable> for &Addon {
             }
         };
 
-        if let Some(replace) = self.replace.as_ref() {
+        if let Some(replace) = value.replace.as_ref() {
             table.insert("replace", toml_edit::value(replace).into_value().unwrap());
         }
 
@@ -71,7 +71,7 @@ impl TryFrom<&dyn TableLike> for Addon {
                 .as_str()
                 .ok_or(anyhow!("expected a string"))
                 .and_then(|p| PathBuf::from_str(p).map_err(|e| anyhow!(e)))
-                .map(|p| Spec::Path(p))?;
+                .map(Spec::Path)?;
 
             return Ok(Addon::new(spec, replace));
         }
@@ -110,6 +110,6 @@ impl TryFrom<&dyn TableLike> for Addon {
             }
         }
 
-        return Err(anyhow!("incorrect properties specified"));
+        Err(anyhow!("incorrect properties specified"))
     }
 }

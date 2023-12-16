@@ -7,11 +7,11 @@ use toml_edit::InlineTable;
 
 use crate::addon::Addon;
 
-pub const MANIFEST_FILENAME: &'static str = "gdpack.toml";
-pub const MANIFEST_SECTION_KEY_ADDONS: &'static str = "addons";
-pub const MANIFEST_SECTION_KEY_ADDONS_DEV: &'static str = "dev-addons";
+pub const MANIFEST_FILENAME: &str = "gdpack.toml";
+pub const MANIFEST_SECTION_KEY_ADDONS: &str = "addons";
+pub const MANIFEST_SECTION_KEY_ADDONS_DEV: &str = "dev-addons";
 
-const MANIFEST_TEMPLATE: &'static str = r#"[addons]
+const MANIFEST_TEMPLATE: &str = r#"[addons]
 "#;
 
 pub struct Manifest(Document);
@@ -43,7 +43,7 @@ impl Manifest {
             .0
             .get(key)
             .and_then(|v| v.as_table_like())
-            .is_some_and(|t| t.len() == 0)
+            .is_some_and(|t| t.is_empty())
         {
             self.0.remove(key);
         }

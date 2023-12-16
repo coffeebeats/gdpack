@@ -15,15 +15,12 @@ pub struct Addon {
 
 impl Addon {
     pub fn new(spec: Spec, replace: Option<String>) -> Addon {
-        Addon {
-            spec: spec,
-            replace: replace,
-        }
+        Addon { spec, replace }
     }
 
     pub fn replace(other: &str, spec: Spec) -> Addon {
         Addon {
-            spec: spec,
+            spec,
             replace: Some(other.to_owned()),
         }
     }
@@ -49,7 +46,7 @@ impl Addon {
 
 impl From<Spec> for Addon {
     fn from(value: Spec) -> Self {
-        return Addon::new(value, None);
+        Addon::new(value, None)
     }
 }
 

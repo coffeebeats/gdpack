@@ -15,10 +15,7 @@ pub struct Spec {
 
 impl Spec {
     pub fn new(repo: Url, commit: Commit) -> Spec {
-        Spec {
-            commit: commit,
-            repo: repo,
-        }
+        Spec { commit, repo }
     }
 }
 

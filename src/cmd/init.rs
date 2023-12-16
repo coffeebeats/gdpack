@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::manifest;
 
-const STR_USAGE: &'static str = "
+const STR_USAGE: &str = "
 Use `gdpack add` to add plugin dependencies to your project.
 
 For example:

@@ -83,18 +83,18 @@ pub struct GitCommitArgs {
 
 /* ------------------------------- Impl: Into ------------------------------- */
 
-impl Into<Spec> for SourceArgs {
-    fn into(self) -> Spec {
-        match self.uri {
+impl From<SourceArgs> for Spec {
+    fn from(value: SourceArgs) -> Self {
+        match value.uri {
             Source::Path(path) => Spec::Path(path),
-            Source::Url(repo) => Spec::Git(git::Spec::new(repo, self.commit.into())),
+            Source::Url(repo) => Spec::Git(git::Spec::new(repo, value.commit.into())),
         }
     }
 }
 
-impl Into<git::Commit> for GitCommitArgs {
-    fn into(self) -> git::Commit {
-        match self {
+impl From<GitCommitArgs> for git::Commit {
+    fn from(value: GitCommitArgs) -> Self {
+        match value {
             GitCommitArgs {
                 branch: None,
                 rev: None,
@@ -137,7 +137,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let spec: Spec = args.source.into();
     let addon: Addon = spec.into();
 
-    if let Some(_) = m.add(section, &addon) {
+    if m.add(section, &addon).is_some() {
         println!("updated dependency: '{}'", addon.name())
     }
 
