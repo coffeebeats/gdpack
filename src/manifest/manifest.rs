@@ -24,34 +24,26 @@ impl Manifest {
 
         let next: InlineTable = addon.into();
 
-        if let Some(existing) = self.0.insert(key, toml_edit::value(next)) {
-            if let Some(existing) = existing.as_table_like() {
-                if let Ok(existing) = existing.try_into() {
-                    return Some(existing);
-                }
-            }
-        }
-
-        None
+        self.0
+            .get_mut(key)
+            .and_then(|v| v.as_table_mut())
+            .and_then(|t| t.insert(&addon.name(), toml_edit::value(next)))
+            .and_then(|v| v.as_table_like().and_then(|t| t.try_into().ok()))
     }
 
     pub fn remove(&mut self, key: &str, name: &str) -> Option<Addon> {
-        let mut existing: Option<Addon> = None;
+        let existing = self
+            .0
+            .get_mut(key)
+            .and_then(|v| v.as_table_like_mut())
+            .and_then(|t| t.remove(name))
+            .and_then(|v| v.as_table_like().and_then(|t| t.try_into().ok()));
 
-        if let Some(section) = self.0.get_mut(key).and_then(|s| s.as_table_like_mut()) {
-            section.remove(name).and_then(|v| {
-                v.as_table_like()
-                    .and_then(|t| TryInto::<Addon>::try_into(t).ok())
-                    .and_then(|s| existing.replace(s))
-            });
-        }
-
-        if key != MANIFEST_SECTION_KEY_ADDONS
-            && self
-                .0
-                .get_mut(key)
-                .and_then(|s| s.as_table_like_mut())
-                .is_some_and(|t| t.len() == 0)
+        if self
+            .0
+            .get(key)
+            .and_then(|v| v.as_table_like())
+            .is_some_and(|t| t.len() == 0)
         {
             self.0.remove(key);
         }
