@@ -1,7 +1,9 @@
-use clap::value_parser;
 use std::path::PathBuf;
 
 use super::add::SourceArgs;
+use crate::addon::Addon;
+use crate::addon::Spec;
+use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -14,8 +16,8 @@ pub struct Args {
     pub dev: bool,
 
     /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH", value_parser = value_parser!(PathBuf))]
-    pub project: Option<String>,
+    #[arg(short, long, value_name = "PATH")]
+    pub project: Option<PathBuf>,
 
     /// Replace the dependency only for TARGET (can be specified more than once
     /// and accepts multiple values delimited by `,`).
@@ -34,6 +36,28 @@ pub struct Args {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(_: Args) -> anyhow::Result<()> {
-    Ok(())
+pub fn handle(args: Args) -> anyhow::Result<()> {
+    let path = super::parse_project(args.project)?;
+
+    let mut m = manifest::parse_from(&path)?;
+
+    let section = match args.dev {
+        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
+        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
+    };
+
+    let spec: Spec = args.source.into();
+
+    let name = args.addon;
+    let mut addon = Addon::new(spec, Some(name.to_owned()));
+
+    if name == addon.name() {
+        let _ = addon.replace.take();
+    }
+
+    if let Some(_) = m.add(section, &addon) {
+        println!("updated dependency: '{}'", addon.name())
+    }
+
+    manifest::write_to(&m, &path)
 }
