@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.9 (2023-12-16)
+
+## What's Changed
+* fix(ci): correctly cache `$CARGO_HOME` directory by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/41
+* feat(manifest): implement basic `manifest::Manifest` operations by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/44
+* chore(deps): bump clap from 4.4.10 to 4.4.11 by @dependabot in https://github.com/coffeebeats/gdpack/pull/43
+
+## New Contributors
+* @dependabot made their first contribution in https://github.com/coffeebeats/gdpack/pull/43
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.8...v0.0.9
+
 ## 0.0.8 (2023-12-04)
 
 ## What's Changed

@@ -1,6 +1,6 @@
 [package]
 name = "gdpack"
-version = "0.0.8"
+version = "0.0.9"
 description = "A small, single-purpose CLI application for managing Godot addons."
 edition = "2021"
 rust-version = "1.74.0"
