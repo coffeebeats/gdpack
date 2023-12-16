@@ -3,7 +3,6 @@ pub mod init;
 pub mod install;
 pub mod remove;
 pub mod replace;
-pub mod update;
 
 /* -------------------------------------------------------------------------- */
 /*                               Enum: Commands                               */
@@ -21,8 +20,6 @@ pub enum Commands {
     Remove(remove::Args),
     /// Replace a dependency with one at the provided URI; can be a filepath or a URL to a git repository.
     Replace(replace::Args),
-    /// Update one or more remote addon dependencies to their latest version.
-    Update(update::Args),
 
     /* --------------------------- Category: Init --------------------------- */
     /// Create a new `gdpack.toml` manifest for the Godot project.
@@ -32,4 +29,28 @@ pub enum Commands {
     /// Install addon dependencies into the Godot project's addons/ directory.
     #[clap(alias = "i")]
     Install(install::Args),
+}
+
+/* -------------------------------------------------------------------------- */
+/*                           Function: parse_project                          */
+/* -------------------------------------------------------------------------- */
+
+use anyhow::anyhow;
+use std::path::PathBuf;
+
+fn parse_project(project: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+    let path: PathBuf;
+    if let Some(project) = project {
+        if !project.is_dir() {
+            return Err(anyhow!(
+                "invalid argument: expected a directory for 'project'"
+            ));
+        }
+
+        path = project
+    } else {
+        path = std::env::current_dir()?;
+    }
+
+    Ok(path.join(crate::manifest::MANIFEST_FILENAME))
 }
