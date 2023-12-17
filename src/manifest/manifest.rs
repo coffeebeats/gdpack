@@ -46,13 +46,13 @@ impl Manifest {
                         .and_then(|v| v.as_table_like_mut())
                     {
                         if let Some(target) = targets
-                            .get_mut(&target_key)
+                            .get_mut(target_key)
                             .and_then(|v| v.as_table_like_mut())
                         {
                             target.remove(key.last());
 
                             if target.is_empty() {
-                                targets.remove(&target_key);
+                                targets.remove(target_key);
                             }
                         }
 
@@ -95,12 +95,12 @@ impl Manifest {
                     targets.set_dotted(true);
                 }
 
-                if !targets.contains_key(&t) {
-                    targets.insert(&t, toml_edit::table());
+                if !targets.contains_key(t) {
+                    targets.insert(t, toml_edit::table());
                 }
 
                 let target = targets
-                    .get_mut(&t)
+                    .get_mut(t)
                     .and_then(|v| v.as_table_like_mut())
                     .ok_or(anyhow!("missing table"))?;
 
