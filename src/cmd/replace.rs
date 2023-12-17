@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use super::add::SourceArgs;
 use crate::addon::Addon;
-use crate::addon::Spec;
 use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
@@ -39,25 +38,35 @@ pub struct Args {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::parse_from(&path)?;
-
-    let section = match args.dev {
-        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
-        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
-    };
-
-    let spec: Spec = args.source.into();
+    let mut m = manifest::init_from(&path)?;
 
     let name = args.addon;
-    let mut addon = Addon::new(spec, Some(name.to_owned()));
+    let mut addon = Addon::builder()
+        .replace(Some(name.to_owned()))
+        .spec(args.source.into())
+        .build();
 
     if name == addon.name() {
         let _ = addon.replace.take();
     }
 
-    if m.add(section, &addon).is_some() {
-        println!("updated dependency: '{}'", addon.name())
+    if let Some(targets) = args.target {
+        for target in targets {
+            m.add(
+                &manifest::Key::builder()
+                    .dev(args.dev)
+                    .target(target)
+                    .build(),
+                &addon,
+            )?;
+        }
+    } else {
+        m.add(&manifest::Key::builder().dev(args.dev).build(), &addon)?;
     }
 
-    manifest::write_to(&m, &path)
+    manifest::write_to(&m, &path)?;
+
+    println!("replaced dependency: {}", name);
+
+    Ok(())
 }

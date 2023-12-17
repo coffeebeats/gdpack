@@ -127,21 +127,29 @@ impl From<GitCommitArgs> for git::Commit {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::parse_from(&path)?;
+    let mut m = manifest::init_from(&path)?;
 
-    let section = match args.dev {
-        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
-        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
-    };
+    let addon = Addon::builder().spec(args.source.into()).build();
 
-    let spec: Spec = args.source.into();
-    let addon: Addon = spec.into();
-
-    if m.add(section, &addon).is_some() {
-        println!("updated dependency: '{}'", addon.name())
+    if let Some(targets) = args.target {
+        for target in targets {
+            m.add(
+                &manifest::Key::builder()
+                    .dev(args.dev)
+                    .target(target)
+                    .build(),
+                &addon,
+            )?;
+        }
+    } else {
+        m.add(&manifest::Key::builder().dev(args.dev).build(), &addon)?;
     }
 
-    manifest::write_to(&m, &path)
+    manifest::write_to(&m, &path)?;
+
+    println!("added dependency: {}", addon.name());
+
+    Ok(())
 }
 
 /* -------------------------------------------------------------------------- */

@@ -6,7 +6,9 @@ use super::git;
 /*                                Struct: Addon                               */
 /* -------------------------------------------------------------------------- */
 
+#[derive(typed_builder::TypedBuilder)]
 pub struct Addon {
+    #[builder(default)]
     pub replace: Option<String>,
     pub spec: Spec,
 }
@@ -14,10 +16,6 @@ pub struct Addon {
 /* ------------------------------- Impl: Addon ------------------------------ */
 
 impl Addon {
-    pub fn new(spec: Spec, replace: Option<String>) -> Addon {
-        Addon { spec, replace }
-    }
-
     pub fn replace(other: &str, spec: Spec) -> Addon {
         Addon {
             spec,
@@ -41,12 +39,6 @@ impl Addon {
                 .expect("missing path segment")
                 .to_owned(),
         }
-    }
-}
-
-impl From<Spec> for Addon {
-    fn from(value: Spec) -> Self {
-        Addon::new(value, None)
     }
 }
 

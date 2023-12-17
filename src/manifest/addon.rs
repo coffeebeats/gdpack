@@ -73,7 +73,7 @@ impl TryFrom<&dyn TableLike> for Addon {
                 .and_then(|p| PathBuf::from_str(p).map_err(|e| anyhow!(e)))
                 .map(Spec::Path)?;
 
-            return Ok(Addon::new(spec, replace));
+            return Ok(Addon::builder().spec(spec).replace(replace).build());
         }
 
         if let Some(repo) = table.get("git") {
@@ -84,7 +84,7 @@ impl TryFrom<&dyn TableLike> for Addon {
 
             if table.len() == 1 + replace.iter().len() {
                 let spec = Spec::Git(git::Spec::new(repo, git::Commit::Default));
-                return Ok(Addon::new(spec, replace));
+                return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
 
             if table.len() > 2 + replace.iter().len() {
@@ -96,17 +96,17 @@ impl TryFrom<&dyn TableLike> for Addon {
                     repo,
                     git::Commit::Branch(branch.to_string()),
                 ));
-                return Ok(Addon::new(spec, replace));
+                return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
 
             if let Some(rev) = table.get("rev") {
                 let spec = Spec::Git(git::Spec::new(repo, git::Commit::Rev(rev.to_string())));
-                return Ok(Addon::new(spec, replace));
+                return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
 
             if let Some(tag) = table.get("tag") {
                 let spec = Spec::Git(git::Spec::new(repo, git::Commit::Tag(tag.to_string())));
-                return Ok(Addon::new(spec, replace));
+                return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
         }
 

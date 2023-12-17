@@ -34,16 +34,25 @@ pub struct Args {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::parse_from(&path)?;
+    let mut m = manifest::init_from(&path)?;
 
-    let section = match args.dev {
-        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
-        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
-    };
-
-    if m.remove(section, &args.name).is_some() {
-        println!("removed dependency: '{}'", &args.name);
+    if let Some(targets) = args.target {
+        for target in targets {
+            m.remove(
+                &manifest::Key::builder()
+                    .dev(args.dev)
+                    .target(target)
+                    .build(),
+                &args.name,
+            )?;
+        }
+    } else {
+        m.remove(&manifest::Key::builder().dev(args.dev).build(), &args.name)?;
     }
 
-    manifest::write_to(&m, &path)
+    manifest::write_to(&m, &path)?;
+
+    println!("removed dependency: {}", &args.name);
+
+    Ok(())
 }

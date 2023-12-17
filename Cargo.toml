@@ -13,4 +13,5 @@ clap = { version = "4.4.11", features = ["cargo", "derive"] }
 serde = { version = "1.0.193", features = ["derive"] }
 toml = "0.8.8"
 toml_edit = { version = "0.21.0", features = ["serde"] }
+typed-builder = "0.18.0"
 url = { version = "2.5.0", features = ["serde"] }

@@ -1,10 +1,13 @@
+use serde::Deserialize;
+use serde::Serialize;
+use typed_builder::TypedBuilder;
 use url::Url;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Spec                                */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Debug, serde::Deserialize, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Serialize, TypedBuilder)]
 pub struct Spec {
     #[serde(flatten)]
     pub commit: Commit,
@@ -23,7 +26,7 @@ impl Spec {
 /*                                Enum: Commit                                */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Debug, serde::Deserialize, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum Commit {
     Default,
