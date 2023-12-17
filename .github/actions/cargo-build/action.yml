@@ -52,12 +52,13 @@ runs:
       uses: actions/cache@v3
       if: inputs.skip_cache != 'true'
       with:
-        key: cache-cargo-home-${{ runner.os }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('.github/workflows/**') }}
+        key: cache-cargo-home-${{ runner.os }}-${{ steps.rs-props.outputs.rustc }}-${{ inputs.use_cross }}-${{ hashFiles('.github/workflows/**') }}
         path: |
           ~/.cargo/.crates.toml
           ~/.cargo/.crates2.json
           ~/.cargo/bin
         restore-keys: |
+          cache-cargo-home-${{ runner.os }}-${{ steps.rs-props.outputs.rustc }}-${{ inputs.use_cross }}-
           cache-cargo-home-${{ runner.os }}-${{ steps.rs-props.outputs.rustc }}-
           cache-cargo-home-${{ runner.os }}-
 
