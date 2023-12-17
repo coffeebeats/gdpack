@@ -13,9 +13,6 @@ use super::key::MANIFEST_SECTION_KEY_ADDONS;
 pub const MANIFEST_FILENAME: &str = "gdpack.toml";
 pub const MANIFEST_SECTION_KEY_TARGET: &str = "target";
 
-const MANIFEST_TEMPLATE: &str = r#"[addons]
-"#;
-
 pub struct Manifest(Document);
 
 impl Manifest {
@@ -132,7 +129,10 @@ impl Manifest {
 
 impl Default for Manifest {
     fn default() -> Self {
-        let doc = MANIFEST_TEMPLATE.parse::<Document>().unwrap();
+        let mut doc = Document::new();
+
+        doc.insert(MANIFEST_SECTION_KEY_ADDONS, toml_edit::table());
+
         Manifest(doc)
     }
 }
