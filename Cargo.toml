@@ -3,7 +3,7 @@ name = "gdpack"
 version = "0.0.9"
 description = "A small, single-purpose CLI application for managing Godot addons."
 edition = "2021"
-rust-version = "1.74.0"
+rust-version = "1.74.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,4 +13,5 @@ clap = { version = "4.4.11", features = ["cargo", "derive"] }
 serde = { version = "1.0.193", features = ["derive"] }
 toml = "0.8.8"
 toml_edit = { version = "0.21.0", features = ["serde"] }
+typed-builder = "0.18.0"
 url = { version = "2.5.0", features = ["serde"] }

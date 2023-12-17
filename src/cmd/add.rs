@@ -26,7 +26,7 @@ pub struct Args {
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
     #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
-    pub target: Option<Vec<String>>,
+    pub target: Vec<String>,
 
     #[clap(flatten)]
     pub source: SourceArgs,
@@ -127,21 +127,34 @@ impl From<GitCommitArgs> for git::Commit {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::parse_from(&path)?;
+    let mut m = manifest::init_from(&path)?;
 
-    let section = match args.dev {
-        true => manifest::MANIFEST_SECTION_KEY_ADDONS_DEV,
-        false => manifest::MANIFEST_SECTION_KEY_ADDONS,
+    let addon = Addon::builder().spec(args.source.into()).build();
+
+    let targets = match args.target.is_empty() {
+        true => vec![None],
+        false => args.target.into_iter().map(Some).collect(),
     };
 
-    let spec: Spec = args.source.into();
-    let addon: Addon = spec.into();
+    for target in targets {
+        if target.as_ref().is_some_and(|t| t.is_empty()) {
+            return Err(anyhow!("missing target"));
+        }
 
-    if m.add(section, &addon).is_some() {
-        println!("updated dependency: '{}'", addon.name())
+        m.add(
+            &manifest::Key::builder()
+                .dev(args.dev)
+                .target(target)
+                .build(),
+            &addon,
+        )?;
     }
 
-    manifest::write_to(&m, &path)
+    manifest::write_to(&m, &path)?;
+
+    println!("added dependency: {}", addon.name());
+
+    Ok(())
 }
 
 /* -------------------------------------------------------------------------- */
