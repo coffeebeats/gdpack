@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use std::path::PathBuf;
 
 use crate::manifest;
@@ -20,7 +21,7 @@ pub struct Args {
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
     #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
-    pub target: Option<Vec<String>>,
+    pub target: Vec<String>,
 
     /// The `NAME` of an installed addon to remove.
     #[arg(index = 1, required = true, value_name = "NAME")]
@@ -36,18 +37,23 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let mut m = manifest::init_from(&path)?;
 
-    if let Some(targets) = args.target {
-        for target in targets {
-            m.remove(
-                &manifest::Key::builder()
-                    .dev(args.dev)
-                    .target(target)
-                    .build(),
-                &args.name,
-            )?;
+    let targets = match args.target.is_empty() {
+        true => vec![None],
+        false => args.target.into_iter().map(Some).collect(),
+    };
+
+    for target in targets {
+        if target.as_ref().is_some_and(|t| t.is_empty()) {
+            return Err(anyhow!("missing target"));
         }
-    } else {
-        m.remove(&manifest::Key::builder().dev(args.dev).build(), &args.name)?;
+
+        m.remove(
+            &manifest::Key::builder()
+                .dev(args.dev)
+                .target(target)
+                .build(),
+            &args.name,
+        )?;
     }
 
     manifest::write_to(&m, &path)?;

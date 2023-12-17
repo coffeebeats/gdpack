@@ -26,7 +26,7 @@ pub struct Args {
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
     #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
-    pub target: Option<Vec<String>>,
+    pub target: Vec<String>,
 
     #[clap(flatten)]
     pub source: SourceArgs,
@@ -131,18 +131,23 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let addon = Addon::builder().spec(args.source.into()).build();
 
-    if let Some(targets) = args.target {
-        for target in targets {
-            m.add(
-                &manifest::Key::builder()
-                    .dev(args.dev)
-                    .target(target)
-                    .build(),
-                &addon,
-            )?;
+    let targets = match args.target.is_empty() {
+        true => vec![None],
+        false => args.target.into_iter().map(Some).collect(),
+    };
+
+    for target in targets {
+        if target.as_ref().is_some_and(|t| t.is_empty()) {
+            return Err(anyhow!("missing target"));
         }
-    } else {
-        m.add(&manifest::Key::builder().dev(args.dev).build(), &addon)?;
+
+        m.add(
+            &manifest::Key::builder()
+                .dev(args.dev)
+                .target(target)
+                .build(),
+            &addon,
+        )?;
     }
 
     manifest::write_to(&m, &path)?;

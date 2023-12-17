@@ -4,7 +4,7 @@ pub(super) const MANIFEST_SECTION_KEY_ADDONS_DEV: &str = "dev-addons";
 #[derive(typed_builder::TypedBuilder)]
 pub struct Key {
     pub dev: bool,
-    #[builder(default, setter(strip_option))]
+    #[builder(default)]
     pub target: Option<String>,
 }
 
