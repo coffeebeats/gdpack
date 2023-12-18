@@ -7,6 +7,7 @@ use crate::addon::git;
 use crate::addon::Addon;
 use crate::addon::Spec;
 use crate::manifest;
+use crate::store;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -148,6 +149,14 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .build(),
             &addon,
         )?;
+    }
+
+    let deps: Vec<crate::addon::Spec> = vec![];
+
+    if let Spec::Git(g) = &addon.spec {
+        let addon = store::Addon::checkout(&g)?;
+
+        for dep in addon.dependencies()? {}
     }
 
     manifest::write_to(&m, &path)?;
