@@ -8,6 +8,7 @@ pub use remote::Remote;
 
 mod repo;
 
+pub use repo::Checkout;
 pub use repo::Repository;
 
 /* ------------------------------- Mod: Source ------------------------------ */

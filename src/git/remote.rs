@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::Command;
 use url::Url;
 
@@ -15,16 +15,16 @@ pub struct Remote(pub(super) Url);
 /* ------------------------------ Impl: Remote ------------------------------ */
 
 impl Remote {
-    pub fn fetch_to(&self, path: PathBuf) -> anyhow::Result<Repository> {
-        if (&path).exists() {
+    pub fn fetch_to(&self, path: impl AsRef<Path>) -> anyhow::Result<Repository> {
+        if path.as_ref().exists() {
             return Ok(Repository {
-                repo: git2::Repository::open(&path)?,
+                repo: git2::Repository::open(path.as_ref())?,
                 remote: self.clone(),
-                path: path,
+                path: path.as_ref().to_owned(),
             });
         }
 
-        if !path.exists() {
+        if !path.as_ref().exists() {
             std::fs::create_dir_all(&path)?;
         }
 
@@ -34,7 +34,10 @@ impl Remote {
             .arg(self.0.as_str())
             .arg("--tags")
             .arg("--no-checkout")
-            .args(&["--bare", path.to_str().ok_or(anyhow!("missing path"))?])
+            .args(&[
+                "--bare",
+                path.as_ref().to_str().ok_or(anyhow!("missing path"))?,
+            ])
             .output()?;
 
         if !output.status.success() {
@@ -48,7 +51,7 @@ impl Remote {
         Ok(super::Repository {
             repo: git2::Repository::open(&path)?,
             remote: self.clone(),
-            path: path,
+            path: path.as_ref().to_owned(),
         })
     }
 
@@ -74,10 +77,10 @@ impl Remote {
     }
 }
 
-/* ------------------- Impl: From<crate::addon::git::Spec> ------------------ */
+/* ------------------------ Impl: From<super::Source> ----------------------- */
 
-impl From<&crate::addon::git::Spec> for Remote {
-    fn from(value: &crate::addon::git::Spec) -> Self {
-        Self(value.repo.clone())
+impl From<&super::Source> for Remote {
+    fn from(value: &super::Source) -> Self {
+        Self(value.repo)
     }
 }

@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -16,7 +17,11 @@ pub struct Repository {
 /* ---------------------------- Impl: Repository ---------------------------- */
 
 impl Repository {
-    pub fn checkout_to(&self, path: PathBuf, commit: super::Reference) -> anyhow::Result<Checkout> {
+    pub fn checkout_to(
+        &self,
+        path: impl AsRef<Path>,
+        commit: super::Reference,
+    ) -> anyhow::Result<Checkout> {
         let obj = self.repo.revparse_single(&commit.rev())?;
 
         let short_id = obj
@@ -24,12 +29,12 @@ impl Repository {
             .map(|id| id.as_str().map(|s| s.to_owned()))?
             .ok_or(anyhow!("couldn't parse revision"))?;
 
-        if (&path).exists() {
+        if path.as_ref().exists() {
             let repo = git2::Repository::open(&path)?;
 
             return Ok(Checkout {
                 repo,
-                path,
+                path: path.as_ref().to_owned(),
                 revision: commit,
             });
         }
@@ -42,7 +47,7 @@ impl Repository {
             .arg(&self.path)
             .arg("--single-branch")
             .arg("--no-tags")
-            .arg(path.to_str().ok_or(anyhow!("missing path"))?)
+            .arg(path.as_ref())
             .output()?;
 
         if !output.status.success() {
@@ -69,7 +74,7 @@ impl Repository {
 
         Ok(Checkout {
             repo: git2::Repository::open(&path)?,
-            path,
+            path: path.as_ref().to_owned(),
             revision: commit,
         })
     }

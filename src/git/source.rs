@@ -17,8 +17,8 @@ pub struct Source {
 /* ------------------------------ Impl: Source ------------------------------ */
 
 impl Source {
-    pub fn new(repo: Url, commit: Reference) -> Source {
-        Source { commit, repo }
+    pub fn reference(&self) -> &Reference {
+        &self.commit
     }
 }
 
