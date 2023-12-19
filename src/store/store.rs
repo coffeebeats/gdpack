@@ -7,21 +7,33 @@ use std::path::PathBuf;
 
 pub struct Addon {
     pub spec: crate::addon::Spec,
-    pub checkout: super::GitCheckout,
+    pub checkout: crate::git::Checkout,
 }
 
 /* ------------------------------- Impl: Addon ------------------------------ */
 
 impl Addon {
-    pub fn checkout(spec: &crate::addon::git::Spec) -> anyhow::Result<Addon> {
-        let remote = super::GitRemote::from(spec);
-        let repo = remote.fetch()?;
+    pub fn download(source: &crate::git::Source) -> anyhow::Result<Addon> {
+        let remote = crate::git::Remote::from(source);
 
-        let checkout = repo.checkout(spec.commit.clone())?;
+        let mut path = super::get_path()?;
+        path.extend(&["git", "repo", &remote.name()?]);
+
+        let repo = remote.fetch_to(path)?;
+
+        let mut path = super::get_path()?;
+        path.extend(&[
+            "git",
+            "checkout",
+            &remote.name()?,
+            &source.reference().rev(),
+        ]);
+
+        let checkout = repo.checkout_to(path, source.reference().clone())?;
 
         Ok(Addon {
             checkout,
-            spec: crate::addon::Spec::Git(spec.clone()),
+            spec: crate::addon::Spec::Git(source.clone()),
         })
     }
 
