@@ -7,9 +7,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use toml_edit::TableLike;
 
-use crate::addon::git;
 use crate::addon::Addon;
 use crate::addon::Spec;
+use crate::git;
 
 impl From<&Addon> for toml_edit::InlineTable {
     fn from(value: &Addon) -> Self {
@@ -31,13 +31,13 @@ impl From<&Addon> for toml_edit::InlineTable {
                 );
 
                 match &g.commit {
-                    git::Commit::Branch(b) => {
+                    git::Reference::Branch(b) => {
                         table.insert("branch", toml_edit::value(b).into_value().unwrap());
                     }
-                    git::Commit::Rev(r) => {
+                    git::Reference::Rev(r) => {
                         table.insert("rev", toml_edit::value(r).into_value().unwrap());
                     }
-                    git::Commit::Tag(t) => {
+                    git::Reference::Tag(t) => {
                         table.insert("tag", toml_edit::value(t).into_value().unwrap());
                     }
                     _ => {}
@@ -83,7 +83,12 @@ impl TryFrom<&dyn TableLike> for Addon {
                 .and_then(|repo| url::Url::parse(repo).map_err(|e| anyhow!(e)))?;
 
             if table.len() == 1 + replace.iter().len() {
-                let spec = Spec::Git(git::Spec::new(repo, git::Commit::Default));
+                let spec = Spec::Git(
+                    git::Source::builder()
+                        .repo(repo)
+                        .commit(git::Reference::Default)
+                        .build(),
+                );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
 
@@ -92,20 +97,32 @@ impl TryFrom<&dyn TableLike> for Addon {
             }
 
             if let Some(branch) = table.get("branch") {
-                let spec = Spec::Git(git::Spec::new(
-                    repo,
-                    git::Commit::Branch(branch.to_string()),
-                ));
+                let spec = Spec::Git(
+                    git::Source::builder()
+                        .repo(repo)
+                        .commit(git::Reference::Branch(branch.to_string()))
+                        .build(),
+                );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
 
             if let Some(rev) = table.get("rev") {
-                let spec = Spec::Git(git::Spec::new(repo, git::Commit::Rev(rev.to_string())));
+                let spec = Spec::Git(
+                    git::Source::builder()
+                        .repo(repo)
+                        .commit(git::Reference::Rev(rev.to_string()))
+                        .build(),
+                );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
 
             if let Some(tag) = table.get("tag") {
-                let spec = Spec::Git(git::Spec::new(repo, git::Commit::Tag(tag.to_string())));
+                let spec = Spec::Git(
+                    git::Source::builder()
+                        .repo(repo)
+                        .commit(git::Reference::Tag(tag.to_string()))
+                        .build(),
+                );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
             }
         }

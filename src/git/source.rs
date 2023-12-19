@@ -10,13 +10,23 @@ use url::Url;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, TypedBuilder)]
 pub struct Source {
     #[serde(flatten)]
-    pub(super) commit: Reference,
-    pub(super) repo: Url,
+    pub commit: Reference,
+    pub repo: Url,
 }
 
 /* ------------------------------ Impl: Source ------------------------------ */
 
 impl Source {
+    pub fn name(&self) -> Option<String> {
+        self.repo
+            .path()
+            .split("/")
+            .skip(1)
+            .take(1)
+            .next()
+            .map(|s| s.to_owned())
+    }
+
     pub fn reference(&self) -> &Reference {
         &self.commit
     }
@@ -40,7 +50,7 @@ pub enum Reference {
 impl Reference {
     pub fn rev(&self) -> String {
         match self {
-            Reference::Default => "refs/remotes/origin/HEAD".to_owned(),
+            Reference::Default => "HEAD".to_owned(),
             Reference::Branch(b) => format!("refs/remotes/origin/{0}", b),
             Reference::Tag(t) => t.to_owned(),
             Reference::Rev(r) => r.to_owned(),

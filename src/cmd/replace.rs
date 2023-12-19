@@ -43,11 +43,12 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let name = args.addon;
     let mut addon = Addon::builder()
+        .name(args.source.name.to_owned())
         .replace(Some(name.to_owned()))
         .spec(args.source.into())
         .build();
 
-    if name == addon.name() {
+    if name == addon.package().ok_or(anyhow!("missing addon name"))? {
         let _ = addon.replace.take();
     }
 

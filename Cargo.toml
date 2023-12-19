@@ -11,6 +11,7 @@ rust-version = "1.74.1"
 anyhow = "1.0.76"
 clap = { version = "4.4.11", features = ["cargo", "derive"] }
 git2 = "0.18.1"
+semver = "1.0.20"
 serde = { version = "1.0.193", features = ["derive"] }
 toml = "0.8.8"
 toml_edit = { version = "0.21.0", features = ["serde"] }

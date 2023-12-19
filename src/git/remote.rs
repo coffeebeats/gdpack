@@ -81,6 +81,6 @@ impl Remote {
 
 impl From<&super::Source> for Remote {
     fn from(value: &super::Source) -> Self {
-        Self(value.repo)
+        Self(value.repo.clone())
     }
 }

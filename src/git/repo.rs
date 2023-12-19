@@ -3,6 +3,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
+use super::Reference;
+
 /* -------------------------------------------------------------------------- */
 /*                             Struct: Repository                             */
 /* -------------------------------------------------------------------------- */
@@ -20,8 +22,8 @@ impl Repository {
     pub fn checkout_to(
         &self,
         path: impl AsRef<Path>,
-        commit: super::Reference,
-    ) -> anyhow::Result<Checkout> {
+        commit: Reference,
+    ) -> anyhow::Result<super::Checkout> {
         let obj = self.repo.revparse_single(&commit.rev())?;
 
         let short_id = obj
@@ -30,10 +32,14 @@ impl Repository {
             .ok_or(anyhow!("couldn't parse revision"))?;
 
         if path.as_ref().exists() {
-            let repo = git2::Repository::open(&path)?;
+            // Update the checkout if using a branch-like reference.
+            match &commit {
+                Reference::Default | Reference::Branch(_) => git2::Repository::open(&path)?
+                    .checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?,
+                _ => {}
+            }
 
-            return Ok(Checkout {
-                repo,
+            return Ok(super::Checkout {
                 path: path.as_ref().to_owned(),
                 revision: commit,
             });
@@ -72,20 +78,9 @@ impl Repository {
             }
         }
 
-        Ok(Checkout {
-            repo: git2::Repository::open(&path)?,
+        Ok(super::Checkout {
             path: path.as_ref().to_owned(),
             revision: commit,
         })
     }
-}
-
-/* -------------------------------------------------------------------------- */
-/*                              Struct: Checkout                              */
-/* -------------------------------------------------------------------------- */
-
-pub struct Checkout {
-    pub(super) repo: git2::Repository,
-    pub(super) path: PathBuf,
-    pub(super) revision: super::Reference,
 }
