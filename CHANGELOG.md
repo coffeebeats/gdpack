@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.11 (2023-12-22)
+
+## What's Changed
+* chore: configure `mdlint` to allow non-sibling repeat headings by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/51
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.10...v0.0.11
+
 ## 0.0.10 (2023-12-22)
 
 ## What's Changed
