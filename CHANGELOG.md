@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.10 (2023-12-22)
+
+## What's Changed
+* feat(manifest): add support for target-specific dependencies by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/45
+* chore(deps): bump actions/upload-artifact from 3 to 4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/47
+* chore(deps): bump actions/download-artifact from 3 to 4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/48
+* fix(ci): skip format job if triggered by dependabot by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/50
+* chore(deps): bump anyhow from 1.0.75 to 1.0.76 by @dependabot in https://github.com/coffeebeats/gdpack/pull/49
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.9...v0.0.10
+
 ## 0.0.9 (2023-12-16)
 
 ## What's Changed
