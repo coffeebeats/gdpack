@@ -7,7 +7,7 @@
 
   "git.branchProtection": ["main"],
 
-  /* --------------------------- Settings: Markdown --------------------------- */
+  /* ------------------------ Extensions: markdownlint ------------------------ */
 
   "markdownlint.config": {
     "MD024": {
@@ -15,7 +15,7 @@
     }
   },
 
-  /* ------------------------- Settings: rust-analyzer ------------------------ */
+  /* ------------------------ Extensions: rust-analyzer ----------------------- */
 
   "rust-analyzer.imports.granularity.enforce": true,
   "rust-analyzer.imports.granularity.group": "item"
