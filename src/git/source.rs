@@ -8,16 +8,20 @@ use url::Url;
 /*                               Struct: Remote                               */
 /* -------------------------------------------------------------------------- */
 
+/// Remote is a newtype wrapper around [Url] which adds helpful methods for
+/// extracting parts of a remotely-hosted git repository.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Remote(Url);
 
 /* ------------------------------ Impl: Remote ------------------------------ */
 
 impl Remote {
+    /// Extracts and returns the host of the remote repository [Url].
     pub fn host(&self) -> Option<String> {
         self.0.host().as_ref().map(Host::<&str>::to_string)
     }
 
+    /// Extracts and returns the owner of the remote repository.
     pub fn owner(&self) -> Option<String> {
         self.0
             .path()
@@ -27,6 +31,7 @@ impl Remote {
             .map(&str::to_owned)
     }
 
+    /// Extracts and returns the name of the remote repository.
     pub fn name(&self) -> Option<String> {
         self.0
             .path()
@@ -38,8 +43,9 @@ impl Remote {
             .map(&str::to_owned)
     }
 
-    pub fn url(&self) -> Url {
-        self.0.clone()
+    /// Returns a reference to the underlying [Url].
+    pub fn url(&self) -> &Url {
+        &self.0
     }
 }
 
@@ -63,6 +69,7 @@ impl From<Url> for Remote {
 /*                               Struct: Source                               */
 /* -------------------------------------------------------------------------- */
 
+/// Captures a specific version of a remotely hosted git repository.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, TypedBuilder)]
 pub struct Source {
     #[serde(flatten)]
@@ -70,14 +77,11 @@ pub struct Source {
     pub repo: Remote,
 }
 
-/* ------------------------------ Impl: Source ------------------------------ */
-
-impl Source {}
-
 /* -------------------------------------------------------------------------- */
 /*                               Enum: Reference                              */
 /* -------------------------------------------------------------------------- */
 
+/// Specifies a particular revision in a git repository.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum Reference {
@@ -90,8 +94,11 @@ pub enum Reference {
 /* ----------------------------- Impl: Reference ---------------------------- */
 
 impl Reference {
+    /// Returns a list of git [refspecs](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec)
+    /// to fetch when checking out a specific git [Reference].
+    ///
+    /// NOTE: This implementation is more or less copied from [Cargo's implementation](https://github.com/rust-lang/cargo/blob/rust-1.76.0/src/cargo/sources/git/utils.rs#L968-L1006).
     pub fn refspecs(&self) -> Vec<String> {
-        // See https://github.com/rust-lang/cargo/blob/rust-1.76.0/src/cargo/sources/git/utils.rs#L968-L1006.
         match self {
             Reference::Default => vec![String::from("+HEAD:refs/remotes/origin/HEAD")],
             Reference::Branch(b) => vec![format!("+refs/heads/{0}:refs/remotes/origin/{0}", b)],
