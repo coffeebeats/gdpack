@@ -37,7 +37,7 @@ impl Addon {
         let plugin = self.plugin()?;
 
         let subfolder = match plugin.as_ref() {
-            Some(p) => p.subfolder().or(p.name()).map(&str::to_owned),
+            Some(p) => p.subfolder().or(p.name()).map(str::to_owned),
             None => self.package(),
         };
 
@@ -80,7 +80,7 @@ impl Addon {
             crate::addon::Spec::Path(p) => p
                 .file_name()
                 .and_then(std::ffi::OsStr::to_str)
-                .map(&str::to_owned),
+                .map(str::to_owned),
         }
     }
 }
@@ -110,7 +110,7 @@ impl Addon {
         }
 
         // Next, check each directory in 'addons'.
-        for entry in WalkDir::new(&path.join("addons"))
+        for entry in WalkDir::new(path.join("addons"))
             .follow_root_links(true)
             .follow_links(true)
             .same_file_system(true)
@@ -125,7 +125,7 @@ impl Addon {
                 && entry
                     .file_name()
                     .to_str()
-                    .is_some_and(|n| n.starts_with("."))
+                    .is_some_and(|n| n.starts_with('.'))
             {
                 continue;
             }

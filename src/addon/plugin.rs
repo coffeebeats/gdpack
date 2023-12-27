@@ -56,6 +56,6 @@ impl Plugin {
         self.config
             .section(Some("plugin"))
             .and_then(|s| s.get("version"))
-            .and_then(|s| Version::parse(&s).ok())
+            .and_then(|s| Version::parse(s).ok())
     }
 }

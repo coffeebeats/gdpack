@@ -37,6 +37,6 @@ const ENV_GDPACK_HOME: &str = "GDPACK_HOME";
 /// path cannot be determined.
 fn get_store_path() -> anyhow::Result<PathBuf> {
     std::env::var(ENV_GDPACK_HOME)
-        .map(|p| PathBuf::from(p))
+        .map(PathBuf::from)
         .map_err(|e| anyhow!(e))
 }

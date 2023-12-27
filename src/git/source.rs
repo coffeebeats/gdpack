@@ -26,9 +26,9 @@ impl Remote {
         self.0
             .path()
             .trim_matches('/')
-            .split("/")
+            .split('/')
             .next()
-            .map(&str::to_owned)
+            .map(str::to_owned)
     }
 
     /// Extracts and returns the name of the remote repository.
@@ -36,11 +36,10 @@ impl Remote {
         self.0
             .path()
             .trim_matches('/')
-            .split("/")
-            .skip(1)
-            .next()
+            .split('/')
+            .nth(1)
             .and_then(|s| s.strip_suffix(".git").or(Some(s)))
-            .map(&str::to_owned)
+            .map(str::to_owned)
     }
 
     /// Returns a reference to the underlying [Url].

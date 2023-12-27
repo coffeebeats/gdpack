@@ -38,9 +38,9 @@ impl Database {
             .repo(self.0.clone())
             .build();
 
-        let path_checkout = Checkout::get_path(&repo, &source)?;
+        let path_checkout = Checkout::get_path(&repo, source)?;
         if !path_checkout.exists() {
-            if let Err(e) = self.fetch_latest(&reference) {
+            if let Err(e) = self.fetch_latest(reference) {
                 println!("failed to fetch latest: {}; skipping...", e);
             }
 
@@ -71,7 +71,7 @@ impl Database {
             reference: source.reference.clone(),
         };
 
-        return Ok(checkout);
+        Ok(checkout)
     }
 
     /// Fetches the latest git [refspecs](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec)
@@ -117,13 +117,13 @@ impl Database {
     pub(super) fn id(remote: &Remote) -> anyhow::Result<String> {
         let host = remote
             .host()
-            .map(|s| s.replace(".", "_"))
+            .map(|s| s.replace('.', "_"))
             .map(|s| s.to_lowercase())
             .ok_or(anyhow!("missing repository host: {}", remote))?;
 
         let owner = remote
             .owner()
-            .map(|s| s.replace("/", "_"))
+            .map(|s| s.replace('/', "_"))
             .map(|s| s.to_lowercase())
             .ok_or(anyhow!("missing repository owner: {}", remote))?;
 
@@ -149,7 +149,7 @@ impl TryFrom<&Source> for Database {
             clone_bare(value, path.as_path())?;
         }
 
-        return Ok(db);
+        Ok(db)
     }
 }
 
@@ -158,7 +158,7 @@ impl TryFrom<&Source> for Database {
 /// Bare clones the provided repository, specified by [Source], into the
 /// appropriate "database" directory in the `gdpack` store.
 fn clone_bare(source: &Source, path: impl AsRef<Path>) -> anyhow::Result<()> {
-    println!("downloading dependency: {}", source.repo.to_string());
+    println!("downloading dependency: {}", source.repo);
 
     std::fs::create_dir_all(&path)?;
 
@@ -175,7 +175,7 @@ fn clone_bare(source: &Source, path: impl AsRef<Path>) -> anyhow::Result<()> {
     }
 
     let output = clone_cmd
-        .args(&["--bare", path.as_ref().to_str().unwrap()])
+        .args(["--bare", path.as_ref().to_str().unwrap()])
         .output()?;
 
     if !output.status.success() {
