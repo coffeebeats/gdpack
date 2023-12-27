@@ -22,7 +22,7 @@ pub struct Database(Remote);
 /* ----------------------------- Impl: Database ----------------------------- */
 
 impl Database {
-    /* ----------------------------- Methods: Public ---------------------------- */
+    /* --------------------------- Methods: Public -------------------------- */
 
     /// Checks out the specific [Reference] into the appropriate "checkout"
     /// directory in the `gdpack` store.
@@ -101,7 +101,7 @@ impl Database {
         Ok(())
     }
 
-    /* ---------------------------- Methods: Private ---------------------------- */
+    /* -------------------------- Methods: Private -------------------------- */
 
     /// Returns a path to the "database" bare clone for the specified [Remote] in
     /// the `gdpack` store.

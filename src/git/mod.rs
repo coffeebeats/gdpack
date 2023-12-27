@@ -1,3 +1,7 @@
+//! This module is heavily inspired by [Cargo](https://doc.rust-lang.org/cargo/guide/cargo-home.html)'s
+//! implementation of git dependencies and provides operations for managing git-
+//! based Godot addons.
+
 /* ------------------------------ Mod: Checkout ----------------------------- */
 
 mod checkout;
