@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use std::path::Path;
 use std::path::PathBuf;
+use typed_builder::TypedBuilder;
 use walkdir::WalkDir;
 
 use crate::git;
@@ -12,7 +13,7 @@ use super::Spec;
 /*                                Struct: Addon                               */
 /* -------------------------------------------------------------------------- */
 
-#[derive(typed_builder::TypedBuilder)]
+#[derive(Clone, Debug, TypedBuilder)]
 pub struct Addon {
     /// Addon name (used in multi-addon repositories).
     #[builder(default)]

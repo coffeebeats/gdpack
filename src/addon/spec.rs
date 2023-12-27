@@ -1,3 +1,5 @@
+use serde::Deserialize;
+use serde::Serialize;
 use std::path::PathBuf;
 
 use crate::git;
@@ -6,7 +8,7 @@ use crate::git;
 /*                                 Enum: Spec                                 */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Debug, serde::Deserialize, PartialEq, Eq, serde::Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(untagged)]
 pub enum Spec {
     Path(PathBuf),
