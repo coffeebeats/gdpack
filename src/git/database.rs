@@ -3,7 +3,6 @@ use git2::Oid;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
-use typed_builder::TypedBuilder;
 
 use super::Checkout;
 use super::Reference;
@@ -14,10 +13,7 @@ use super::Source;
 /*                              Struct: Database                              */
 /* -------------------------------------------------------------------------- */
 
-#[derive(TypedBuilder)]
-pub struct Database {
-    remote: Remote,
-}
+pub struct Database(Remote);
 
 /* ----------------------------- Impl: Database ----------------------------- */
 
@@ -25,7 +21,7 @@ impl Database {
     /* ----------------------------- Methods: Public ---------------------------- */
 
     pub fn checkout(&self, reference: &Reference) -> anyhow::Result<Checkout> {
-        let path_db = Database::get_path(&self.remote)?;
+        let path_db = Database::get_path(&self.0)?;
 
         let repo = git2::Repository::open(&path_db)?;
 
@@ -33,7 +29,7 @@ impl Database {
 
         let source = &Source::builder()
             .reference(Reference::Rev(obj.id().to_string()))
-            .repo(self.remote.clone())
+            .repo(self.0.clone())
             .build();
 
         let path_checkout = Checkout::get_path(&repo, &source)?;
@@ -48,7 +44,7 @@ impl Database {
                     .file_name()
                     .and_then(|s| s.to_str())
                     .expect("missing short id"),
-                self.remote.name().expect("missing remote name")
+                self.0.name().expect("missing remote name")
             );
 
             let repo =
@@ -75,14 +71,14 @@ impl Database {
     pub fn fetch_latest(&self, reference: &Reference) -> anyhow::Result<()> {
         println!(
             "fetching latest for dependency: {}",
-            self.remote.name().expect("missing remote name")
+            self.0.name().expect("missing remote name")
         );
 
-        let path = Database::get_path(&self.remote)?;
+        let path = Database::get_path(&self.0)?;
 
         let repo = git2::Repository::open(path)?;
 
-        let mut remote = repo.remote_anonymous(&self.remote.to_string())?;
+        let mut remote = repo.remote_anonymous(&self.0.to_string())?;
 
         remote.fetch(
             &reference.refspecs(),
@@ -134,7 +130,7 @@ impl TryFrom<&Source> for Database {
     type Error = anyhow::Error;
 
     fn try_from(value: &Source) -> Result<Self, Self::Error> {
-        let db = Database::builder().remote(value.repo.clone()).build();
+        let db = Database(value.repo.clone());
 
         let path = Database::get_path(&value.repo)?;
         if !path.exists() {
