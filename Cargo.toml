@@ -11,9 +11,11 @@ rust-version = "1.74.1"
 anyhow = "1.0.76"
 clap = { version = "4.4.11", features = ["cargo", "derive"] }
 git2 = "0.18.1"
+rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.20"
 serde = { version = "1.0.193", features = ["derive"] }
 toml = "0.8.8"
 toml_edit = { version = "0.21.0", features = ["serde"] }
 typed-builder = "0.18.0"
 url = { version = "2.5.0", features = ["serde"] }
+walkdir = "2.4.0"
