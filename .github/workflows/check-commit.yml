@@ -157,6 +157,10 @@ jobs:
           version-file: Cargo.toml
           profile: minimal
 
+      - uses: "./.github/actions/cargo-build"
+        with:
+          profile: release
+
       - name: Test source code
         run: |
           cargo test \
