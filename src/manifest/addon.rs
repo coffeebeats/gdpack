@@ -30,7 +30,7 @@ impl From<&Addon> for toml_edit::InlineTable {
                     toml_edit::value(g.repo.to_string()).into_value().unwrap(),
                 );
 
-                match &g.commit {
+                match &g.reference {
                     git::Reference::Branch(b) => {
                         table.insert("branch", toml_edit::value(b).into_value().unwrap());
                     }
@@ -85,8 +85,8 @@ impl TryFrom<&dyn TableLike> for Addon {
             if table.len() == 1 + replace.iter().len() {
                 let spec = Spec::Git(
                     git::Source::builder()
-                        .repo(repo)
-                        .commit(git::Reference::Default)
+                        .repo(repo.into())
+                        .reference(git::Reference::Default)
                         .build(),
                 );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
@@ -99,8 +99,8 @@ impl TryFrom<&dyn TableLike> for Addon {
             if let Some(branch) = table.get("branch") {
                 let spec = Spec::Git(
                     git::Source::builder()
-                        .repo(repo)
-                        .commit(git::Reference::Branch(branch.to_string()))
+                        .repo(repo.into())
+                        .reference(git::Reference::Branch(branch.to_string()))
                         .build(),
                 );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
@@ -109,8 +109,8 @@ impl TryFrom<&dyn TableLike> for Addon {
             if let Some(rev) = table.get("rev") {
                 let spec = Spec::Git(
                     git::Source::builder()
-                        .repo(repo)
-                        .commit(git::Reference::Rev(rev.to_string()))
+                        .repo(repo.into())
+                        .reference(git::Reference::Rev(rev.to_string()))
                         .build(),
                 );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());
@@ -119,8 +119,8 @@ impl TryFrom<&dyn TableLike> for Addon {
             if let Some(tag) = table.get("tag") {
                 let spec = Spec::Git(
                     git::Source::builder()
-                        .repo(repo)
-                        .commit(git::Reference::Tag(tag.to_string()))
+                        .repo(repo.into())
+                        .reference(git::Reference::Tag(tag.to_string()))
                         .build(),
                 );
                 return Ok(Addon::builder().spec(spec).replace(replace).build());

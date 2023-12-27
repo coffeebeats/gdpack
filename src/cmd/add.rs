@@ -89,8 +89,8 @@ impl From<SourceArgs> for Spec {
             Source::Path(path) => Spec::Path(path),
             Source::Url(repo) => Spec::Git(
                 git::Source::builder()
-                    .repo(repo)
-                    .commit(value.commit.into())
+                    .repo(repo.into())
+                    .reference(value.commit.into())
                     .build(),
             ),
         }
@@ -158,17 +158,9 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         )?;
     }
 
-    let deps: Vec<crate::addon::Spec> = vec![];
-
-    if let Spec::Git(g) = &addon.spec {
-        let checkout = git::download(&g)?;
-        println!(
-            "added dependency: {}",
-            addon.package().ok_or(anyhow!("missing addon name"))?
-        );
-    }
-
     manifest::write_to(&m, &path)?;
+
+    addon.install_to(path.parent().ok_or(anyhow!("missing project directory"))?)?;
 
     Ok(())
 }

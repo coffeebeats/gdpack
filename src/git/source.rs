@@ -1,7 +1,63 @@
 use serde::Deserialize;
 use serde::Serialize;
 use typed_builder::TypedBuilder;
+use url::Host;
 use url::Url;
+
+/* -------------------------------------------------------------------------- */
+/*                               Struct: Remote                               */
+/* -------------------------------------------------------------------------- */
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct Remote(Url);
+
+/* ------------------------------ Impl: Remote ------------------------------ */
+
+impl Remote {
+    pub fn host(&self) -> Option<String> {
+        self.0.host().as_ref().map(Host::<&str>::to_string)
+    }
+
+    pub fn owner(&self) -> Option<String> {
+        self.0
+            .path()
+            .trim_matches('/')
+            .split("/")
+            .next()
+            .map(&str::to_owned)
+    }
+
+    pub fn name(&self) -> Option<String> {
+        self.0
+            .path()
+            .trim_matches('/')
+            .split("/")
+            .skip(1)
+            .next()
+            .and_then(|s| s.strip_suffix(".git").or(Some(s)))
+            .map(&str::to_owned)
+    }
+
+    pub fn url(&self) -> Url {
+        self.0.clone()
+    }
+}
+
+/* ------------------------------ Impl: Display ----------------------------- */
+
+impl std::fmt::Display for Remote {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0.as_str())
+    }
+}
+
+/* ----------------------------- Impl: From<Url> ---------------------------- */
+
+impl From<Url> for Remote {
+    fn from(value: Url) -> Self {
+        Remote(value)
+    }
+}
 
 /* -------------------------------------------------------------------------- */
 /*                               Struct: Source                               */
@@ -10,27 +66,13 @@ use url::Url;
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, TypedBuilder)]
 pub struct Source {
     #[serde(flatten)]
-    pub commit: Reference,
-    pub repo: Url,
+    pub reference: Reference,
+    pub repo: Remote,
 }
 
 /* ------------------------------ Impl: Source ------------------------------ */
 
-impl Source {
-    pub fn name(&self) -> Option<String> {
-        self.repo
-            .path()
-            .split("/")
-            .skip(1)
-            .take(1)
-            .next()
-            .map(|s| s.to_owned())
-    }
-
-    pub fn reference(&self) -> &Reference {
-        &self.commit
-    }
-}
+impl Source {}
 
 /* -------------------------------------------------------------------------- */
 /*                               Enum: Reference                              */
@@ -48,12 +90,25 @@ pub enum Reference {
 /* ----------------------------- Impl: Reference ---------------------------- */
 
 impl Reference {
-    pub fn rev(&self) -> String {
+    pub fn refspecs(&self) -> Vec<String> {
+        // See https://github.com/rust-lang/cargo/blob/rust-1.76.0/src/cargo/sources/git/utils.rs#L968-L1006.
         match self {
-            Reference::Default => "HEAD".to_owned(),
-            Reference::Branch(b) => format!("refs/remotes/origin/{0}", b),
-            Reference::Tag(t) => t.to_owned(),
-            Reference::Rev(r) => r.to_owned(),
+            Reference::Default => vec![String::from("+HEAD:refs/remotes/origin/HEAD")],
+            Reference::Branch(b) => vec![format!("+refs/heads/{0}:refs/remotes/origin/{0}", b)],
+            Reference::Tag(t) => vec![format!("+refs/tags/{0}:refs/remotes/origin/tags/{0}", t)],
+            Reference::Rev(r) => {
+                if r.starts_with("refs/") {
+                    vec![format!("+{0}:{0}", r)]
+                } else if is_commit_hash_like(r) {
+                    vec![format!("+{0}:refs/commit/{0}", r)]
+                } else {
+                    // Just fetch everything and hope it's found.
+                    vec![
+                        String::from("+refs/heads/*:refs/remotes/origin/*"),
+                        String::from("+HEAD:refs/remotes/origin/HEAD"),
+                    ]
+                }
+            }
         }
     }
 }
@@ -64,9 +119,15 @@ impl std::fmt::Display for Reference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Reference::Default => f.write_str("HEAD"),
-            Reference::Branch(b) => f.write_str(&format!("branch={}", b)),
-            Reference::Rev(r) => f.write_str(&format!("rev={}", r)),
-            Reference::Tag(t) => f.write_str(&format!("tag={}", t)),
+            Reference::Branch(b) => f.write_str(b),
+            Reference::Rev(r) => f.write_str(r),
+            Reference::Tag(t) => f.write_str(t),
         }
     }
+}
+
+/* ---------------------- Function: is_commit_hash_like --------------------- */
+
+fn is_commit_hash_like(id: &str) -> bool {
+    id.len() >= 7 && id.chars().all(|ch| ch.is_ascii_hexdigit())
 }
