@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
-use crate::addon::git;
 use crate::addon::Addon;
 use crate::addon::Spec;
+use crate::git;
 use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
@@ -87,34 +87,39 @@ impl From<SourceArgs> for Spec {
     fn from(value: SourceArgs) -> Self {
         match value.uri {
             Source::Path(path) => Spec::Path(path),
-            Source::Url(repo) => Spec::Git(git::Spec::new(repo, value.commit.into())),
+            Source::Url(repo) => Spec::Git(
+                git::Source::builder()
+                    .repo(repo.into())
+                    .reference(value.commit.into())
+                    .build(),
+            ),
         }
     }
 }
 
-impl From<GitCommitArgs> for git::Commit {
+impl From<GitCommitArgs> for git::Reference {
     fn from(value: GitCommitArgs) -> Self {
         match value {
             GitCommitArgs {
                 branch: None,
                 rev: None,
                 tag: None,
-            } => git::Commit::Default,
+            } => git::Reference::Default,
             GitCommitArgs {
                 branch: Some(b),
                 rev: None,
                 tag: None,
-            } => git::Commit::Branch(b),
+            } => git::Reference::Branch(b),
             GitCommitArgs {
                 branch: None,
                 rev: Some(r),
                 tag: None,
-            } => git::Commit::Rev(r),
+            } => git::Reference::Rev(r),
             GitCommitArgs {
                 branch: None,
                 rev: None,
                 tag: Some(t),
-            } => git::Commit::Tag(t),
+            } => git::Reference::Tag(t),
             _ => unreachable!(),
         }
     }
@@ -129,7 +134,10 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let mut m = manifest::init_from(&path)?;
 
-    let addon = Addon::builder().spec(args.source.into()).build();
+    let addon = Addon::builder()
+        .name(args.source.name.to_owned())
+        .spec(args.source.into())
+        .build();
 
     let targets = match args.target.is_empty() {
         true => vec![None],
@@ -152,7 +160,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     manifest::write_to(&m, &path)?;
 
-    println!("added dependency: {}", addon.name());
+    addon.install_to(path.parent().ok_or(anyhow!("missing project directory"))?)?;
 
     Ok(())
 }

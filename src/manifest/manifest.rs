@@ -21,7 +21,10 @@ impl Manifest {
 
         let next: InlineTable = addon.into();
 
-        section.insert(&addon.name(), toml_edit::value(next));
+        section.insert(
+            &addon.package().ok_or(anyhow!("missing addon package"))?,
+            toml_edit::value(next),
+        );
 
         Ok(())
     }

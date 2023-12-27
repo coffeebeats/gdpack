@@ -1,5 +1,6 @@
 mod addon;
 mod cmd;
+mod git;
 mod manifest;
 
 use anyhow::Result;
