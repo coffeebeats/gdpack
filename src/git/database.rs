@@ -13,6 +13,10 @@ use super::Source;
 /*                              Struct: Database                              */
 /* -------------------------------------------------------------------------- */
 
+/// A newtype wrapper around a [Remote] repository [url::Url] and provides
+/// operations for initializing both the "database" bare clone and the commit-
+/// specific [Checkout] directories.
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Database(Remote);
 
 /* ----------------------------- Impl: Database ----------------------------- */
@@ -20,6 +24,8 @@ pub struct Database(Remote);
 impl Database {
     /* ----------------------------- Methods: Public ---------------------------- */
 
+    /// Checks out the specific [Reference] into the appropriate "checkout"
+    /// directory in the `gdpack` store.
     pub fn checkout(&self, reference: &Reference) -> anyhow::Result<Checkout> {
         let path_db = Database::get_path(&self.0)?;
 
@@ -68,6 +74,8 @@ impl Database {
         return Ok(checkout);
     }
 
+    /// Fetches the latest git [refspecs](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec)
+    /// in the "database" bare clone for the provided [Reference].
     pub fn fetch_latest(&self, reference: &Reference) -> anyhow::Result<()> {
         println!(
             "fetching latest for dependency: {}",
@@ -95,6 +103,8 @@ impl Database {
 
     /* ---------------------------- Methods: Private ---------------------------- */
 
+    /// Returns a path to the "database" bare clone for the specified [Remote] in
+    /// the `gdpack` store.
     pub(super) fn get_path(remote: &Remote) -> anyhow::Result<PathBuf> {
         let mut path = super::get_store_path()?;
         path.extend(&["git", "repo", &Database::id(remote)?]);
@@ -102,6 +112,8 @@ impl Database {
         Ok(path)
     }
 
+    /// Returns the directory name for the "database" bare clone for the specified
+    /// [Remote] in the `gdpack` store.
     pub(super) fn id(remote: &Remote) -> anyhow::Result<String> {
         let host = remote
             .host()
@@ -143,6 +155,8 @@ impl TryFrom<&Source> for Database {
 
 /* -------------------------- Function: clone_bare -------------------------- */
 
+/// Bare clones the provided repository, specified by [Source], into the
+/// appropriate "database" directory in the `gdpack` store.
 fn clone_bare(source: &Source, path: impl AsRef<Path>) -> anyhow::Result<()> {
     println!("downloading dependency: {}", source.repo.to_string());
 
