@@ -6,7 +6,7 @@ use toml_edit::Document;
 use toml_edit::InlineTable;
 use toml_edit::TableLike;
 
-use crate::addon::Addon;
+use crate::addon::Dependency;
 
 use super::key::MANIFEST_SECTION_KEY_ADDONS;
 
@@ -16,13 +16,13 @@ pub const MANIFEST_SECTION_KEY_TARGET: &str = "target";
 pub struct Manifest(Document);
 
 impl Manifest {
-    pub fn add(&mut self, key: &super::Key, addon: &Addon) -> anyhow::Result<()> {
+    pub fn add(&mut self, key: &super::Key, dep: &Dependency) -> anyhow::Result<()> {
         let section = self.get_section_mut(key)?;
 
-        let next: InlineTable = addon.into();
+        let next: InlineTable = dep.into();
 
         section.insert(
-            &addon.package().ok_or(anyhow!("missing addon package"))?,
+            &dep.package().ok_or(anyhow!("missing addon package"))?,
             toml_edit::value(next),
         );
 

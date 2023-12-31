@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
-use crate::addon::Addon;
+use crate::addon::Dependency;
 use crate::addon::Spec;
 use crate::git;
 use crate::manifest;
@@ -53,13 +53,37 @@ pub struct SourceArgs {
     #[arg(value_name = "URI", value_parser = parse_source)]
     pub uri: Source,
 
-    /// Install the addon named `NAME` from a multi-addon dependency; if
+    /// Install the plugin named `NAME` from a multi-addon dependency; if
     /// omitted, assumed to be repository name or filepath base name.
     #[arg(short, long, value_name = "NAME")]
     pub name: Option<String>,
 
     #[clap(flatten)]
     pub commit: GitCommitArgs,
+}
+
+impl From<SourceArgs> for Dependency {
+    fn from(value: SourceArgs) -> Self {
+        let spec = match value.uri {
+            Source::Path(path) => Spec::Path(path),
+            Source::Url(repo) => {
+                let source = git::Source::builder()
+                    .repo(repo.into())
+                    .reference(value.commit.into())
+                    .build();
+
+                match &source.reference {
+                    git::Reference::Release(_, _) => Spec::Release(source),
+                    _ => Spec::Git(source),
+                }
+            }
+        };
+
+        Dependency::builder()
+            .name(value.name.to_owned())
+            .spec(spec)
+            .build()
+    }
 }
 
 /* -------------------------- Struct: GitCommitArgs ------------------------- */
@@ -79,48 +103,50 @@ pub struct GitCommitArgs {
     /// Use a git `TAG` version (only used with a git repository `URI`)
     #[arg(long, value_name = "TAG")]
     pub tag: Option<String>,
+
+    #[clap(flatten)]
+    pub release: ReleaseArgs,
 }
 
-/* ------------------------------- Impl: Into ------------------------------- */
+#[derive(clap::Args, Debug)]
+#[group(required = false, multiple = true)]
+pub struct ReleaseArgs {
+    /// Use a git `RELEASE` version (only used with a git repository `URI`)
+    #[arg(long, value_name = "RELEASE", requires = "asset")]
+    pub release: Option<String>,
 
-impl From<SourceArgs> for Spec {
-    fn from(value: SourceArgs) -> Self {
-        match value.uri {
-            Source::Path(path) => Spec::Path(path),
-            Source::Url(repo) => Spec::Git(
-                git::Source::builder()
-                    .repo(repo.into())
-                    .reference(value.commit.into())
-                    .build(),
-            ),
-        }
-    }
+    /// A specific `ASSET` from a git `RELEASE` version (only used with a git
+    /// repository `URI` and `RELEASE`)
+    #[arg(long, value_name = "ASSET", requires = "release")]
+    pub asset: Option<String>,
 }
 
 impl From<GitCommitArgs> for git::Reference {
     fn from(value: GitCommitArgs) -> Self {
         match value {
             GitCommitArgs {
-                branch: None,
-                rev: None,
-                tag: None,
-            } => git::Reference::Default,
-            GitCommitArgs {
-                branch: Some(b),
-                rev: None,
-                tag: None,
+                branch: Some(b), ..
             } => git::Reference::Branch(b),
             GitCommitArgs {
-                branch: None,
-                rev: Some(r),
                 tag: None,
-            } => git::Reference::Rev(r),
+                release:
+                    ReleaseArgs {
+                        asset: Some(a),
+                        release: Some(r),
+                    },
+                ..
+            } => git::Reference::Release(r, a),
+            GitCommitArgs { rev: Some(r), .. } => git::Reference::Rev(r),
             GitCommitArgs {
-                branch: None,
-                rev: None,
                 tag: Some(t),
+                release:
+                    ReleaseArgs {
+                        release: None,
+                        asset: None,
+                    },
+                ..
             } => git::Reference::Tag(t),
-            _ => unreachable!(),
+            _ => git::Reference::Default,
         }
     }
 }
@@ -134,10 +160,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let mut m = manifest::init_from(&path)?;
 
-    let addon = Addon::builder()
-        .name(args.source.name.to_owned())
-        .spec(args.source.into())
-        .build();
+    let dep = Dependency::from(args.source);
 
     let targets = match args.target.is_empty() {
         true => vec![None],
@@ -154,11 +177,13 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .dev(args.dev)
                 .target(target)
                 .build(),
-            &addon,
+            &dep,
         )?;
     }
 
     manifest::write_to(&m, &path)?;
+
+    let addon = dep.install()?;
 
     addon.install_to(path.parent().ok_or(anyhow!("missing project directory"))?)?;
 

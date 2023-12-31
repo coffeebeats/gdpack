@@ -8,6 +8,7 @@ use std::path::PathBuf;
 /*                               Struct: Plugin                               */
 /* -------------------------------------------------------------------------- */
 
+#[derive(Clone, Debug)]
 pub struct Plugin {
     config: Ini,
     path: PathBuf,
@@ -21,7 +22,7 @@ impl Plugin {
             return Err(anyhow!("filepath not found"));
         }
 
-        if !path.as_ref().ends_with("plugin.cfg") {
+        if path.as_ref().file_name().is_some_and(|s| s != "plugin.cfg") {
             return Err(anyhow!("expected 'plugin.cfg' file"));
         }
 

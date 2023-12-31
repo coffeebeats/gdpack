@@ -4,10 +4,8 @@ use std::path::PathBuf;
 use typed_builder::TypedBuilder;
 use walkdir::WalkDir;
 
-use crate::git;
-
+use super::Extension;
 use super::Plugin;
-use super::Spec;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Addon                               */
@@ -15,97 +13,58 @@ use super::Spec;
 
 #[derive(Clone, Debug, TypedBuilder)]
 pub struct Addon {
-    /// Addon name (used in multi-addon repositories).
     #[builder(default)]
-    pub name: Option<String>,
-    /// Name of an addon to replace during installs.
+    extension: Option<Extension>,
+    path: PathBuf,
     #[builder(default)]
-    pub replace: Option<String>,
-    /// The source of the addon repository/directory.
-    pub spec: Spec,
+    plugin: Option<Plugin>,
 }
 
 /* ------------------------------- Impl: Addon ------------------------------ */
 
 impl Addon {
-    pub fn install_to(&self, out: impl AsRef<Path>) -> anyhow::Result<()> {
-        let path = out.as_ref();
-        if !path.exists() || !path.is_dir() || !path.join("project.godot").exists() {
-            return Err(anyhow!("expected a project directory: {:?}", path));
-        }
-
-        let plugin = self.plugin()?;
-
-        let subfolder = match plugin.as_ref() {
-            Some(p) => p.subfolder().or(p.name()).map(str::to_owned),
-            None => self.package(),
-        };
-
-        if subfolder.is_none() {
-            return Err(anyhow!("cannot determine addon path"));
-        }
-
-        let mut dest = PathBuf::from(path);
-        dest.extend(&["addons", &subfolder.unwrap()]);
-
-        let mut source = match &self.spec {
-            crate::addon::Spec::Path(p) => p.clone(),
-            crate::addon::Spec::Git(g) => git::checkout(g)?.path.clone(),
-        };
-
-        if let Some(plugin) = plugin.as_ref() {
-            let plugin_source = plugin.source();
-            let subdirectory = plugin_source.as_ref().strip_prefix(&source)?;
-
-            source.push(subdirectory);
-        }
-
-        if dest.as_path().exists() {
-            std::fs::remove_dir_all(dest.as_path())?;
-        }
-
-        // Recursively copy contents from source into destination.
-        copy_recursively(source, dest, |s, d| {
-            std::fs::hard_link(s, d).map_err(|e| anyhow!(e))
-        })
-    }
-
-    pub fn dependencies(&self) -> anyhow::Result<Vec<Addon>> {
-        todo!()
-    }
-
-    pub fn package(&self) -> Option<String> {
-        match &self.spec {
-            crate::addon::Spec::Git(g) => g.repo.owner(),
-            crate::addon::Spec::Path(p) => p
-                .file_name()
-                .and_then(std::ffi::OsStr::to_str)
-                .map(str::to_owned),
-        }
-    }
-}
-
-impl Addon {
-    fn plugin(&self) -> anyhow::Result<Option<Plugin>> {
-        // Determine the path to the addon directory.
-        let path = match &self.spec {
-            Spec::Path(p) => p.to_owned(),
-            Spec::Git(g) => {
-                let checkout = git::checkout(g)?;
-                checkout.path
-            }
-        };
-
-        if !path.exists() {
-            return Err(anyhow!("addon not found"));
+    pub fn new(path: impl AsRef<Path>, name: Option<&str>) -> anyhow::Result<Addon> {
+        let path = path.as_ref().to_owned();
+        if !path.exists() || !path.is_dir() {
+            return Err(anyhow!(
+                "invalid path to addon; expected a directory: {}",
+                path.to_str().unwrap_or("''")
+            ));
         }
 
         // First check if the addon has a plugin defined at the root.
-        let root = path.join("plugin.cfg");
-        if root.exists() {
-            let plugin = self.try_get_plugin(root)?;
+        let path_plugin = path.join("plugin.cfg");
+        if path_plugin.exists() {
+            let plugin = Addon::try_get_plugin(path_plugin.clone(), name)?;
             if plugin.is_some() {
-                return Ok(plugin);
+                return Ok(Addon::builder().path(path_plugin).plugin(plugin).build());
+            }
+        }
+
+        // Next check if the addon has a gdextension defined at the root.
+        for entry in WalkDir::new(path.clone())
+            .follow_root_links(true)
+            .follow_links(false)
+            .contents_first(true)
+            .max_depth(1)
+            .min_depth(1)
+        {
+            let entry = entry?;
+            let path = entry.path();
+
+            if !path.exists()
+                || !path.is_file()
+                || !path.extension().is_some_and(|s| s == "gdextension")
+            {
+                continue;
+            }
+
+            let extension = Addon::try_get_extension(path, name)?;
+            if extension.is_some() {
+                return Ok(Addon::builder()
+                    .path(path.to_owned())
+                    .extension(extension)
+                    .build());
             }
         }
 
@@ -113,7 +72,6 @@ impl Addon {
         for entry in WalkDir::new(path.join("addons"))
             .follow_root_links(true)
             .follow_links(true)
-            .same_file_system(true)
             .contents_first(false)
             .max_depth(1)
             .min_depth(1)
@@ -130,27 +88,119 @@ impl Addon {
                 continue;
             }
 
-            let path = entry.path().join("plugin.cfg");
-            if path.exists() {
-                let plugin = self.try_get_plugin(path)?;
+            let path = entry.path();
+
+            // First check if the addon has a plugin defined.
+            let path_plugin = path.join("plugin.cfg");
+            if path_plugin.exists() {
+                let plugin = Addon::try_get_plugin(path_plugin.as_path(), name)?;
                 if plugin.is_some() {
-                    return Ok(plugin);
+                    return Ok(Addon::builder().path(path_plugin).plugin(plugin).build());
+                }
+            }
+
+            // Next check if the addon has a gdextension defined.
+            for entry in WalkDir::new(path)
+                .follow_root_links(true)
+                .follow_links(false)
+                .contents_first(true)
+                .max_depth(1)
+                .min_depth(1)
+            {
+                let entry = entry?;
+                let path = entry.path();
+
+                if !path.exists()
+                    || !path.is_file()
+                    || !path.extension().is_some_and(|s| s == "gdextension")
+                {
+                    continue;
+                }
+
+                let extension = Addon::try_get_extension(path, name)?;
+                if extension.is_some() {
+                    return Ok(Addon::builder()
+                        .path(path.to_owned())
+                        .extension(extension)
+                        .build());
                 }
             }
         }
 
-        if let Some(name) = self.name.as_ref() {
-            return Err(anyhow!("plugin not found: {}", name));
+        Ok(Addon::builder().path(path).build())
+    }
+
+    pub fn install_to(&self, out: impl AsRef<Path>) -> anyhow::Result<()> {
+        let path = out.as_ref();
+        if !path.exists() || !path.is_dir() || !path.join("project.godot").exists() {
+            return Err(anyhow!("expected a project directory: {:?}", path));
+        }
+
+        let subfolder = if let Some(plugin) = self.plugin.as_ref() {
+            plugin.subfolder().or(plugin.name())
+        } else if let Some(extension) = self.extension.as_ref() {
+            extension.name()
+        } else {
+            // TODO: Determine whether this is correct.
+            self.path.file_name().and_then(|s| s.to_str())
+        };
+
+        if subfolder.is_none() {
+            return Err(anyhow!("cannot determine addon path"));
+        }
+
+        let mut dest = PathBuf::from(path);
+        dest.extend(&["addons", &subfolder.unwrap()]);
+
+        let source = if let Some(plugin) = self.plugin.as_ref() {
+            plugin.source().as_ref().to_owned()
+        } else if let Some(extension) = self.extension.as_ref() {
+            extension.source().as_ref().to_owned()
+        } else {
+            self.path.to_owned()
+        };
+
+        println!("source: {}", &source.to_str().unwrap_or(""));
+
+        if dest.as_path().exists() {
+            std::fs::remove_dir_all(dest.as_path())?;
+        }
+
+        // Recursively copy contents from source into destination.
+        copy_recursively(source, dest, |s, d| {
+            std::fs::hard_link(s, d).map_err(|e| anyhow!(e))
+        })
+    }
+
+    pub fn dependencies(&self) -> anyhow::Result<Vec<Addon>> {
+        todo!()
+    }
+}
+
+impl Addon {
+    fn try_get_extension(
+        path: impl AsRef<Path>,
+        name: Option<&str>,
+    ) -> anyhow::Result<Option<Extension>> {
+        let plugin = Extension::from_file(path)?;
+        if name.is_none()
+            || name
+                .as_ref()
+                .is_some_and(|want| plugin.name().as_ref().is_some_and(|got| got == want))
+        {
+            return Ok(Some(plugin));
         }
 
         Ok(None)
     }
 
-    fn try_get_plugin(&self, path: impl AsRef<Path>) -> anyhow::Result<Option<Plugin>> {
+    fn try_get_plugin(
+        path: impl AsRef<Path>,
+        name: Option<&str>,
+    ) -> anyhow::Result<Option<Plugin>> {
         let plugin = Plugin::from_file(path)?;
-        if self.name.is_none()
-            || self
-                .name
+        if name.is_none()
+            || name
                 .as_ref()
                 .is_some_and(|want| plugin.name().as_ref().is_some_and(|got| got == want))
         {
