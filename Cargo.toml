@@ -9,7 +9,7 @@ rust-version = "1.74.1"
 
 [dependencies]
 anyhow = "1.0.77"
-clap = { version = "4.4.11", features = ["cargo", "derive"] }
+clap = { version = "4.4.12", features = ["cargo", "derive"] }
 git2 = "0.18.1"
 rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.20"
