@@ -21,15 +21,16 @@ jobs:
     timeout-minutes: 4
 
     outputs:
-      has_source_change: ${{ steps.check-source.outputs.any_modified }}
+      has_change: "${{ steps.check-non-source.outputs.any_modified || steps.check-source.outputs.any_modified }}"
+      has_source_change: "${{ steps.check-source.outputs.any_modified }}"
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Check for any Rust source code changes
-        id: check-source
+      - name: Check for any non-source code changes
+        id: check-non-source
         uses: tj-actions/changed-files@v41
         with:
           files: |
@@ -39,11 +40,16 @@ jobs:
             Cargo.toml
             Cargo.lock
 
+      - name: Check for any source code changes
+        id: check-source
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
             src/**/*.rs
 
   build:
     needs: ["changes"]
-    if: needs.changes.outputs.has_source_change == 'true'
+    if: needs.changes.outputs.has_change == 'true'
 
     runs-on: ubuntu-latest
     timeout-minutes: 4
@@ -62,7 +68,7 @@ jobs:
           profile: release
 
   format:
-    needs: ["build", "changes"]
+    needs: ["changes"]
     if: |
       needs.changes.outputs.has_source_change == 'true' &&
       github.actor != 'dependabot[bot]'
@@ -86,10 +92,6 @@ jobs:
           version-file: Cargo.toml
           profile: minimal
           components: rustfmt
-
-      - uses: "./.github/actions/cargo-build"
-        with:
-          profile: release
 
       - name: Check Rust source formatting
         id: format
@@ -115,7 +117,7 @@ jobs:
         run: exit 1
 
   lint:
-    needs: ["build", "changes"]
+    needs: ["changes", "build", "format"]
     if: needs.changes.outputs.has_source_change == 'true'
 
     runs-on: ubuntu-latest
@@ -145,8 +147,8 @@ jobs:
               --deny=warnings
 
   test:
-    needs: ["build", "changes", "format", "lint"]
-    if: needs.changes.outputs.has_source_change == 'true'
+    needs: ["changes", "build"]
+    if: needs.changes.outputs.has_change == 'true'
 
     runs-on: ubuntu-latest
     timeout-minutes: 4
@@ -174,6 +176,7 @@ jobs:
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
+        if: needs.changes.outputs.has_source_change == 'true'
         with:
           fail_ci_if_error: true
           flags: gdpack
