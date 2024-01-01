@@ -67,14 +67,14 @@ runs:
       uses: actions/cache@v3
       if: inputs.skip_cache != 'true'
       with:
-        key: cache-cargo-registry-${{ runner.os }}-${{ inputs.platform }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('Cargo.lock') }}
+        key: cache-cargo-registry-${{ runner.os }}-${{ ${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('Cargo.lock') }}
         path: |
           ~/.cargo/git/db/
           ~/.cargo/registry/cache/
           ~/.cargo/registry/index/
         restore-keys: |
-          cache-cargo-registry-${{ runner.os }}-${{ inputs.platform }}-${{ steps.rs-props.outputs.rustc }}-
-          cache-cargo-registry-${{ runner.os }}-${{ inputs.platform }}-
+          cache-cargo-registry-${{ runner.os }}-${{ ${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-
+          cache-cargo-registry-${{ runner.os }}-${{ ${{ steps.rs-props.outputs.platform }}-
           cache-cargo-registry-${{ runner.os }}-
 
     - name: Cache 'cargo' build artifacts
@@ -82,13 +82,13 @@ runs:
       uses: actions/cache@v3
       if: inputs.skip_cache != 'true'
       with:
-        key: cache-cargo-build-${{ runner.os }}-${{ inputs.platform }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('src/**/*.rs', 'Cargo.toml', 'Cargo.lock', '.cargo/config.toml') }}
+        key: cache-cargo-build-${{ runner.os }}-${{ ${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('src/**/*.rs', 'Cargo.toml', 'Cargo.lock', '.cargo/config.toml') }}
         path: |
           ${{ steps.rs-props.outputs.crate_dir }}/target
           ${{ steps.rs-props.outputs.crate_dir }}/vendor
         restore-keys: |
-          cache-cargo-build-${{ runner.os }}-${{ inputs.platform }}-${{ steps.rs-props.outputs.rustc }}-
-          cache-cargo-build-${{ runner.os }}-${{ inputs.platform }}-
+          cache-cargo-build-${{ runner.os }}-${{ ${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-
+          cache-cargo-build-${{ runner.os }}-${{ ${{ steps.rs-props.outputs.platform }}-
 
     - name: Install 'cross' for cross-compilation
       if: |
