@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use typed_builder::TypedBuilder;
 
 use crate::git;
@@ -26,19 +25,17 @@ pub struct Dependency {
 
 impl Dependency {
     pub fn install(&self) -> anyhow::Result<super::Addon> {
+        let name = self.name.as_ref().map(|s| s.as_str());
+
         match &self.spec {
-            Spec::Path(p) => Addon::new(p.clone(), self.name.as_ref().map(|s| s.as_str())),
+            Spec::Path(p) => Addon::new(p.clone(), name),
             Spec::Git(s) => {
                 let checkout = git::checkout(&s)?;
-                Addon::new(checkout.path, self.name.as_ref().map(|s| s.as_str()))
+                Addon::new(checkout.path, name)
             }
             Spec::Release(release) => {
-                let (tag, target_asset) = match &release.reference {
-                    git::Reference::Release(tag, asset) => (tag, asset),
-                    _ => Err(anyhow!("invalid specification"))?,
-                };
-
-                todo!()
+                release.download()?;
+                Addon::new(release.get_path()?, name)
             }
         }
     }
