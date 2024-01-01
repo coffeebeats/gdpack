@@ -64,30 +64,29 @@ impl GitHubRelease {
 
         let target = self.get_path()?;
 
-        let mut archive = zip::ZipArchive::new(File::open(path)?)?;
+        let mut archive = zip::ZipArchive::new(File::open(&path)?)?;
 
         // See https://github.com/zip-rs/zip/blob/3e88fe66c941d411cff5cf49778ba08c2ed93801/examples/extract.rs
         for i in 0..archive.len() {
-            let mut file = archive.by_index(i).unwrap();
+            let mut file = archive.by_index(i)?;
 
-            let mut outpath = match file.enclosed_name() {
-                Some(path) => path.to_owned(),
-                None => continue,
+            let filepath = match file.enclosed_name() {
+                Some(n) => n.to_owned(),
+                None => continue, // Skip insecure filepaths.
             };
 
-            outpath = target.join(outpath);
+            let dst = target.join(filepath.as_path());
 
             if file.is_dir() {
-                std::fs::create_dir_all(&outpath).unwrap();
+                std::fs::create_dir_all(&dst)?;
             } else {
-                if let Some(p) = outpath.parent() {
+                if let Some(p) = dst.parent() {
                     if !p.exists() {
-                        std::fs::create_dir_all(p).unwrap();
+                        std::fs::create_dir_all(p)?;
                     }
                 }
 
-                let mut outfile = std::fs::File::create(&outpath).unwrap();
-                std::io::copy(&mut file, &mut outfile).unwrap();
+                std::io::copy(&mut file, &mut std::fs::File::create(&dst)?)?;
             }
 
             // Get and Set permissions
@@ -96,8 +95,7 @@ impl GitHubRelease {
                 use std::os::unix::fs::PermissionsExt;
 
                 if let Some(mode) = file.unix_mode() {
-                    std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode))
-                        .unwrap();
+                    std::fs::set_permissions(&dst, std::fs::Permissions::from_mode(mode)).unwrap();
                 }
             }
         }
