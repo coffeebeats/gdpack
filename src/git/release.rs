@@ -1,22 +1,23 @@
-use anyhow::anyhow;
+use serde::Deserialize;
+use serde::Serialize;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::PathBuf;
 use tempfile::tempdir;
+use typed_builder::TypedBuilder;
 
 use super::Database;
-use super::Reference;
 use super::Remote;
-use super::Source;
 
 /* -------------------------------------------------------------------------- */
 /*                            Struct: GitHubRelease                           */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, TypedBuilder)]
 pub struct GitHubRelease {
-    repo: Remote,
-    tag: String,
+    pub repo: Remote,
+    pub tag: String,
+    pub asset: String,
 }
 
 /* --------------------------- Impl: GitHubRelease -------------------------- */
@@ -24,44 +25,83 @@ pub struct GitHubRelease {
 impl GitHubRelease {
     /// Returns a path to the release-specific directory for the specified
     /// [super::Remote] in the `gdpack` store.
-    pub fn get_path(remote: &Remote, source: &Source) -> anyhow::Result<PathBuf> {
+    pub fn get_path(&self) -> anyhow::Result<PathBuf> {
         let mut path = super::get_store_path()?;
-        path.extend(&["asset", &Database::id(remote)?]);
+        path.extend(&["asset", &Database::id(&self.repo)?]);
 
-        let (tag, _) = match &source.reference {
-            Reference::Release(r, a) => (r, a),
-            _ => return Err(anyhow!("invalid 'Reference'; expected a release!")),
-        };
+        path.push(&self.tag);
 
-        path.push(tag);
+        let filename = PathBuf::from(&self.asset);
+        let extension = filename
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .unwrap_or("");
+
+        path.push(
+            self.asset
+                .strip_suffix(&format!(".{}", extension))
+                .unwrap_or(&self.asset),
+        );
 
         Ok(path)
     }
 
-    pub fn download_asset(&self, asset: String) -> anyhow::Result<()> {
-        println!("Installing from release: {} {}", self.tag, asset);
+    pub fn download(&self) -> anyhow::Result<()> {
         let base = self.repo.assets()?;
-        println!("Base URL: {}", base.as_str());
-        let asset_url = base.join(&format!("{}/{}", self.tag, asset))?;
-        println!("Asset URL: {}", asset_url.as_str());
+        let asset_url = base.join(&format!("{}/{}", self.tag, self.asset))?;
 
-        let path = GitHubRelease::get_path(&self.repo, self.source);
+        let tmp = tempdir()?;
 
-        let path = tmp.path().join(asset);
-        println!("Path: {}", path.to_str().unwrap());
+        let path = tmp.path().join(&self.asset);
 
         let mut file = File::create(path.as_path())?;
-        println!("Downloading to: {}", &path.to_str().unwrap_or("''"));
 
         let res = reqwest::blocking::get(asset_url)?;
-        println!("Downloaded: {}", res.status());
 
         let mut content = Cursor::new(res.bytes()?);
 
         std::io::copy(&mut content, &mut file)?;
 
-        println!("downloaded: {}", path.to_str().unwrap_or(""));
+        let target = self.get_path()?;
 
-        todo!()
+        let mut archive = zip::ZipArchive::new(File::open(path)?)?;
+
+        // See https://github.com/zip-rs/zip/blob/3e88fe66c941d411cff5cf49778ba08c2ed93801/examples/extract.rs
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i).unwrap();
+
+            let mut outpath = match file.enclosed_name() {
+                Some(path) => path.to_owned(),
+                None => continue,
+            };
+
+            outpath = target.join(outpath);
+
+            if file.is_dir() {
+                std::fs::create_dir_all(&outpath).unwrap();
+            } else {
+                if let Some(p) = outpath.parent() {
+                    if !p.exists() {
+                        std::fs::create_dir_all(p).unwrap();
+                    }
+                }
+
+                let mut outfile = std::fs::File::create(&outpath).unwrap();
+                std::io::copy(&mut file, &mut outfile).unwrap();
+            }
+
+            // Get and Set permissions
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+
+                if let Some(mode) = file.unix_mode() {
+                    std::fs::set_permissions(&outpath, std::fs::Permissions::from_mode(mode))
+                        .unwrap();
+                }
+            }
+        }
+
+        Ok(())
     }
 }

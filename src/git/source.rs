@@ -50,16 +50,15 @@ impl Remote {
 
     /// Returns a reference to the underlying [Url].
     pub fn assets(&self) -> anyhow::Result<Url> {
-        let mut u = self.0.clone();
-        u.set_path(&format!(
+        let mut assets_url = self.0.clone();
+
+        assets_url.set_path(&format!(
             "{}/{}/releases/download/",
             self.owner().ok_or(anyhow!("missing owner"))?,
             self.name().ok_or(anyhow!("missing name"))?,
         ));
 
-        println!("{}", &u);
-
-        Ok(u)
+        Ok(assets_url)
     }
 }
 
@@ -101,7 +100,6 @@ pub struct Source {
 pub enum Reference {
     Default,
     Branch(String),
-    Release(String, String),
     Rev(String),
     Tag(String),
 }
@@ -115,7 +113,6 @@ impl Reference {
     /// NOTE: This implementation is more or less copied from [Cargo's implementation](https://github.com/rust-lang/cargo/blob/rust-1.76.0/src/cargo/sources/git/utils.rs#L968-L1006).
     pub fn refspecs(&self) -> Vec<String> {
         match self {
-            Reference::Release(_, _) => unimplemented!(),
             Reference::Default => vec![String::from("+HEAD:refs/remotes/origin/HEAD")],
             Reference::Branch(b) => vec![format!("+refs/heads/{0}:refs/remotes/origin/{0}", b)],
             Reference::Tag(t) => vec![format!("+refs/tags/{0}:refs/remotes/origin/tags/{0}", t)],
@@ -141,7 +138,6 @@ impl Reference {
 impl std::fmt::Display for Reference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Reference::Release(_, _) => unimplemented!(),
             Reference::Default => f.write_str("HEAD"),
             Reference::Branch(b) => f.write_str(b),
             Reference::Rev(r) => f.write_str(r),

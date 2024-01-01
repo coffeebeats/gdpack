@@ -160,8 +160,6 @@ impl Addon {
             self.path.to_owned()
         };
 
-        println!("source: {}", &source.to_str().unwrap_or(""));
-
         if dest.as_path().exists() {
             std::fs::remove_dir_all(dest.as_path())?;
         }

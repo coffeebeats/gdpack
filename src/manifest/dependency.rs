@@ -24,7 +24,7 @@ impl From<&Dependency> for toml_edit::InlineTable {
                         .unwrap(),
                 );
             }
-            Spec::Git(s) | Spec::Release(s) => {
+            Spec::Git(s) => {
                 table.insert(
                     "git",
                     toml_edit::value(s.repo.to_string()).into_value().unwrap(),
@@ -34,10 +34,6 @@ impl From<&Dependency> for toml_edit::InlineTable {
                     git::Reference::Branch(b) => {
                         table.insert("branch", toml_edit::value(b).into_value().unwrap());
                     }
-                    git::Reference::Release(r, a) => {
-                        table.insert("asset", toml_edit::value(a).into_value().unwrap());
-                        table.insert("release", toml_edit::value(r).into_value().unwrap());
-                    }
                     git::Reference::Rev(r) => {
                         table.insert("rev", toml_edit::value(r).into_value().unwrap());
                     }
@@ -46,6 +42,10 @@ impl From<&Dependency> for toml_edit::InlineTable {
                     }
                     _ => {}
                 };
+            }
+            Spec::Release(r) => {
+                table.insert("asset", toml_edit::value(&r.asset).into_value().unwrap());
+                table.insert("release", toml_edit::value(&r.tag).into_value().unwrap());
             }
         };
 
@@ -110,11 +110,12 @@ impl TryFrom<&dyn TableLike> for Dependency {
                 return Ok(Dependency::builder().spec(spec).replace(replace).build());
             }
 
-            if let (Some(rev), Some(asset)) = (table.get("release"), table.get("asset")) {
-                let spec = Spec::Git(
-                    git::Source::builder()
+            if let (Some(tag), Some(asset)) = (table.get("release"), table.get("asset")) {
+                let spec = Spec::Release(
+                    git::GitHubRelease::builder()
                         .repo(repo.into())
-                        .reference(git::Reference::Release(rev.to_string(), asset.to_string()))
+                        .tag(tag.to_string())
+                        .asset(asset.to_string())
                         .build(),
                 );
                 return Ok(Dependency::builder().spec(spec).replace(replace).build());

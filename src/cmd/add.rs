@@ -59,24 +59,31 @@ pub struct SourceArgs {
     pub name: Option<String>,
 
     #[clap(flatten)]
-    pub commit: GitCommitArgs,
+    pub rev: GitRevArgs,
+
+    #[clap(flatten)]
+    pub release: ReleaseArgs,
 }
 
 impl From<SourceArgs> for Dependency {
     fn from(value: SourceArgs) -> Self {
         let spec = match value.uri {
             Source::Path(path) => Spec::Path(path),
-            Source::Url(repo) => {
-                let source = git::Source::builder()
-                    .repo(repo.into())
-                    .reference(value.commit.into())
-                    .build();
-
-                match &source.reference {
-                    git::Reference::Release(_, _) => Spec::Release(source),
-                    _ => Spec::Git(source),
-                }
-            }
+            Source::Url(repo) => match (value.release.release, value.release.asset) {
+                (Some(tag), Some(asset)) => Spec::Release(
+                    git::GitHubRelease::builder()
+                        .repo(repo.into())
+                        .tag(tag)
+                        .asset(asset)
+                        .build(),
+                ),
+                _ => Spec::Git(
+                    git::Source::builder()
+                        .repo(repo.into())
+                        .reference(value.rev.into())
+                        .build(),
+                ),
+            },
         };
 
         Dependency::builder()
@@ -86,12 +93,27 @@ impl From<SourceArgs> for Dependency {
     }
 }
 
-/* -------------------------- Struct: GitCommitArgs ------------------------- */
+/* --------------------------- Struct: ReleaseArgs -------------------------- */
 
-/// GitCommitArgs specifies a particular commit within a Git repository.
+#[derive(clap::Args, Debug)]
+#[group(required = false, multiple = true)]
+pub struct ReleaseArgs {
+    /// Use a git `RELEASE` version (only used with a git repository `URI`)
+    #[arg(long = "release", value_name = "RELEASE", requires = "asset")]
+    pub release: Option<String>,
+
+    /// A specific `ASSET` from a git `RELEASE` version (only used with a git
+    /// repository `URI` and `RELEASE`)
+    #[arg(long, value_name = "ASSET", requires = "release")]
+    pub asset: Option<String>,
+}
+
+/* --------------------------- Struct: GitRevArgs --------------------------- */
+
+/// GitRevArgs specifies a particular commit within a Git repository.
 #[derive(clap::Args, Debug)]
 #[group(required = false, multiple = false)]
-pub struct GitCommitArgs {
+pub struct GitRevArgs {
     /// Use a git `BRANCH` version (only used with a git repository `URI`)
     #[arg(long, value_name = "BRANCH")]
     pub branch: Option<String>,
@@ -103,49 +125,16 @@ pub struct GitCommitArgs {
     /// Use a git `TAG` version (only used with a git repository `URI`)
     #[arg(long, value_name = "TAG")]
     pub tag: Option<String>,
-
-    #[clap(flatten)]
-    pub release: ReleaseArgs,
 }
 
-#[derive(clap::Args, Debug)]
-#[group(required = false, multiple = true)]
-pub struct ReleaseArgs {
-    /// Use a git `RELEASE` version (only used with a git repository `URI`)
-    #[arg(long, value_name = "RELEASE", requires = "asset")]
-    pub release: Option<String>,
-
-    /// A specific `ASSET` from a git `RELEASE` version (only used with a git
-    /// repository `URI` and `RELEASE`)
-    #[arg(long, value_name = "ASSET", requires = "release")]
-    pub asset: Option<String>,
-}
-
-impl From<GitCommitArgs> for git::Reference {
-    fn from(value: GitCommitArgs) -> Self {
+impl From<GitRevArgs> for git::Reference {
+    fn from(value: GitRevArgs) -> Self {
         match value {
-            GitCommitArgs {
+            GitRevArgs { rev: Some(r), .. } => git::Reference::Rev(r),
+            GitRevArgs { tag: Some(t), .. } => git::Reference::Tag(t),
+            GitRevArgs {
                 branch: Some(b), ..
             } => git::Reference::Branch(b),
-            GitCommitArgs {
-                tag: None,
-                release:
-                    ReleaseArgs {
-                        asset: Some(a),
-                        release: Some(r),
-                    },
-                ..
-            } => git::Reference::Release(r, a),
-            GitCommitArgs { rev: Some(r), .. } => git::Reference::Rev(r),
-            GitCommitArgs {
-                tag: Some(t),
-                release:
-                    ReleaseArgs {
-                        release: None,
-                        asset: None,
-                    },
-                ..
-            } => git::Reference::Tag(t),
             _ => git::Reference::Default,
         }
     }
