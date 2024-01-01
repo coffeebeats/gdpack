@@ -106,11 +106,15 @@ impl TryFrom<&dyn TableLike> for Dependency {
 
             if table.len() == 3 + replace.iter().len() {
                 if let (Some(tag), Some(asset)) = (table.get("release"), table.get("asset")) {
+                    let tag = tag.to_string();
+                    let mut asset = asset.to_string();
+                    asset = asset.replace("{release}", &tag);
+
                     let spec = Spec::Release(
                         git::GitHubRelease::builder()
                             .repo(repo.into())
-                            .tag(tag.to_string())
-                            .asset(asset.to_string())
+                            .tag(tag)
+                            .asset(asset)
                             .build(),
                     );
 

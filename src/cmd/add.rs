@@ -70,13 +70,17 @@ impl From<SourceArgs> for Dependency {
         let spec = match value.uri {
             Source::Path(path) => Spec::Path(path),
             Source::Url(repo) => match (value.release.release, value.release.asset) {
-                (Some(tag), Some(asset)) => Spec::Release(
-                    git::GitHubRelease::builder()
-                        .repo(repo.into())
-                        .tag(tag)
-                        .asset(asset)
-                        .build(),
-                ),
+                (Some(tag), Some(mut asset)) => {
+                    asset = asset.replace("{release}", &tag);
+
+                    Spec::Release(
+                        git::GitHubRelease::builder()
+                            .repo(repo.into())
+                            .tag(tag)
+                            .asset(asset)
+                            .build(),
+                    )
+                }
                 _ => Spec::Git(
                     git::Source::builder()
                         .repo(repo.into())
