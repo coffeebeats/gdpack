@@ -15,6 +15,12 @@ mod database;
 
 pub use database::Database;
 
+/* ------------------------------ Mod: Release ------------------------------ */
+
+mod release;
+
+pub use release::GitHubRelease;
+
 /* ------------------------------- Mod: Source ------------------------------ */
 
 mod source;

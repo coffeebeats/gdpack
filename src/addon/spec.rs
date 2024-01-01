@@ -13,4 +13,5 @@ use crate::git;
 pub enum Spec {
     Path(PathBuf),
     Git(git::Source),
+    Release(git::GitHubRelease),
 }

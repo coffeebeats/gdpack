@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
-use crate::addon::Addon;
+use crate::addon::Dependency;
 use crate::addon::Spec;
 use crate::git;
 use crate::manifest;
@@ -53,21 +53,71 @@ pub struct SourceArgs {
     #[arg(value_name = "URI", value_parser = parse_source)]
     pub uri: Source,
 
-    /// Install the addon named `NAME` from a multi-addon dependency; if
+    /// Install the plugin named `NAME` from a multi-addon dependency; if
     /// omitted, assumed to be repository name or filepath base name.
     #[arg(short, long, value_name = "NAME")]
     pub name: Option<String>,
 
     #[clap(flatten)]
-    pub commit: GitCommitArgs,
+    pub rev: GitRevArgs,
+
+    #[clap(flatten)]
+    pub release: ReleaseArgs,
 }
 
-/* -------------------------- Struct: GitCommitArgs ------------------------- */
+impl From<SourceArgs> for Dependency {
+    fn from(value: SourceArgs) -> Self {
+        let spec = match value.uri {
+            Source::Path(path) => Spec::Path(path),
+            Source::Url(repo) => match (value.release.release, value.release.asset) {
+                (Some(tag), Some(mut asset)) => {
+                    asset = asset.replace("{release}", &tag);
 
-/// GitCommitArgs specifies a particular commit within a Git repository.
+                    Spec::Release(
+                        git::GitHubRelease::builder()
+                            .repo(repo.into())
+                            .tag(tag)
+                            .asset(asset)
+                            .build(),
+                    )
+                }
+                _ => Spec::Git(
+                    git::Source::builder()
+                        .repo(repo.into())
+                        .reference(value.rev.into())
+                        .build(),
+                ),
+            },
+        };
+
+        Dependency::builder()
+            .name(value.name.to_owned())
+            .spec(spec)
+            .build()
+    }
+}
+
+/* --------------------------- Struct: ReleaseArgs -------------------------- */
+
+#[derive(clap::Args, Debug)]
+#[group(required = false, multiple = true)]
+pub struct ReleaseArgs {
+    /// Use a git `RELEASE` version (only used with a git repository `URI`)
+    #[arg(long = "release", value_name = "RELEASE", requires = "asset")]
+    pub release: Option<String>,
+
+    /// A specific `ASSET` from a git `RELEASE` version (only used with a git
+    /// repository `URI` and `RELEASE`)
+    #[arg(long, value_name = "ASSET", requires = "release")]
+    pub asset: Option<String>,
+}
+
+/* --------------------------- Struct: GitRevArgs --------------------------- */
+
+/// GitRevArgs specifies a particular commit within a Git repository.
 #[derive(clap::Args, Debug)]
 #[group(required = false, multiple = false)]
-pub struct GitCommitArgs {
+pub struct GitRevArgs {
     /// Use a git `BRANCH` version (only used with a git repository `URI`)
     #[arg(long, value_name = "BRANCH")]
     pub branch: Option<String>,
@@ -81,46 +131,15 @@ pub struct GitCommitArgs {
     pub tag: Option<String>,
 }
 
-/* ------------------------------- Impl: Into ------------------------------- */
-
-impl From<SourceArgs> for Spec {
-    fn from(value: SourceArgs) -> Self {
-        match value.uri {
-            Source::Path(path) => Spec::Path(path),
-            Source::Url(repo) => Spec::Git(
-                git::Source::builder()
-                    .repo(repo.into())
-                    .reference(value.commit.into())
-                    .build(),
-            ),
-        }
-    }
-}
-
-impl From<GitCommitArgs> for git::Reference {
-    fn from(value: GitCommitArgs) -> Self {
+impl From<GitRevArgs> for git::Reference {
+    fn from(value: GitRevArgs) -> Self {
         match value {
-            GitCommitArgs {
-                branch: None,
-                rev: None,
-                tag: None,
-            } => git::Reference::Default,
-            GitCommitArgs {
-                branch: Some(b),
-                rev: None,
-                tag: None,
+            GitRevArgs { rev: Some(r), .. } => git::Reference::Rev(r),
+            GitRevArgs { tag: Some(t), .. } => git::Reference::Tag(t),
+            GitRevArgs {
+                branch: Some(b), ..
             } => git::Reference::Branch(b),
-            GitCommitArgs {
-                branch: None,
-                rev: Some(r),
-                tag: None,
-            } => git::Reference::Rev(r),
-            GitCommitArgs {
-                branch: None,
-                rev: None,
-                tag: Some(t),
-            } => git::Reference::Tag(t),
-            _ => unreachable!(),
+            _ => git::Reference::Default,
         }
     }
 }
@@ -134,10 +153,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let mut m = manifest::init_from(&path)?;
 
-    let addon = Addon::builder()
-        .name(args.source.name.to_owned())
-        .spec(args.source.into())
-        .build();
+    let dep = Dependency::from(args.source);
 
     let targets = match args.target.is_empty() {
         true => vec![None],
@@ -154,11 +170,13 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .dev(args.dev)
                 .target(target)
                 .build(),
-            &addon,
+            &dep,
         )?;
     }
 
     manifest::write_to(&m, &path)?;
+
+    let addon = dep.install()?;
 
     addon.install_to(path.parent().ok_or(anyhow!("missing project directory"))?)?;
 

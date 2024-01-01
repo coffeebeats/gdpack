@@ -7,12 +7,12 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use toml_edit::TableLike;
 
-use crate::addon::Addon;
+use crate::addon::Dependency;
 use crate::addon::Spec;
 use crate::git;
 
-impl From<&Addon> for toml_edit::InlineTable {
-    fn from(value: &Addon) -> Self {
+impl From<&Dependency> for toml_edit::InlineTable {
+    fn from(value: &Dependency) -> Self {
         let mut table = toml_edit::InlineTable::new();
 
         match &value.spec {
@@ -24,13 +24,13 @@ impl From<&Addon> for toml_edit::InlineTable {
                         .unwrap(),
                 );
             }
-            Spec::Git(g) => {
+            Spec::Git(s) => {
                 table.insert(
                     "git",
-                    toml_edit::value(g.repo.to_string()).into_value().unwrap(),
+                    toml_edit::value(s.repo.to_string()).into_value().unwrap(),
                 );
 
-                match &g.reference {
+                match &s.reference {
                     git::Reference::Branch(b) => {
                         table.insert("branch", toml_edit::value(b).into_value().unwrap());
                     }
@@ -43,6 +43,17 @@ impl From<&Addon> for toml_edit::InlineTable {
                     _ => {}
                 };
             }
+            Spec::Release(r) => {
+                table.insert(
+                    "git",
+                    toml_edit::value(r.repo.to_string()).into_value().unwrap(),
+                );
+
+                let asset = r.asset.replace(&r.tag.to_owned(), "{release}");
+
+                table.insert("asset", toml_edit::value(asset).into_value().unwrap());
+                table.insert("release", toml_edit::value(&r.tag).into_value().unwrap());
+            }
         };
 
         if let Some(replace) = value.replace.as_ref() {
@@ -53,7 +64,7 @@ impl From<&Addon> for toml_edit::InlineTable {
     }
 }
 
-impl TryFrom<&dyn TableLike> for Addon {
+impl TryFrom<&dyn TableLike> for Dependency {
     type Error = anyhow::Error;
 
     fn try_from(table: &dyn TableLike) -> Result<Self, Self::Error> {
@@ -73,7 +84,7 @@ impl TryFrom<&dyn TableLike> for Addon {
                 .and_then(|p| PathBuf::from_str(p).map_err(|e| anyhow!(e)))
                 .map(Spec::Path)?;
 
-            return Ok(Addon::builder().spec(spec).replace(replace).build());
+            return Ok(Dependency::builder().spec(spec).replace(replace).build());
         }
 
         if let Some(repo) = table.get("git") {
@@ -89,7 +100,26 @@ impl TryFrom<&dyn TableLike> for Addon {
                         .reference(git::Reference::Default)
                         .build(),
                 );
-                return Ok(Addon::builder().spec(spec).replace(replace).build());
+
+                return Ok(Dependency::builder().spec(spec).replace(replace).build());
+            }
+
+            if table.len() == 3 + replace.iter().len() {
+                if let (Some(tag), Some(asset)) = (table.get("release"), table.get("asset")) {
+                    let tag = tag.to_string();
+                    let mut asset = asset.to_string();
+                    asset = asset.replace("{release}", &tag);
+
+                    let spec = Spec::Release(
+                        git::GitHubRelease::builder()
+                            .repo(repo.into())
+                            .tag(tag)
+                            .asset(asset)
+                            .build(),
+                    );
+
+                    return Ok(Dependency::builder().spec(spec).replace(replace).build());
+                }
             }
 
             if table.len() > 2 + replace.iter().len() {
@@ -103,7 +133,7 @@ impl TryFrom<&dyn TableLike> for Addon {
                         .reference(git::Reference::Branch(branch.to_string()))
                         .build(),
                 );
-                return Ok(Addon::builder().spec(spec).replace(replace).build());
+                return Ok(Dependency::builder().spec(spec).replace(replace).build());
             }
 
             if let Some(rev) = table.get("rev") {
@@ -113,7 +143,7 @@ impl TryFrom<&dyn TableLike> for Addon {
                         .reference(git::Reference::Rev(rev.to_string()))
                         .build(),
                 );
-                return Ok(Addon::builder().spec(spec).replace(replace).build());
+                return Ok(Dependency::builder().spec(spec).replace(replace).build());
             }
 
             if let Some(tag) = table.get("tag") {
@@ -123,7 +153,7 @@ impl TryFrom<&dyn TableLike> for Addon {
                         .reference(git::Reference::Tag(tag.to_string()))
                         .build(),
                 );
-                return Ok(Addon::builder().spec(spec).replace(replace).build());
+                return Ok(Dependency::builder().spec(spec).replace(replace).build());
             }
         }
 

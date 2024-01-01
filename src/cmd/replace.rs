@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use std::path::PathBuf;
 
 use super::add::SourceArgs;
-use crate::addon::Addon;
+use crate::addon::Dependency;
 use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
@@ -41,15 +41,16 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let mut m = manifest::init_from(&path)?;
 
-    let name = args.addon;
-    let mut addon = Addon::builder()
-        .name(args.source.name.to_owned())
-        .replace(Some(name.to_owned()))
-        .spec(args.source.into())
-        .build();
+    let mut dep = Dependency::from(args.source);
+    dep.replace = Some(args.addon.clone());
 
-    if name == addon.package().ok_or(anyhow!("missing addon name"))? {
-        let _ = addon.replace.take();
+    if &args.addon
+        == dep
+            .package()
+            .as_ref()
+            .ok_or(anyhow!("missing addon name"))?
+    {
+        let _ = dep.replace.take();
     }
 
     let targets = match args.target.is_empty() {
@@ -67,13 +68,13 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .dev(args.dev)
                 .target(target)
                 .build(),
-            &addon,
+            &dep,
         )?;
     }
 
     manifest::write_to(&m, &path)?;
 
-    println!("replaced dependency: {}", name);
+    println!("replaced dependency: {}", args.addon);
 
     Ok(())
 }

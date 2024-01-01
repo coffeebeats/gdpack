@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use serde::Deserialize;
 use serde::Serialize;
 use typed_builder::TypedBuilder;
@@ -21,16 +22,6 @@ impl Remote {
         self.0.host().as_ref().map(Host::<&str>::to_string)
     }
 
-    /// Extracts and returns the owner of the remote repository.
-    pub fn owner(&self) -> Option<String> {
-        self.0
-            .path()
-            .trim_matches('/')
-            .split('/')
-            .next()
-            .map(str::to_owned)
-    }
-
     /// Extracts and returns the name of the remote repository.
     pub fn name(&self) -> Option<String> {
         self.0
@@ -42,9 +33,32 @@ impl Remote {
             .map(str::to_owned)
     }
 
+    /// Extracts and returns the owner of the remote repository.
+    pub fn owner(&self) -> Option<String> {
+        self.0
+            .path()
+            .trim_matches('/')
+            .split('/')
+            .next()
+            .map(str::to_owned)
+    }
+
     /// Returns a reference to the underlying [Url].
     pub fn url(&self) -> &Url {
         &self.0
+    }
+
+    /// Returns a reference to the underlying [Url].
+    pub fn assets(&self) -> anyhow::Result<Url> {
+        let mut assets_url = self.0.clone();
+
+        assets_url.set_path(&format!(
+            "{}/{}/releases/download/",
+            self.owner().ok_or(anyhow!("missing owner"))?,
+            self.name().ok_or(anyhow!("missing name"))?,
+        ));
+
+        Ok(assets_url)
     }
 }
 
