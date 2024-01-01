@@ -44,7 +44,14 @@ impl From<&Dependency> for toml_edit::InlineTable {
                 };
             }
             Spec::Release(r) => {
-                table.insert("asset", toml_edit::value(&r.asset).into_value().unwrap());
+                table.insert(
+                    "git",
+                    toml_edit::value(r.repo.to_string()).into_value().unwrap(),
+                );
+
+                let asset = r.asset.replace(&r.tag.to_owned(), "{release}");
+
+                table.insert("asset", toml_edit::value(asset).into_value().unwrap());
                 table.insert("release", toml_edit::value(&r.tag).into_value().unwrap());
             }
         };
@@ -93,7 +100,22 @@ impl TryFrom<&dyn TableLike> for Dependency {
                         .reference(git::Reference::Default)
                         .build(),
                 );
+
                 return Ok(Dependency::builder().spec(spec).replace(replace).build());
+            }
+
+            if table.len() == 3 + replace.iter().len() {
+                if let (Some(tag), Some(asset)) = (table.get("release"), table.get("asset")) {
+                    let spec = Spec::Release(
+                        git::GitHubRelease::builder()
+                            .repo(repo.into())
+                            .tag(tag.to_string())
+                            .asset(asset.to_string())
+                            .build(),
+                    );
+
+                    return Ok(Dependency::builder().spec(spec).replace(replace).build());
+                }
             }
 
             if table.len() > 2 + replace.iter().len() {
@@ -105,17 +127,6 @@ impl TryFrom<&dyn TableLike> for Dependency {
                     git::Source::builder()
                         .repo(repo.into())
                         .reference(git::Reference::Branch(branch.to_string()))
-                        .build(),
-                );
-                return Ok(Dependency::builder().spec(spec).replace(replace).build());
-            }
-
-            if let (Some(tag), Some(asset)) = (table.get("release"), table.get("asset")) {
-                let spec = Spec::Release(
-                    git::GitHubRelease::builder()
-                        .repo(repo.into())
-                        .tag(tag.to_string())
-                        .asset(asset.to_string())
                         .build(),
                 );
                 return Ok(Dependency::builder().spec(spec).replace(replace).build());
