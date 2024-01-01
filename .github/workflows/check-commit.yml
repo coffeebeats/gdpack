@@ -33,6 +33,9 @@ jobs:
         uses: tj-actions/changed-files@v41
         with:
           files: |
+            .github/actions/**
+            .github/workflows/**
+
             Cargo.toml
             Cargo.lock
 
