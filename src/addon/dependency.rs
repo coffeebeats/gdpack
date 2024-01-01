@@ -25,12 +25,12 @@ pub struct Dependency {
 
 impl Dependency {
     pub fn install(&self) -> anyhow::Result<super::Addon> {
-        let name = self.name.as_ref().map(|s| s.as_str());
+        let name = self.name.as_deref();
 
         match &self.spec {
             Spec::Path(p) => Addon::new(p.clone(), name),
             Spec::Git(s) => {
-                let checkout = git::checkout(&s)?;
+                let checkout = git::checkout(s)?;
                 Addon::new(checkout.path, name)
             }
             Spec::Release(release) => {
