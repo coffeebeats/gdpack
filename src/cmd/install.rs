@@ -1,4 +1,3 @@
-use clap::value_parser;
 use std::path::PathBuf;
 
 /* -------------------------------------------------------------------------- */
@@ -13,8 +12,8 @@ pub struct Args {
     pub production: bool,
 
     /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH", value_parser = value_parser!(PathBuf))]
-    pub project: Option<String>,
+    #[arg(short, long, value_name = "PATH")]
+    pub project: Option<PathBuf>,
 
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
