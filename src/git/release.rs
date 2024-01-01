@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fs::File;
@@ -56,7 +57,16 @@ impl GitHubRelease {
 
         let mut file = File::create(path.as_path())?;
 
-        let res = reqwest::blocking::get(asset_url)?;
+        let res = reqwest::blocking::get(asset_url.clone())?;
+
+        let status = res.status();
+        if status.is_client_error() || status.is_server_error() {
+            return Err(anyhow!(
+                "failed to fetch asset: {}: {}",
+                status,
+                asset_url.as_str()
+            ));
+        }
 
         let mut content = Cursor::new(res.bytes()?);
 
