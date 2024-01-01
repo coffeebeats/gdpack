@@ -25,5 +25,3 @@ target/
 gdpack.json
 gdpack.toml
 gdpack.yaml
-
-project/
