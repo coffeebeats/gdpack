@@ -25,9 +25,12 @@ impl Extension {
         if !path
             .as_ref()
             .extension()
-            .is_some_and(|s| s != "gdextension")
+            .is_some_and(|s| s == "gdextension")
         {
-            return Err(anyhow!("expected '*.gdextension' file"));
+            return Err(anyhow!(
+                "expected '*.gdextension' file: {}",
+                path.as_ref().to_str().unwrap_or("''")
+            ));
         }
 
         Ini::load_from_file(path.as_ref())

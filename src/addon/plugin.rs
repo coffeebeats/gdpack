@@ -22,7 +22,7 @@ impl Plugin {
             return Err(anyhow!("filepath not found"));
         }
 
-        if path.as_ref().file_name().is_some_and(|s| s != "plugin.cfg") {
+        if !path.as_ref().file_name().is_some_and(|s| s == "plugin.cfg") {
             return Err(anyhow!("expected 'plugin.cfg' file"));
         }
 
