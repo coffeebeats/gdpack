@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.0.11 (2024-01-01)
+
+## What's Changed
+* chore: configure `mdlint` to allow non-sibling repeat headings by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/51
+* feat(git): add support for downloading git dependencies by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/56
+* fix(ci): ensure targets are built before testing by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/58
+* chore(deps): bump anyhow from 1.0.76 to 1.0.77 by @dependabot in https://github.com/coffeebeats/gdpack/pull/55
+* chore(deps): bump tj-actions/changed-files from 40 to 41 by @dependabot in https://github.com/coffeebeats/gdpack/pull/54
+* fix(ci): use correct dependabot name by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/60
+* chore(deps): bump clap from 4.4.11 to 4.4.12 by @dependabot in https://github.com/coffeebeats/gdpack/pull/59
+* feat(ci): auto merge Dependabot PRs by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/61
+* feat(dependency): add support for installing from a GitHub release by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/62
+* chore(ci): update cache key to always specify platform by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/63
+* fix(ci): ensure CI flow runs if actions or workflows change by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/64
+* feat(ci): skip formatting, linting, and code coverage for non-source changes by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/65
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.10...v0.0.11
+
 ## 0.0.10 (2023-12-22)
 
 ## What's Changed
