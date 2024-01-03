@@ -29,15 +29,15 @@ impl Manifest {
         todo!()
     }
 
-    pub fn addons_mut(&self) -> Addons<'_, toml_edit::InlineTable> {
+    pub fn addons_mut(&mut self) -> AddonsMut<'_, toml_edit::InlineTable> {
         todo!()
     }
 
-    pub fn target(&self) -> Target<'_, toml_edit::Table> {
+    pub fn target(&self) -> Addons<'_, toml_edit::Table> {
         todo!()
     }
 
-    pub fn target_mut(&mut self) -> TargetMut<'_, toml_edit::Table> {
+    pub fn target_mut(&mut self) -> AddonsMut<'_, toml_edit::Table> {
         todo!()
     }
 }
@@ -79,67 +79,6 @@ impl Default for Manifest {
         doc.insert(MANIFEST_SECTION_KEY_ADDONS, toml_edit::table());
 
         Manifest(doc)
-    }
-}
-
-/* -------------------------------------------------------------------------- */
-/*                               Struct: Target                               */
-/* -------------------------------------------------------------------------- */
-
-pub struct Target<'a, T>(&'a T)
-where
-    T: toml_edit::TableLike;
-
-/* --------------------------- Impl: Dependencies --------------------------- */
-
-impl<'a, T> Dependencies for Target<'a, T>
-where
-    T: toml_edit::TableLike,
-{
-    fn has(&self, name: &str) -> bool {
-        Addons::<T>(&self.0).has(name)
-    }
-
-    fn get(&self, name: &str) -> Option<Dependency> {
-        Addons::<T>(&self.0).get(name)
-    }
-}
-
-/* -------------------------------------------------------------------------- */
-/*                              Struct: TargetMut                             */
-/* -------------------------------------------------------------------------- */
-
-pub struct TargetMut<'a, T>(&'a mut T)
-where
-    T: toml_edit::TableLike;
-
-/* --------------------------- Impl: Dependencies --------------------------- */
-
-impl<'a, T> Dependencies for TargetMut<'a, T>
-where
-    T: toml_edit::TableLike,
-{
-    fn has(&self, name: &str) -> bool {
-        Addons::<T>(&self.0).has(name)
-    }
-
-    fn get(&self, name: &str) -> Option<Dependency> {
-        Addons::<T>(&self.0).get(name)
-    }
-}
-
-/* -------------------------- Impl: DependenciesMut ------------------------- */
-
-impl<'a, T> DependenciesMut for TargetMut<'a, T>
-where
-    T: toml_edit::TableLike,
-{
-    fn add(&mut self, name: &str, dep: Dependency) -> Option<Dependency> {
-        AddonsMut::<T>(&mut self.0).add(name, dep)
-    }
-
-    fn remove(&mut self, name: &str) -> Option<Dependency> {
-        AddonsMut::<T>(&mut self.0).remove(name)
     }
 }
 
