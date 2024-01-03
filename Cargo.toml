@@ -16,6 +16,7 @@ rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.21"
 serde = { version = "1.0.193", features = ["derive"] }
 tempfile = "3.9.0"
+thiserror = "1.0.56"
 toml = "0.8.8"
 toml_edit = { version = "0.21.0", features = ["serde"] }
 typed-builder = "0.18.0"
