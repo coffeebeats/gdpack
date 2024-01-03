@@ -1,5 +1,6 @@
 mod addon;
 mod cmd;
+mod config;
 mod git;
 mod manifest;
 
