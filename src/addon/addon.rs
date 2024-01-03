@@ -4,6 +4,9 @@ use std::path::PathBuf;
 use typed_builder::TypedBuilder;
 use walkdir::WalkDir;
 
+use crate::manifest::Manifest;
+
+use super::Dependency;
 use super::Extension;
 use super::Plugin;
 
@@ -15,6 +18,8 @@ use super::Plugin;
 pub struct Addon {
     #[builder(default)]
     extension: Option<Extension>,
+    #[builder(default)]
+    manifest: Option<Manifest>,
     path: PathBuf,
     #[builder(default)]
     plugin: Option<Plugin>,
@@ -35,9 +40,14 @@ impl Addon {
         // First check if the addon has a plugin defined at the root.
         let path_plugin = path.join("plugin.cfg");
         if path_plugin.exists() {
-            let plugin = Addon::try_get_plugin(path_plugin.clone(), name)?;
+            let plugin = Addon::try_get_plugin(&path_plugin, name)?;
+
             if plugin.is_some() {
-                return Ok(Addon::builder().path(path_plugin).plugin(plugin).build());
+                return Ok(Addon::builder()
+                    .path(path_plugin)
+                    .plugin(plugin)
+                    .manifest(Addon::try_get_manifest(path, name)?)
+                    .build());
             }
         }
 
@@ -170,7 +180,7 @@ impl Addon {
         })
     }
 
-    pub fn dependencies(&self) -> anyhow::Result<Vec<Addon>> {
+    pub fn dependencies(&self) -> anyhow::Result<Vec<Dependency>> {
         todo!()
     }
 }
@@ -187,6 +197,26 @@ impl Addon {
                 .is_some_and(|want| plugin.name().as_ref().is_some_and(|got| got == want))
         {
             return Ok(Some(plugin));
+        }
+
+        Ok(None)
+    }
+
+    fn try_get_manifest(
+        path: impl AsRef<Path>,
+        name: Option<&str>,
+    ) -> anyhow::Result<Option<Manifest>> {
+        // TODO: Add support for searching ancestor directories.
+        // TODO: For Extension, Plugin, and Manifest, create a config file trait which implements common behavior
+        // like name of file, parsing, and most importantly, searching a filesystem for that file.
+
+        let m = Manifest::from_file(path)?;
+        if name.is_none()
+            || name
+                .as_ref()
+                .is_some_and(|want| m.name().as_ref().is_some_and(|got| got == want))
+        {
+            return Ok(Some(m));
         }
 
         Ok(None)
