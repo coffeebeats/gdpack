@@ -11,8 +11,10 @@ use crate::addon::Dependency;
 use super::key::MANIFEST_SECTION_KEY_ADDONS;
 
 pub const MANIFEST_FILENAME: &str = "gdpack.toml";
+pub const MANIFEST_SECTION_KEY_PROJECT: &str = "project";
 pub const MANIFEST_SECTION_KEY_TARGET: &str = "target";
 
+#[derive(Clone, Debug)]
 pub struct Manifest(Document);
 
 impl Manifest {
@@ -130,6 +132,49 @@ impl Manifest {
     }
 }
 
+impl Manifest {
+    pub fn from_file(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+        if !path.as_ref().exists() {
+            return Err(anyhow!(
+                "filepath not found: {}",
+                path.as_ref().to_str().unwrap_or("''")
+            ));
+        }
+
+        if !path
+            .as_ref()
+            .file_name()
+            .is_some_and(|s| s == MANIFEST_FILENAME)
+        {
+            return Err(anyhow!(
+                "invalid filepath: {}",
+                path.as_ref().to_str().unwrap_or("''")
+            ));
+        }
+
+        let contents = std::fs::read_to_string(path)?;
+        let mut doc = contents.parse::<Document>()?;
+
+        if !doc.contains_key(MANIFEST_SECTION_KEY_ADDONS) {
+            doc.insert(MANIFEST_SECTION_KEY_ADDONS, toml_edit::table());
+        }
+
+        Ok(Manifest(doc))
+    }
+
+    pub fn name(&self) -> Option<&str> {
+        if let Some(project) = self
+            .0
+            .get(MANIFEST_SECTION_KEY_PROJECT)
+            .and_then(|v| v.as_table_like())
+        {
+            return project.get("name").and_then(|v| v.as_str());
+        }
+
+        None
+    }
+}
+
 impl Default for Manifest {
     fn default() -> Self {
         let mut doc = Document::new();
@@ -140,28 +185,20 @@ impl Default for Manifest {
     }
 }
 
-pub fn init_from(path: &Path) -> anyhow::Result<Manifest> {
-    if !path.exists() {
+pub fn init_from(path: impl AsRef<Path>) -> anyhow::Result<Manifest> {
+    if !path.as_ref().exists() {
         return Ok(Manifest::default());
     }
 
-    if !path.is_file() {
-        return Err(anyhow!("expected path to a file"));
-    }
-
-    let contents = std::fs::read_to_string(path)?;
-    let mut doc = contents.parse::<Document>()?;
-
-    if !doc.contains_key(MANIFEST_SECTION_KEY_ADDONS) {
-        doc.insert(MANIFEST_SECTION_KEY_ADDONS, toml_edit::table());
-    }
-
-    Ok(Manifest(doc))
+    Manifest::from_file(path)
 }
 
 pub fn write_to(doc: &Manifest, path: &Path) -> anyhow::Result<()> {
     if path.exists() && (!path.is_file() || !path.ends_with(MANIFEST_FILENAME)) {
-        return Err(anyhow!("invalid filepath"));
+        return Err(anyhow!(
+            "invalid filepath: {}",
+            path.to_str().unwrap_or("''")
+        ));
     }
 
     File::create(path)?
