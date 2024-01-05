@@ -11,10 +11,10 @@ mod manifest;
 mod plugin;
 
 /* -------------------------------------------------------------------------- */
-/*                             Trait: Configurable                            */
+/*                             Trait: Persistable                             */
 /* -------------------------------------------------------------------------- */
 
-pub trait Configurable {
+pub trait Persistable {
     /// `file_ext` is the expected extension of the configuration file.
     fn file_ext<'a>() -> Option<&'a str>;
 
@@ -30,14 +30,14 @@ use std::path::Path;
 
 pub trait Parsable
 where
-    Self: Configurable + Default + Sized,
+    Self: Persistable + Default + Sized,
 {
     fn parse(contents: &str) -> Result<Self, ParsableError>;
 
     fn parse_file(path: impl AsRef<Path>) -> Result<Self, ParsableError> {
         let path = path.as_ref();
 
-        if let Some(want) = <Self as Configurable>::file_ext() {
+        if let Some(want) = <Self as Persistable>::file_ext() {
             let file_ext = path.extension().and_then(|s| s.to_str());
             if !file_ext.is_some_and(|s| s == want.strip_prefix('.').unwrap_or(want)) {
                 return Err(ParsableError::InvalidName(
@@ -46,7 +46,7 @@ where
             }
         }
 
-        if let Some(want) = <Self as Configurable>::file_name() {
+        if let Some(want) = <Self as Persistable>::file_name() {
             let file_name = path.file_name().and_then(|s| s.to_str());
             if !file_name.is_some_and(|s| s == want) {
                 return Err(ParsableError::InvalidName(
