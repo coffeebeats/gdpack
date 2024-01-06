@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
-use crate::manifest;
+use crate::config::Manifest;
+use crate::config::Persistable;
 
 const STR_USAGE: &str = "
 Use `gdpack add` to add plugin dependencies to your project.
@@ -27,7 +28,7 @@ pub struct Args {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    manifest::write_to(&manifest::Manifest::default(), &path)?;
+    Manifest::persist(&Manifest::default(), &path)?;
 
     println!("{}", STR_USAGE);
 

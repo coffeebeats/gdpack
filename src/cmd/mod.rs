@@ -36,21 +36,22 @@ pub enum Commands {
 /* -------------------------------------------------------------------------- */
 
 use anyhow::anyhow;
+use std::path::Path;
 use std::path::PathBuf;
 
-fn parse_project(project: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+fn parse_project(project: Option<impl AsRef<Path>>) -> anyhow::Result<PathBuf> {
     let path: PathBuf;
     if let Some(project) = project {
-        if !project.is_dir() {
+        if !project.as_ref().is_dir() {
             return Err(anyhow!(
                 "invalid argument: expected a directory for 'project'"
             ));
         }
 
-        path = project
+        path = project.as_ref().to_owned()
     } else {
         path = std::env::current_dir()?;
     }
 
-    Ok(path.join(crate::manifest::MANIFEST_FILENAME))
+    Ok(path.join(crate::config::Manifest::file_name()))
 }

@@ -1,9 +1,14 @@
 use anyhow::anyhow;
 use std::path::PathBuf;
 
-use super::add::SourceArgs;
 use crate::addon::Dependency;
-use crate::manifest;
+use crate::config::Manifest;
+use crate::config::ManifestKey;
+use crate::config::ManifestQuery;
+use crate::config::Parsable;
+use crate::config::Persistable;
+
+use super::add::SourceArgs;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -39,7 +44,7 @@ pub struct Args {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::init_from(&path)?;
+    let mut m = Manifest::parse_file(&path)?;
 
     let mut dep = Dependency::from(args.source);
     dep.replace = Some(args.addon.clone());
@@ -63,16 +68,25 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             return Err(anyhow!("missing target"));
         }
 
-        m.add(
-            &manifest::Key::builder()
-                .dev(args.dev)
-                .target(target)
+        let _ = m.addons_mut().insert(
+            &ManifestKey::builder()
+                .name(
+                    dep.package()
+                        .ok_or(anyhow!("missing dependency name"))?
+                        .to_owned(),
+                )
+                .query(
+                    ManifestQuery::builder()
+                        .dev(args.dev)
+                        .target(target)
+                        .build(),
+                )
                 .build(),
             &dep,
-        )?;
+        );
     }
 
-    manifest::write_to(&m, &path)?;
+    m.persist(&path)?;
 
     println!("replaced dependency: {}", args.addon);
 
