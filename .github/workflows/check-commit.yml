@@ -171,17 +171,25 @@ jobs:
         if: needs.changes.outputs.has_source_change == 'true'
         run: cargo +stable install cargo-llvm-cov --locked
 
-      - name: Test source code
+      - name: Test source code (with coverage)
+        if: needs.changes.outputs.has_source_change == 'true'
         run: |
-          CMD=$([[ "${{ needs.changes.outputs.has_source_change }}" == 'true' ]] && echo "llvm-cov" || echo test)
-
-          cargo "$CMD" \
+          cargo llvm-cov \
             --all-features \
             --all-targets \
             --frozen \
             --release \
             --codecov \
             --output-path codecov.json
+
+      - name: Test source code
+        if: needs.changes.outputs.has_source_change != 'true'
+        run: |
+          cargo test \
+            --all-features \
+            --all-targets \
+            --frozen \
+            --release
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
