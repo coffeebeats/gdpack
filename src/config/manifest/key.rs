@@ -28,32 +28,32 @@ impl<'a> Key<'a> {
     /// Retrieve the [`toml_edit::Item`] for the addon specified by the [`Key`],
     /// if it exists.
     pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
-        self.query.get(doc).and_then(|t| t.get(&self.name))
+        self.query.get(doc).and_then(|t| t.get(self.name))
     }
 
     /// Retrieve a mutable [`toml_edit::Item`] for the addon specified by the
     /// [`Key`], if it exists.
     #[allow(dead_code)]
     pub(super) fn get_mut<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
-        self.query.get_mut(doc).and_then(|t| t.get_mut(&self.name))
+        self.query.get_mut(doc).and_then(|t| t.get_mut(self.name))
     }
 
     /// Insert the provided [`toml_edit::Item`] into the provided
     /// [`toml_edit::Document`] under the path corresponding to the [`Key`].
-    pub(super) fn insert<'b>(&self, doc: &'b mut Document, value: Item) -> Option<Item> {
+    pub(super) fn insert(&self, doc: &mut Document, value: Item) -> Option<Item> {
         self.query
             .insert(doc)
             .and_then(|t| t.as_table_like_mut())
-            .and_then(|t| t.insert(&self.name, value))
+            .and_then(|t| t.insert(self.name, value))
     }
 
     /// Remove the [`toml_edit::Item`] at the path corresponding to [`Key`] from
     /// the provided [`toml_edit::Document`] and return it, if it exists.
-    pub(super) fn remove<'b>(&self, doc: &'b mut Document) -> Option<Item> {
+    pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
         self.query
             .get_mut(doc)
             .and_then(|t| t.as_table_like_mut())
-            .and_then(|t| t.remove(&self.name))
+            .and_then(|t| t.remove(self.name))
     }
 }
 
@@ -100,7 +100,7 @@ impl Query {
         }
     }
 
-    pub(super) fn is_empty<'a>(&self, doc: &'a Document) -> bool {
+    pub(super) fn is_empty(&self, doc: &Document) -> bool {
         self.get(doc)
             .and_then(|v| v.as_table_like())
             .map(|t| t.is_empty())
@@ -140,7 +140,7 @@ impl Query {
         }
     }
 
-    pub(super) fn remove<'a>(&self, doc: &'a mut Document) -> Option<Item> {
+    pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
         match self.target.as_ref() {
             None => {
                 let prev = doc.remove(self.key_addons());

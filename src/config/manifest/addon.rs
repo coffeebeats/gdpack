@@ -30,7 +30,7 @@ impl<'a> Addons<'a> {
     pub fn get(&self, name: &str) -> Option<Dependency> {
         let key = Key::builder().query(&self.query).name(name).build();
 
-        key.get(&self.document).and_then(|t| {
+        key.get(self.document).and_then(|t| {
             t.to_string()
                 .parse::<ValueDeserializer>()
                 .and_then(Dependency::deserialize)
@@ -83,7 +83,7 @@ impl<'a> AddonsMut<'a> {
     /// Immutably look up the [`Dependency`] with the specified `name`.
     pub fn get(&self, name: &str) -> Option<Dependency> {
         Addons::builder()
-            .document(&self.document)
+            .document(self.document)
             .query(self.query.clone())
             .build()
             .get(name)
@@ -97,7 +97,7 @@ impl<'a> AddonsMut<'a> {
         let prev = dep
             .serialize(ValueSerializer::new())
             .ok()
-            .and_then(|v| key.insert(&mut self.document, toml_edit::value(v)))?;
+            .and_then(|v| key.insert(self.document, toml_edit::value(v)))?;
 
         prev.to_string()
             .parse::<ValueDeserializer>()
@@ -111,13 +111,13 @@ impl<'a> AddonsMut<'a> {
         let key = Key::builder().query(&self.query).name(name).build();
 
         let out = key
-            .remove(&mut self.document)
+            .remove(self.document)
             .map(|v| v.to_string())
             .and_then(|s| s.parse::<ValueDeserializer>().ok())
             .and_then(|de| Dependency::deserialize(de).ok());
 
-        if key.query.is_empty(&self.document) {
-            key.query.remove(&mut self.document);
+        if key.query.is_empty(self.document) {
+            key.query.remove(self.document);
         }
 
         out
