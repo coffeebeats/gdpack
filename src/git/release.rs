@@ -16,7 +16,9 @@ use super::Remote;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, TypedBuilder)]
 pub struct GitHubRelease {
+    #[serde(rename = "git")]
     pub repo: Remote,
+    #[serde(rename = "release")]
     pub tag: String,
     pub asset: String,
 }

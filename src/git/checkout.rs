@@ -13,7 +13,7 @@ use super::Source;
 /// reference to the version-specific repository.
 pub fn checkout(source: &Source) -> anyhow::Result<Checkout> {
     let db = Database::try_from(source)?;
-    let checkout = db.checkout(&source.reference)?;
+    let checkout = db.checkout(source.reference.as_ref())?;
 
     Ok(checkout)
 }
@@ -26,7 +26,7 @@ pub fn checkout(source: &Source) -> anyhow::Result<Checkout> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Checkout {
     pub path: PathBuf,
-    pub reference: Reference,
+    pub reference: Option<Reference>,
 }
 
 /* ----------------------------- Impl: Checkout ----------------------------- */
@@ -39,7 +39,13 @@ impl Checkout {
     pub fn get_path(repo: &git2::Repository, source: &Source) -> anyhow::Result<PathBuf> {
         let mut path = super::get_store_path()?;
 
-        let obj = repo.revparse_single(&source.reference.to_string())?;
+        let obj = repo.revparse_single(
+            &source
+                .reference
+                .as_ref()
+                .map(Reference::to_string)
+                .unwrap_or(String::from("HEAD")),
+        )?;
 
         let short_id = obj
             .short_id()

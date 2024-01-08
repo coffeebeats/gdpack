@@ -3,10 +3,13 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
-use crate::addon::Dependency;
-use crate::addon::Spec;
+use crate::config::manifest::Dependency;
+use crate::config::manifest::Manifest;
+use crate::config::manifest::Query;
+use crate::config::manifest::Source;
+use crate::config::Parsable;
+use crate::config::Persistable;
 use crate::git;
-use crate::manifest;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -50,10 +53,10 @@ pub struct SourceArgs {
     ///        directory/repository, in that order. Note that in the latter
     ///        case (ii), `gdpack` will only install non-Git and non-`.`-
     ///        prefixed files into the project.
-    #[arg(value_name = "URI", value_parser = parse_source)]
-    pub uri: Source,
+    #[arg(value_name = "URI", value_parser = Uri::parse)]
+    pub uri: Uri,
 
-    /// Install the plugin named `NAME` from a multi-addon dependency; if
+    /// Install the addon named `NAME` from a multi-addon dependency; if
     /// omitted, assumed to be repository name or filepath base name.
     #[arg(short, long, value_name = "NAME")]
     pub name: Option<String>,
@@ -67,13 +70,13 @@ pub struct SourceArgs {
 
 impl From<SourceArgs> for Dependency {
     fn from(value: SourceArgs) -> Self {
-        let spec = match value.uri {
-            Source::Path(path) => Spec::Path(path),
-            Source::Url(repo) => match (value.release.release, value.release.asset) {
+        let source = match value.uri {
+            Uri::Path(path) => path.into(),
+            Uri::Url(repo) => match (value.release.release, value.release.asset) {
                 (Some(tag), Some(mut asset)) => {
                     asset = asset.replace("{release}", &tag);
 
-                    Spec::Release(
+                    Source::Release(
                         git::GitHubRelease::builder()
                             .repo(repo.into())
                             .tag(tag)
@@ -81,18 +84,18 @@ impl From<SourceArgs> for Dependency {
                             .build(),
                     )
                 }
-                _ => Spec::Git(
+                _ => Source::Git(
                     git::Source::builder()
                         .repo(repo.into())
-                        .reference(value.rev.into())
+                        .reference(<Option<git::Reference>>::from(value.rev))
                         .build(),
                 ),
             },
         };
 
         Dependency::builder()
-            .name(value.name.to_owned())
-            .spec(spec)
+            .addon(value.name.to_owned())
+            .source(source)
             .build()
     }
 }
@@ -131,15 +134,15 @@ pub struct GitRevArgs {
     pub tag: Option<String>,
 }
 
-impl From<GitRevArgs> for git::Reference {
+impl From<GitRevArgs> for Option<git::Reference> {
     fn from(value: GitRevArgs) -> Self {
         match value {
-            GitRevArgs { rev: Some(r), .. } => git::Reference::Rev(r),
-            GitRevArgs { tag: Some(t), .. } => git::Reference::Tag(t),
+            GitRevArgs { rev: Some(r), .. } => Some(git::Reference::Rev(r)),
+            GitRevArgs { tag: Some(t), .. } => Some(git::Reference::Tag(t)),
             GitRevArgs {
                 branch: Some(b), ..
-            } => git::Reference::Branch(b),
-            _ => git::Reference::Default,
+            } => Some(git::Reference::Branch(b)),
+            _ => None,
         }
     }
 }
@@ -151,7 +154,7 @@ impl From<GitRevArgs> for git::Reference {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::init_from(&path)?;
+    let mut m = Manifest::parse_file(&path)?;
 
     let dep = Dependency::from(args.source);
 
@@ -165,57 +168,77 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             return Err(anyhow!("missing target"));
         }
 
-        m.add(
-            &manifest::Key::builder()
-                .dev(args.dev)
-                .target(target)
-                .build(),
-            &dep,
-        )?;
+        if let Some(_prev) = m
+            .addons_mut(Query::builder().dev(args.dev).target(target).build())
+            .insert(
+                &dep.package()
+                    .ok_or(anyhow!("missing dependency name"))?
+                    .to_owned(),
+                &dep,
+            )
+        {}
     }
 
-    manifest::write_to(&m, &path)?;
+    m.persist(&path)?;
 
-    let addon = dep.install()?;
-
-    addon.install_to(path.parent().ok_or(anyhow!("missing project directory"))?)?;
+    println!(
+        "added dependency: {}",
+        dep.package().unwrap_or(String::from("unknown"))
+    );
 
     Ok(())
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                Enum: Source                                */
+/*                                  Enum: Uri                                 */
 /* -------------------------------------------------------------------------- */
 
-/// Source contains a specification of where the addon source code is located.
+/// Uri contains a specification of where the addon source code is located.
 #[derive(Clone, Debug)]
-pub enum Source {
+pub enum Uri {
     Url(Url),
     Path(PathBuf),
 }
 
-/* ------------------------- Function: parse_source ------------------------- */
+/* -------------------------------- Impl: Uri ------------------------------- */
 
-/// parse_source attempts to parse either a URL or a filepath from the provided
-/// string.
-pub(in crate::cmd) fn parse_source(s: &str) -> Result<Source, anyhow::Error> {
-    // NOTE: Parse a `Url` first as it's more specific than a `PathBuf`.
-    if let Ok(u) = Url::parse(s) {
-        return Ok(Source::Url(u));
-    }
-
-    // TODO: Properly identify the plugin path according to documentation.
-    if let Ok(p) = PathBuf::from_str(s) {
-        if !p.exists() {
-            return Err(anyhow!("path does not exist: {}", s));
+impl Uri {
+    /// Parse either a [`Url`] or a [`PathBuf`] from the provided [`str`].
+    pub fn parse(s: &str) -> Result<Uri, UriError> {
+        // NOTE: Parse a `Url` first as it's more specific than a `PathBuf`.
+        if let Ok(u) = Url::parse(s) {
+            return Ok(Uri::Url(u));
         }
 
-        if !p.is_dir() {
-            return Err(anyhow!("path is not a directory: {}", s));
+        // TODO: Properly identify the plugin path according to documentation.
+        if let Ok(p) = PathBuf::from_str(s) {
+            if !p.exists() {
+                return Err(UriError::NotFound(s.to_owned()));
+            }
+
+            if !p.is_dir() {
+                return Err(UriError::NotADir(s.to_owned()));
+            }
+
+            return Ok(Uri::Path(p));
         }
 
-        return Ok(Source::Path(p));
+        Err(UriError::Invalid(s.to_owned()))
     }
+}
 
-    Err(anyhow!("could not parse source: {}", s))
+/* ----------------------------- Enum: UriError ----------------------------- */
+
+#[derive(Clone, Debug, thiserror::Error)]
+pub enum UriError {
+    #[error("could not parse uri: {0}")]
+    Invalid(String),
+    #[error("path is not a directory: {0}")]
+    NotADir(String),
+    #[error("path does not exist: {0}")]
+    NotFound(String),
+    #[error(transparent)]
+    Path(<PathBuf as FromStr>::Err),
+    #[error(transparent)]
+    Url(url::ParseError),
 }

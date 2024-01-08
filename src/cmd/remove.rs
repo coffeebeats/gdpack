@@ -1,7 +1,10 @@
 use anyhow::anyhow;
 use std::path::PathBuf;
 
-use crate::manifest;
+use crate::config::manifest::Manifest;
+use crate::config::manifest::Query;
+use crate::config::Parsable;
+use crate::config::Persistable;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -35,30 +38,29 @@ pub struct Args {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    let mut m = manifest::init_from(&path)?;
+    let mut m = Manifest::parse_file(&path)?;
 
     let targets = match args.target.is_empty() {
         true => vec![None],
         false => args.target.into_iter().map(Some).collect(),
     };
 
+    let name = args.name.as_str();
+
     for target in targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
             return Err(anyhow!("missing target"));
         }
 
-        m.remove(
-            &manifest::Key::builder()
-                .dev(args.dev)
-                .target(target)
-                .build(),
-            &args.name,
-        )?;
+        if let Some(_prev) = m
+            .addons_mut(Query::builder().dev(args.dev).target(target).build())
+            .remove(name)
+        {}
     }
 
-    manifest::write_to(&m, &path)?;
+    m.persist(&path)?;
 
-    println!("removed dependency: {}", &args.name);
+    println!("removed dependency: {}", args.name);
 
     Ok(())
 }

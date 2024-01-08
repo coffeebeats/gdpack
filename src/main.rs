@@ -1,7 +1,7 @@
 mod addon;
 mod cmd;
+mod config;
 mod git;
-mod manifest;
 
 use anyhow::Result;
 use clap::Parser;
