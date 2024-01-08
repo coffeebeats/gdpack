@@ -63,9 +63,13 @@ impl Dependency {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 #[serde(untagged, rename_all = "lowercase")]
 pub enum Source {
+    // NOTE: `Source::Release` must come before `Source::Git` because of their
+    // shared use of the `git` property during serialization. `Source::Release`
+    // is more specific and will only match for releases, whereas `Source::Git`
+    // will match on any usage of the `git` within the serialized data.
+    Release(git::GitHubRelease),
     Git(git::Source),
     Path { path: PathBuf },
-    Release(git::GitHubRelease),
 }
 
 /* ------------------------- Impl: Into<Dependency> ------------------------- */

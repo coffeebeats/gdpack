@@ -205,7 +205,7 @@ mod tests {
 
     /* ------------------------- Test: Serialization ------------------------ */
 
-    macro_rules! test_ser_spec {
+    macro_rules! test_ser_source {
         ($name:ident, $input:expr, $want:expr$(,)?) => {
             #[test]
             fn $name() {
@@ -219,14 +219,14 @@ mod tests {
         };
     }
 
-    test_ser_spec!(
-        test_ser_spec_local_path,
-        PathBuf::from("a/b/c"),
+    test_ser_source!(
+        test_ser_source_local_path,
+        Source::from(PathBuf::from("a/b/c")),
         r#"{ path = "a/b/c" }"#
     );
 
-    test_ser_spec!(
-        test_ser_spec_repo_with_default_branch,
+    test_ser_source!(
+        test_ser_source_repo_with_default_branch,
         Source::Git(
             git::Source::builder()
                 .repo(
@@ -239,8 +239,8 @@ mod tests {
         r#"{ git = "https://github.com/" }"#,
     );
 
-    test_ser_spec!(
-        test_ser_spec_repo_with_branch,
+    test_ser_source!(
+        test_ser_source_repo_with_branch,
         Source::Git(
             git::Source::builder()
                 .reference(Some(git::Reference::Branch(String::from("branch"))))
@@ -254,8 +254,8 @@ mod tests {
         r#"{ branch = "branch", git = "https://github.com/" }"#,
     );
 
-    test_ser_spec!(
-        test_ser_spec_repo_with_tag,
+    test_ser_source!(
+        test_ser_source_repo_with_tag,
         Source::Git(
             git::Source::builder()
                 .reference(Some(git::Reference::Tag(String::from("tag"))))
@@ -269,8 +269,8 @@ mod tests {
         r#"{ tag = "tag", git = "https://github.com/" }"#,
     );
 
-    test_ser_spec!(
-        test_ser_spec_repo_with_rev,
+    test_ser_source!(
+        test_ser_source_repo_with_rev,
         Source::Git(
             git::Source::builder()
                 .reference(Some(git::Reference::Rev(String::from("rev"))))
@@ -284,8 +284,8 @@ mod tests {
         r#"{ rev = "rev", git = "https://github.com/" }"#
     );
 
-    test_ser_spec!(
-        test_ser_spec_repo_with_release,
+    test_ser_source!(
+        test_ser_source_repo_with_release,
         Source::Release(
             git::GitHubRelease::builder()
                 .tag(String::from("tag"))
@@ -310,7 +310,7 @@ mod tests {
 
         assert_eq!(
             dep.serialize(ValueSerializer::new())?.to_string(),
-            r#"{ name = "abc", replace = "def", path = "a/b/c" }"#
+            r#"{ addon = "abc", replace = "def", path = "a/b/c" }"#
         );
 
         Ok(())
@@ -318,7 +318,7 @@ mod tests {
 
     /* ------------------------ Test: Deserialization ----------------------- */
 
-    macro_rules! test_de_spec {
+    macro_rules! test_de_source {
         ($name:ident, $input:expr, $want:expr) => {
             #[test]
             fn $name() {
@@ -332,14 +332,14 @@ mod tests {
         };
     }
 
-    test_de_spec!(
-        test_de_spec_local_path,
+    test_de_source!(
+        test_de_source_local_path,
         r#"{ path = "a/b/c" }"#,
         Source::from(PathBuf::from("a/b/c"))
     );
 
-    test_de_spec!(
-        test_de_spec_repo_with_default_branch,
+    test_de_source!(
+        test_de_source_repo_with_default_branch,
         r#"{ git = "https://github.com" }"#,
         Source::Git(
             git::Source::builder()
@@ -352,8 +352,8 @@ mod tests {
         )
     );
 
-    test_de_spec!(
-        test_de_spec_repo_with_branch,
+    test_de_source!(
+        test_de_source_repo_with_branch,
         r#"{ git = "https://github.com", branch = "branch" }"#,
         Source::Git(
             git::Source::builder()
@@ -367,8 +367,8 @@ mod tests {
         )
     );
 
-    test_de_spec!(
-        test_de_spec_repo_with_tag,
+    test_de_source!(
+        test_de_source_repo_with_tag,
         r#"{ git = "https://github.com", tag = "tag" }"#,
         Source::Git(
             git::Source::builder()
@@ -382,8 +382,8 @@ mod tests {
         )
     );
 
-    test_de_spec!(
-        test_de_spec_repo_with_rev,
+    test_de_source!(
+        test_de_source_repo_with_rev,
         r#"{ git = "https://github.com", rev = "rev" }"#,
         Source::Git(
             git::Source::builder()
@@ -397,8 +397,8 @@ mod tests {
         )
     );
 
-    test_de_spec!(
-        test_de_spec_repo_with_release,
+    test_de_source!(
+        test_de_source_repo_with_release,
         r#"{ git = "https://github.com", release = "tag", asset = "asset" }"#,
         Source::Release(
             git::GitHubRelease::builder()
@@ -416,7 +416,7 @@ mod tests {
     #[test]
     fn test_dependency_deserializes_with_attrs_to_table() -> Result<(), toml_edit::de::Error> {
         assert_eq!(
-            r#"{ git = "https://github.com", name = "abc", replace = "def" }"#
+            r#"{ addon = "abc", git = "https://github.com", replace = "def" }"#
                 .parse::<ValueDeserializer>()
                 .and_then(Dependency::deserialize)?,
             Dependency::builder()
