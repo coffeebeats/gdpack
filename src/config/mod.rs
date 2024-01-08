@@ -1,22 +1,16 @@
 /* ------------------------------- Mod: gdext ------------------------------- */
 
-mod gdext;
-
-pub use gdext::Extension;
+pub mod gdext;
 
 /* ------------------------------ Mod: manifest ----------------------------- */
 
 pub mod manifest;
 
-pub use manifest::Key as ManifestKey;
 pub use manifest::Manifest;
-pub use manifest::Query as ManifestQuery;
 
 /* ------------------------------- Mod: plugin ------------------------------ */
 
-mod plugin;
-
-pub use plugin::Plugin;
+pub mod plugin;
 
 /* -------------------------------------------------------------------------- */
 /*                            Trait: Configuration                            */

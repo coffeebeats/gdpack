@@ -9,11 +9,13 @@ pub use addon::AddonsMut;
 
 mod dependency;
 
+pub use dependency::Dependency;
+pub use dependency::Source;
+
 /* -------------------------------- Mod: key -------------------------------- */
 
 mod key;
 
-pub use key::Key;
 pub use key::Query;
 
 /* -------------------------------------------------------------------------- */
@@ -29,6 +31,9 @@ use super::ParsableError;
 
 const MANIFEST_FILENAME: &str = "gdpack.toml";
 
+/// A wrapper around a formatted [`toml_edit::Document`] that provides
+/// operations to manage [`Dependency`] and configuration information for a
+/// Godot project.
 #[derive(Clone, Debug)]
 pub struct Manifest(Document);
 
@@ -37,16 +42,23 @@ pub struct Manifest(Document);
 impl Manifest {
     /* --------------------------- Methods: Public -------------------------- */
 
+    /// The file name associated with [`Manifest`] files.
     pub fn file_name() -> &'static str {
         MANIFEST_FILENAME
     }
 
-    pub fn addons(&self) -> Addons {
-        Addons(&self.0)
+    /// Returns an _immutable_ view of the addons recorded for the provided
+    /// [`Query`].
+    pub fn addons(&self, query: Query) -> Addons {
+        Addons::builder().document(&self.0).query(query).build()
     }
 
-    pub fn addons_mut(&mut self) -> AddonsMut {
-        AddonsMut(&mut self.0)
+    /// Returns a mutable view of the addons recorded for the provided [`Query`].
+    pub fn addons_mut(&mut self, query: Query) -> AddonsMut {
+        AddonsMut::builder()
+            .document(&mut self.0)
+            .query(query)
+            .build()
     }
 }
 
@@ -82,13 +94,21 @@ impl From<&Manifest> for String {
     }
 }
 
+/* -------------------------- Impl: From<Document> -------------------------- */
+
+impl From<Document> for Manifest {
+    fn from(value: Document) -> Self {
+        Manifest(value)
+    }
+}
+
 /* ------------------------------ Impl: Default ----------------------------- */
 
 impl Default for Manifest {
     fn default() -> Self {
-        let doc = Document::new();
+        let mut doc = Document::new();
 
-        // TODO: Define what the default manifest looks like.
+        doc.insert(key::MANIFEST_SECTION_ADDONS, toml_edit::table());
 
         Manifest(doc)
     }
