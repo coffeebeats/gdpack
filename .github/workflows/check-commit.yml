@@ -166,7 +166,24 @@ jobs:
         with:
           profile: release
 
+      # See https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#installation.
+      - name: Install 'cargo-llvm-cov'
+        if: needs.changes.outputs.has_source_change == 'true'
+        run: cargo +stable install cargo-llvm-cov --locked
+
+      - name: Test source code (with coverage)
+        if: needs.changes.outputs.has_source_change == 'true'
+        run: |
+          cargo llvm-cov \
+            --all-features \
+            --all-targets \
+            --frozen \
+            --release \
+            --codecov \
+            --output-path codecov.json
+
       - name: Test source code
+        if: needs.changes.outputs.has_source_change != 'true'
         run: |
           cargo test \
             --all-features \
@@ -179,6 +196,7 @@ jobs:
         if: needs.changes.outputs.has_source_change == 'true'
         with:
           fail_ci_if_error: true
+          files: codecov.json
           flags: gdpack
           token: ${{ secrets.CODECOV_TOKEN }}
 
