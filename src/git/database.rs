@@ -26,15 +26,19 @@ impl Database {
 
     /// Checks out the specific [Reference] into the appropriate "checkout"
     /// directory in the `gdpack` store.
-    pub fn checkout(&self, reference: &Reference) -> anyhow::Result<Checkout> {
+    pub fn checkout(&self, reference: Option<&Reference>) -> anyhow::Result<Checkout> {
         let path_db = Database::get_path(&self.0)?;
 
         let repo = git2::Repository::open(&path_db)?;
 
-        let obj = repo.revparse_single(&reference.to_string())?;
+        let obj = repo.revparse_single(
+            &reference
+                .map(Reference::to_string)
+                .unwrap_or(String::from("HEAD")),
+        )?;
 
         let source = &Source::builder()
-            .reference(Reference::Rev(obj.id().to_string()))
+            .reference(Some(Reference::Rev(obj.id().to_string())))
             .repo(self.0.clone())
             .build();
 
@@ -76,7 +80,7 @@ impl Database {
 
     /// Fetches the latest git [refspecs](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec)
     /// in the "database" bare clone for the provided [Reference].
-    pub fn fetch_latest(&self, reference: &Reference) -> anyhow::Result<()> {
+    pub fn fetch_latest(&self, reference: Option<&Reference>) -> anyhow::Result<()> {
         println!(
             "fetching latest for dependency: {}",
             self.0.name().expect("missing remote name")
@@ -89,7 +93,7 @@ impl Database {
         let mut remote = repo.remote_anonymous(&self.0.to_string())?;
 
         remote.fetch(
-            &reference.refspecs(),
+            &Reference::refspecs(reference),
             Some(
                 git2::FetchOptions::default()
                     .prune(git2::FetchPrune::On)
@@ -170,7 +174,7 @@ fn clone_bare(source: &Source, path: impl AsRef<Path>) -> anyhow::Result<()> {
         .arg(source.repo.to_string())
         .arg("--no-checkout");
 
-    if let Reference::Tag(_) = source.reference {
+    if let Some(Reference::Tag(_)) = source.reference {
         clone_cmd.arg("--tags");
     }
 

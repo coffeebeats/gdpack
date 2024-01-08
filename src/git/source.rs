@@ -66,7 +66,7 @@ impl Remote {
 
 impl std::fmt::Display for Remote {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.0.as_str())
+        f.write_str(self.0.as_str().trim_end_matches('/'))
     }
 }
 
@@ -86,7 +86,9 @@ impl From<Url> for Remote {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, TypedBuilder)]
 pub struct Source {
     #[serde(flatten)]
-    pub reference: Reference,
+    #[builder(default)]
+    pub reference: Option<Reference>,
+    #[serde(rename = "git")]
     pub repo: Remote,
 }
 
@@ -96,9 +98,8 @@ pub struct Source {
 
 /// Specifies a particular revision in a git repository.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum Reference {
-    Default,
     Branch(String),
     Rev(String),
     Tag(String),
@@ -111,24 +112,30 @@ impl Reference {
     /// to fetch when checking out a specific git [Reference].
     ///
     /// NOTE: This implementation is more or less copied from [Cargo's implementation](https://github.com/rust-lang/cargo/blob/rust-1.76.0/src/cargo/sources/git/utils.rs#L968-L1006).
-    pub fn refspecs(&self) -> Vec<String> {
-        match self {
-            Reference::Default => vec![String::from("+HEAD:refs/remotes/origin/HEAD")],
-            Reference::Branch(b) => vec![format!("+refs/heads/{0}:refs/remotes/origin/{0}", b)],
-            Reference::Tag(t) => vec![format!("+refs/tags/{0}:refs/remotes/origin/tags/{0}", t)],
-            Reference::Rev(r) => {
-                if r.starts_with("refs/") {
-                    vec![format!("+{0}:{0}", r)]
-                } else if is_commit_hash_like(r) {
-                    vec![format!("+{0}:refs/commit/{0}", r)]
-                } else {
-                    // Just fetch everything and hope it's found.
-                    vec![
-                        String::from("+refs/heads/*:refs/remotes/origin/*"),
-                        String::from("+HEAD:refs/remotes/origin/HEAD"),
-                    ]
+    pub fn refspecs(r: Option<&Reference>) -> Vec<String> {
+        match r {
+            None => vec![String::from("+HEAD:refs/remotes/origin/HEAD")],
+            Some(r) => match r {
+                Reference::Branch(b) => {
+                    vec![format!("+refs/heads/{0}:refs/remotes/origin/{0}", b)]
                 }
-            }
+                Reference::Tag(t) => {
+                    vec![format!("+refs/tags/{0}:refs/remotes/origin/tags/{0}", t)]
+                }
+                Reference::Rev(r) => {
+                    if r.starts_with("refs/") {
+                        vec![format!("+{0}:{0}", r)]
+                    } else if is_commit_hash_like(r) {
+                        vec![format!("+{0}:refs/commit/{0}", r)]
+                    } else {
+                        // Just fetch everything and hope it's found.
+                        vec![
+                            String::from("+refs/heads/*:refs/remotes/origin/*"),
+                            String::from("+HEAD:refs/remotes/origin/HEAD"),
+                        ]
+                    }
+                }
+            },
         }
     }
 }
@@ -138,7 +145,6 @@ impl Reference {
 impl std::fmt::Display for Reference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Reference::Default => f.write_str("HEAD"),
             Reference::Branch(b) => f.write_str(b),
             Reference::Rev(r) => f.write_str(r),
             Reference::Tag(t) => f.write_str(t),

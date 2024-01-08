@@ -1,9 +1,8 @@
 use anyhow::anyhow;
 use std::path::PathBuf;
 
-use crate::config::Manifest;
-use crate::config::ManifestKey;
-use crate::config::ManifestQuery;
+use crate::config::manifest::Manifest;
+use crate::config::manifest::Query;
 use crate::config::Parsable;
 use crate::config::Persistable;
 
@@ -46,27 +45,22 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         false => args.target.into_iter().map(Some).collect(),
     };
 
+    let name = args.name.as_str();
+
     for target in targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
             return Err(anyhow!("missing target"));
         }
 
-        let _ = m.addons_mut().remove(
-            &ManifestKey::builder()
-                .name(args.name.clone())
-                .query(
-                    ManifestQuery::builder()
-                        .dev(args.dev)
-                        .target(target)
-                        .build(),
-                )
-                .build(),
-        );
+        if let Some(_prev) = m
+            .addons_mut(Query::builder().dev(args.dev).target(target).build())
+            .remove(name)
+        {}
     }
 
     m.persist(&path)?;
 
-    println!("removed dependency: {}", &args.name);
+    println!("removed dependency: {}", args.name);
 
     Ok(())
 }
