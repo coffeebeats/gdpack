@@ -1,40 +1,31 @@
 use std::path::Path;
 use std::path::PathBuf;
-use typed_builder::TypedBuilder;
 
-use crate::config::gdext::Extension;
 use crate::config::manifest::Dependency;
-use crate::config::manifest::Manifest;
-use crate::config::plugin::Plugin;
+use crate::config::manifest::Source;
+
+use super::Installable;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Addon                               */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Clone, Debug, TypedBuilder)]
-pub struct Addon {
-    #[allow(dead_code)]
-    #[builder(default)]
-    extension: Option<Extension>,
-    #[allow(dead_code)]
-    #[builder(default)]
-    manifest: Option<Manifest>,
-    #[allow(dead_code)]
-    path: PathBuf,
-    #[allow(dead_code)]
-    #[builder(default)]
-    plugin: Option<Plugin>,
-}
+#[derive(Clone, Debug)]
+pub struct Addon(PathBuf);
 
 /* ------------------------------- Impl: Addon ------------------------------ */
 
 impl Addon {
-    pub fn new(_: impl AsRef<Path>, _: Option<&str>) -> anyhow::Result<Addon> {
-        todo!()
-    }
+    pub fn new(path: impl AsRef<Path>) -> Result<Addon, Error> {
+        if !path.as_ref().exists() {
+            return Err(Error::Io(std::io::ErrorKind::NotFound.into()));
+        }
 
-    pub fn install_to(&self, _: impl AsRef<Path>) -> anyhow::Result<()> {
-        todo!();
+        if !path.as_ref().is_dir() {
+            return Err(Error::Io(std::io::ErrorKind::AlreadyExists.into()));
+        }
+
+        Ok(Addon(path.as_ref().to_owned()))
     }
 
     pub fn dependencies(&self) -> anyhow::Result<Vec<Dependency>> {
@@ -42,32 +33,48 @@ impl Addon {
     }
 }
 
-/* -------------------------------------------------------------------------- */
-/*                         Function: copy_recursively                         */
-/* -------------------------------------------------------------------------- */
+/* ---------------------------- Impl: Installable --------------------------- */
 
-/// Clone files recursively from source to destination using the provided copy
-/// function. See https://nick.groenen.me/notes/recursively-copy-files-in-rust/.
-#[allow(dead_code)]
-fn copy_recursively(
-    src: impl AsRef<Path>,
-    dst: impl AsRef<Path>,
-    copy_fn: fn(&Path, &Path) -> anyhow::Result<()>,
-) -> anyhow::Result<()> {
-    std::fs::create_dir_all(&dst)?;
+impl Installable for Addon {
+    fn install_to(&self, target: impl AsRef<Path>) -> Result<(), std::io::Error> {
+        if !target.as_ref().exists() || !target.as_ref().is_dir() {
+            return Err(std::io::ErrorKind::InvalidInput.into());
+        }
 
-    for entry in std::fs::read_dir(src)? {
-        let entry = entry?;
+        super::clone_recursively(self.0.as_path(), target, |src, dst| {
+            std::fs::hard_link(src, dst)
+        })
+    }
+}
 
-        if entry.file_type()?.is_dir() {
-            copy_recursively(entry.path(), dst.as_ref().join(entry.file_name()), copy_fn)?;
-        } else {
-            copy_fn(
-                entry.path().as_ref(),
-                dst.as_ref().join(entry.file_name()).as_ref(),
-            )?;
+/* ----------------------- Impl: TryFrom<&Dependency> ----------------------- */
+
+impl TryFrom<&Dependency> for Addon {
+    type Error = Error;
+
+    fn try_from(value: &Dependency) -> Result<Self, Self::Error> {
+        match &value.source {
+            Source::Path { path } => Addon::new(path),
+            Source::Git(s) => {
+                let checkout = crate::git::checkout(s).map_err(Error::Git)?;
+                Addon::new(checkout.path)
+            }
+            Source::Release(release) => {
+                release.download().map_err(Error::Git)?;
+                Addon::new(release.get_path().map_err(Error::Git)?)
+            }
         }
     }
+}
 
-    Ok(())
+/* -------------------------------------------------------------------------- */
+/*                                 Enum: Error                                */
+/* -------------------------------------------------------------------------- */
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Io(std::io::Error),
+    #[error(transparent)]
+    Git(crate::git::Error),
 }
