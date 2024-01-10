@@ -43,7 +43,7 @@ where
             ));
         }
 
-        let contents = std::fs::read_to_string(path).map_err(ParsableError::IO)?;
+        let contents = std::fs::read_to_string(path).map_err(ParsableError::Io)?;
 
         Self::parse(&contents)
     }
@@ -54,7 +54,7 @@ where
 #[derive(Debug, thiserror::Error)]
 pub enum ParsableError {
     #[error(transparent)]
-    IO(std::io::Error),
+    Io(std::io::Error),
     #[error("invalid filename: {0}")]
     InvalidName(String),
     #[error(transparent)]
@@ -97,7 +97,7 @@ where
 
             File::create(path)
                 .and_then(|mut f| f.write_all(contents.as_bytes()))
-                .map_err(PersistableError::IO)
+                .map_err(PersistableError::Io)
         }
     }
 }
@@ -117,7 +117,7 @@ where
 #[derive(Debug, thiserror::Error)]
 pub enum PersistableError {
     #[error(transparent)]
-    IO(std::io::Error),
+    Io(std::io::Error),
     #[error("invalid filepath: {0}")]
     InvalidPath(String),
     #[error(transparent)]
