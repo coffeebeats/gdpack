@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
@@ -43,7 +44,7 @@ pub struct Dependency {
 impl Dependency {
     /// The name of the addon's project; this value is used as the key within
     /// the [`super::Manifest`] addon sections.
-    pub fn package(&self) -> Option<String> {
+    pub fn name(&self) -> Option<String> {
         match &self.source {
             Source::Release(r) => r.repo.name(),
             Source::Git(g) => g.repo.name(),
@@ -70,6 +71,41 @@ pub enum Source {
     Release(git::GitHubRelease),
     Git(git::Source),
     Path { path: PathBuf },
+}
+
+/* ------------------------------ Impl: Source ------------------------------ */
+
+impl Source {
+    pub fn fetch(&self) -> anyhow::Result<PathBuf> {
+        let path = match self {
+            Source::Path { path } => Ok(path.to_owned()),
+            Source::Git(s) => crate::git::checkout(s)
+                .map(|c| c.path)
+                .map_err(|e| anyhow!(e)),
+            Source::Release(release) => release
+                .download()
+                .and_then(|_| release.get_path())
+                .map_err(|e| anyhow!(e)),
+        }?;
+
+        if !path.exists() {
+            let err =
+                std::io::Error::new(std::io::ErrorKind::NotFound, path.to_str().unwrap_or(""));
+
+            return Err(anyhow!(err));
+        }
+
+        if !path.is_dir() {
+            let err = std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                format!("expected a directory: {}", path.to_str().unwrap_or("")),
+            );
+
+            return Err(anyhow!(err));
+        }
+
+        Ok(path)
+    }
 }
 
 /* ------------------------- Impl: Into<Dependency> ------------------------- */
