@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use serde::Deserialize;
 use serde::Serialize;
 use typed_builder::TypedBuilder;
@@ -49,13 +48,15 @@ impl Remote {
     }
 
     /// Returns a reference to the underlying [Url].
-    pub fn assets(&self) -> anyhow::Result<Url> {
+    pub fn assets(&self) -> Result<Url, super::Error> {
         let mut assets_url = self.0.clone();
 
         assets_url.set_path(&format!(
             "{}/{}/releases/download/",
-            self.owner().ok_or(anyhow!("missing owner"))?,
-            self.name().ok_or(anyhow!("missing name"))?,
+            self.owner()
+                .ok_or(super::Error::MissingInput("owner".into()))?,
+            self.name()
+                .ok_or(super::Error::MissingInput("name".into()))?,
         ));
 
         Ok(assets_url)
