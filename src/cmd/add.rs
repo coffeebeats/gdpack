@@ -171,7 +171,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         if let Some(_prev) = m
             .addons_mut(Query::builder().dev(args.dev).target(target).build())
             .insert(
-                &dep.package()
+                &dep.name()
                     .ok_or(anyhow!("missing dependency name"))?
                     .to_owned(),
                 &dep,
@@ -183,7 +183,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     println!(
         "added dependency: {}",
-        dep.package().unwrap_or(String::from("unknown"))
+        dep.name().unwrap_or(String::from("unknown"))
     );
 
     Ok(())

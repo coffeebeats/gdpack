@@ -16,16 +16,19 @@ pub struct Plugin(Ini);
 /* ------------------------------ Impl: Plugin ------------------------------ */
 
 impl Plugin {
+    #[allow(dead_code)]
     pub fn name(&self) -> Option<&str> {
         self.0.section(Some("plugin")).and_then(|s| s.get("name"))
     }
 
+    #[allow(dead_code)]
     pub fn subfolder(&self) -> Option<&str> {
         self.0
             .section(Some("plugin"))
             .and_then(|s| s.get("subfolder"))
     }
 
+    #[allow(dead_code)]
     pub fn version(&self) -> Option<Version> {
         self.0
             .section(Some("plugin"))

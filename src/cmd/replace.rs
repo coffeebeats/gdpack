@@ -48,12 +48,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let mut dep = Dependency::from(args.source);
     dep.replace = Some(args.addon.clone());
 
-    if &args.addon
-        == dep
-            .package()
-            .as_ref()
-            .ok_or(anyhow!("missing addon name"))?
-    {
+    if &args.addon == dep.name().as_ref().ok_or(anyhow!("missing addon name"))? {
         let _ = dep.replace.take();
     }
 
@@ -70,7 +65,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         if let Some(_prev) = m
             .addons_mut(Query::builder().dev(args.dev).target(target).build())
             .insert(
-                &dep.package()
+                &dep.name()
                     .ok_or(anyhow!("missing dependency name"))?
                     .to_owned(),
                 &dep,
