@@ -93,6 +93,12 @@ jobs:
           platform: ${{ matrix.target }}
           targets: bins
           use_cross: ${{ matrix.use_cross }}
+          # FIXME(https://github.com/actions-rs/cargo/issues/227): This works around a
+          # cross-compilation issue seen in GitHub actions runs where `openssl-sys` cannot
+          # be compiled when using `cross`.
+          extra_args: |
+            $([[ "${{ matrix.use_cross }}" == "true"  ]] && \
+              echo --config 'replace."openssl-sys".features=["vendored"]')
 
       - name: Archive executable (Default)
         if: runner.os != 'Windows'
