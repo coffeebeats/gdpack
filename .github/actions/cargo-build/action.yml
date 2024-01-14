@@ -113,6 +113,8 @@ runs:
       run: |
         cargo vendor --manifest-path=${{ inputs.manifest }} --frozen
 
+        mkdir -p "${{ steps.rs-props.outputs.crate_dir }}/.cargo"
+
         cat > "${{ steps.rs-props.outputs.crate_dir }}/.cargo/config.toml" << EOM
         [source.crates-io]
         replace-with = "vendored-sources"
