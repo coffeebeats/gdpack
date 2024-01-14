@@ -43,8 +43,12 @@ jobs:
     needs: ["release-please"]
     if: needs.release-please.outputs.release-created == 'true'
 
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 8
+    uses: "./.github/workflows/build-application.yml"
+    with:
+      archive-name: ${{ matrix.archive }}
+      target: ${{ matrix.target }}
+      os: ${{ matrix.os }}
+      use_cross: ${{ matrix.use_cross }}
 
     strategy:
       fail-fast: false # do not exit early
@@ -68,54 +72,6 @@ jobs:
           - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-windows-x86_64.zip
             target: x86_64-pc-windows-msvc
             os: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: "./.github/actions/setup-rust"
-        id: setup-rust
-        with:
-          profile: minimal
-          version-file: Cargo.toml
-          targets: ${{ matrix.target }}
-
-      # Set minimum supported version to '11.1', which guarantees support for
-      # M1 macs (see https://developer.apple.com/support/xcode).
-      - name: Set OSX environment variables
-        if: endsWith(matrix.target, 'apple-darwin')
-        run: |
-          echo "SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path)" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=11.1" >> $GITHUB_ENV
-
-      - uses: "./.github/actions/cargo-build"
-        with:
-          profile: release
-          platform: ${{ matrix.target }}
-          targets: bins
-          use_cross: ${{ matrix.use_cross }}
-
-      - name: Archive executable (Default)
-        if: runner.os != 'Windows'
-        run: |
-          tar \
-            -C "target/${{ matrix.target }}/release" \
-            -czf ${{ matrix.archive }} \
-            "gdpack"
-
-      - name: Archive executable (Default)
-        if: runner.os == 'Windows'
-        run: |
-          cat  <<- EOM | python3 -c "$(</dev/stdin)"
-          from zipfile import ZipFile
-          with ZipFile("${{ matrix.archive }}", mode="w") as a:
-            a.write("target/${{ matrix.target }}/release/gdpack.exe", arcname="gdpack.exe")
-          EOM
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.target }}
-          path: ${{ matrix.archive }}
-          if-no-files-found: error
 
   publish:
     needs: ["release-please", "build"]
