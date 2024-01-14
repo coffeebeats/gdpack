@@ -80,14 +80,30 @@ impl<'a> AddonsMut<'a> {
     /// Insert a new [`Dependency`] with the specified `name`; overrides any
     /// existing values and returns the previously stored value, if any.
     pub fn insert(&mut self, name: &str, dep: &Dependency) -> Option<Dependency> {
+        // When inserting a [`Dependency`], ensure that it's not present in the
+        // opposite environment (i.e. 'dev' vs. non-'dev'). Note that this is an
+        // invariant, which is why it's implemented here instead of requiring
+        // callers to handle this themselves (which is the case for
+        // [`AddonsMut::Remove()`]).
+        //
+        // NOTE: This must be done _before_ inserting the new [`Dependency`]
+        // because if a `target` is set in this [`Query`], then
+        // [`AddonsMut::remove()`] might remove the entire `target` table when
+        // trying to remove the [`Dependency`] from the opposite environment.
+        let _ = AddonsMut::builder()
+            .document(self.document)
+            .query(self.query.invert_dev())
+            .build()
+            .remove(name);
+
         let key = Key::builder().query(&self.query).name(name).build();
 
         let prev = dep
             .serialize(ValueSerializer::new())
             .ok()
-            .and_then(|v| key.insert(self.document, toml_edit::value(v)))?;
+            .and_then(|v| key.insert(self.document, toml_edit::value(v)));
 
-        (&prev).try_into().ok()
+        (&prev?).try_into().ok()
     }
 
     /// Remove the [`Dependency`] with the specified `name`; returns the
