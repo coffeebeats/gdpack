@@ -28,7 +28,6 @@ impl<'a> Key<'a> {
     /// Retrieve the [`toml_edit::Item`] for the addon specified by the [`Key`],
     /// if it exists.
     pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
-        // TODO: Verify entry is unique across addon environments.
         self.query.get(doc).and_then(|t| t.get(self.name))
     }
 
@@ -36,14 +35,12 @@ impl<'a> Key<'a> {
     /// [`Key`], if it exists.
     #[allow(dead_code)]
     pub(super) fn get_mut<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
-        // TODO: Verify entry is unique across addon environments.
         self.query.get_mut(doc).and_then(|t| t.get_mut(self.name))
     }
 
     /// Insert the provided [`toml_edit::Item`] into the provided
     /// [`toml_edit::Document`] under the path corresponding to the [`Key`].
     pub(super) fn insert(&self, doc: &mut Document, value: Item) -> Option<Item> {
-        // TODO: Verify entry is unique across addon environments.
         self.query
             .insert(doc)
             .and_then(|t| t.as_table_like_mut())
@@ -53,7 +50,6 @@ impl<'a> Key<'a> {
     /// Remove the [`toml_edit::Item`] at the path corresponding to [`Key`] from
     /// the provided [`toml_edit::Document`] and return it, if it exists.
     pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
-        // TODO: Verify entry is unique across addon environments.
         self.query
             .get_mut(doc)
             .and_then(|t| t.as_table_like_mut())
@@ -78,6 +74,14 @@ pub struct Query<'a> {
 /* ------------------------------- Impl: Query ------------------------------ */
 
 impl<'a> Query<'a> {
+    /* --------------------------- Methods: Public -------------------------- */
+
+    /// `invert_dev` turns `self` into a new [`Query`] instance for the opposing
+    /// addon environment (i.e. 'dev' vs. non-'dev').
+    pub fn invert_dev(&self) -> Query<'a> {
+        Query::builder().dev(!self.dev).target(self.target).build()
+    }
+
     /* -------------------------- Methods: Private -------------------------- */
 
     pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
@@ -158,11 +162,26 @@ impl<'a> Query<'a> {
                 prev
             }
             Some(target) => {
-                // Remove the entire target-specific section.
+                // Remove the target- and environment-specific section.
                 let prev = doc
                     .get_mut(MANIFEST_SECTION_TARGET)
                     .and_then(|v| v.as_table_like_mut())
-                    .and_then(|t| t.remove(target));
+                    .and_then(|t| t.get_mut(target))
+                    .and_then(|v| v.as_table_like_mut())
+                    .and_then(|t| t.remove(self.key_addons()));
+
+                // If this leaves the target-specific section empty, remove it.
+                if doc
+                    .get(MANIFEST_SECTION_TARGET)
+                    .and_then(|v| v.as_table_like())
+                    .and_then(|t| t.get(target))
+                    .and_then(|v| v.as_table_like())
+                    .is_some_and(|t| t.is_empty())
+                {
+                    doc.get_mut(MANIFEST_SECTION_TARGET)
+                        .and_then(|v| v.as_table_like_mut())
+                        .and_then(|t| t.remove(target));
+                }
 
                 // If this leaves the top-level 'target' key empty, remove it.
                 if doc
