@@ -16,11 +16,6 @@ use super::install::Args as InstallArgs;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
-    /// Add a development-only dependency (will not be propagated to dependents'
-    /// installs).
-    #[arg(short, long)]
-    pub dev: bool,
-
     /// A `PATH` to the Godot project containing the manifest.
     #[arg(short, long, value_name = "PATH")]
     pub project: Option<PathBuf>,
@@ -40,10 +35,11 @@ pub struct Args {
 /* -------------------------------------------------------------------------- */
 
 pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path = super::parse_project(args.project.as_ref())?;
+    let path_project = super::parse_project(args.project.as_ref())?;
 
-    let path_manifest = path.join(Manifest::file_name().unwrap());
-    let mut m = Manifest::parse_file(&path_manifest)?;
+    let path_manifest = path_project.join(Manifest::file_name().unwrap());
+    let mut m = Manifest::parse_file(&path_manifest)
+        .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
 
     let targets = match args.target.is_empty() {
         true => vec![None],
@@ -52,32 +48,60 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let name = args.name.as_str();
 
+    let mut should_install = !path_project.as_path().join("addons").is_dir();
     for target in &targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
             return Err(anyhow!("missing target"));
         }
 
-        let prev = m
+        // Remove the specified [`Dependency`] from *both* environments.
+
+        let prev_prod = m
             .addons_mut(
                 Query::builder()
-                    .dev(args.dev)
+                    .dev(false)
                     .target(target.map(String::as_str))
                     .build(),
             )
             .remove(name);
 
+        let prev_dev = m
+            .addons_mut(
+                Query::builder()
+                    .dev(true)
+                    .target(target.map(String::as_str))
+                    .build(),
+            )
+            .remove(name);
+
+        let prev = prev_prod.or(prev_dev); // Prioritize a production dependency.
         if prev.is_some_and(|d| d.name().is_some_and(|n| n == name)) {
-            println!("removed dependency: {}", name);
+            // Install if the [`Manifest`] was modified somehow. Note that the
+            // implicit installation performed by `gdpack` manifest
+            // modification commands should never use a target.
+            should_install = should_install || target.is_none();
+
+            println!(
+                "removed dependency{}: {}",
+                match target {
+                    None => "".to_owned(),
+                    Some(t) => format!(" from target '{}'", t),
+                },
+                name,
+            );
         }
     }
 
     m.persist(path_manifest)?;
 
+    if !should_install {
+        return Ok(());
+    }
+
     install(
         InstallArgs::builder()
             .production(false)
             .project(args.project)
-            .target(args.target)
             .build(),
     )?;
 

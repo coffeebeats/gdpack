@@ -169,7 +169,7 @@ jobs:
       # See https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#installation.
       - name: Install 'cargo-llvm-cov'
         if: needs.changes.outputs.has_source_change == 'true'
-        run: cargo +stable install cargo-llvm-cov --locked
+        run: cargo install cargo-llvm-cov --locked
 
       - name: Test source code (with coverage)
         if: needs.changes.outputs.has_source_change == 'true'
