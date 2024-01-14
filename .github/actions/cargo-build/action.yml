@@ -25,6 +25,10 @@ inputs:
     description: "Whether to skip caching of artifacts."
     required: false
     default: false
+  extra_args:
+    description: "Additional arguments to pass to the build command."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -128,4 +132,5 @@ runs:
           --manifest-path=${{ inputs.manifest }} \
           --profile=${{ inputs.profile }} \
           --target=${{ steps.rs-props.outputs.platform }} \
-          "${TARGETS[@]}"
+          "${TARGETS[@]}" \
+          $(echo "${{ inputs.extra_args }}" | tr '\n' ' ')
