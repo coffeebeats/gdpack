@@ -1,6 +1,4 @@
-use serde::Deserialize;
 use serde::Serialize;
-use toml_edit::de::ValueDeserializer;
 use toml_edit::ser::ValueSerializer;
 use toml_edit::Document;
 use typed_builder::TypedBuilder;
@@ -18,7 +16,7 @@ use super::Query;
 #[derive(Debug, TypedBuilder)]
 pub struct Addons<'a> {
     document: &'a Document,
-    query: Query,
+    query: Query<'a>,
 }
 
 /* ------------------------------ Impl: Addons ------------------------------ */
@@ -30,12 +28,7 @@ impl<'a> Addons<'a> {
     pub fn get(&self, name: &str) -> Option<Dependency> {
         let key = Key::builder().query(&self.query).name(name).build();
 
-        key.get(self.document).and_then(|t| {
-            t.to_string()
-                .parse::<ValueDeserializer>()
-                .and_then(Dependency::deserialize)
-                .ok()
-        })
+        key.get(self.document).and_then(|t| t.try_into().ok())
     }
 }
 
@@ -52,12 +45,7 @@ impl<'a> IntoIterator for Addons<'a> {
             .and_then(|v| v.as_table_like())
             .map(|t| t.iter())
             .unwrap_or(Box::new(std::iter::empty()))
-            .filter_map(|(_, v)| {
-                v.to_string()
-                    .parse::<ValueDeserializer>()
-                    .and_then(Dependency::deserialize)
-                    .ok()
-            })
+            .filter_map(|(_, v)| v.try_into().ok())
             .collect::<Vec<_>>()
             .into_iter()
     }
@@ -72,7 +60,7 @@ impl<'a> IntoIterator for Addons<'a> {
 #[derive(Debug, TypedBuilder)]
 pub struct AddonsMut<'a> {
     document: &'a mut Document,
-    query: Query,
+    query: Query<'a>,
 }
 
 /* ----------------------------- Impl: AddonsMut ---------------------------- */
@@ -99,10 +87,7 @@ impl<'a> AddonsMut<'a> {
             .ok()
             .and_then(|v| key.insert(self.document, toml_edit::value(v)))?;
 
-        prev.to_string()
-            .parse::<ValueDeserializer>()
-            .and_then(Dependency::deserialize)
-            .ok()
+        (&prev).try_into().ok()
     }
 
     /// Remove the [`Dependency`] with the specified `name`; returns the
@@ -110,11 +95,7 @@ impl<'a> AddonsMut<'a> {
     pub fn remove(&mut self, name: &str) -> Option<Dependency> {
         let key = Key::builder().query(&self.query).name(name).build();
 
-        let out = key
-            .remove(self.document)
-            .map(|v| v.to_string())
-            .and_then(|s| s.parse::<ValueDeserializer>().ok())
-            .and_then(|de| Dependency::deserialize(de).ok());
+        let out = key.remove(self.document).and_then(|v| (&v).try_into().ok());
 
         if key.query.is_empty(self.document) {
             key.query.remove(self.document);
@@ -137,12 +118,7 @@ impl<'a> IntoIterator for AddonsMut<'a> {
             .and_then(|v| v.as_table_like())
             .map(|t| t.iter())
             .unwrap_or(Box::new(std::iter::empty()))
-            .filter_map(|(_, v)| {
-                v.to_string()
-                    .parse::<ValueDeserializer>()
-                    .and_then(Dependency::deserialize)
-                    .ok()
-            })
+            .filter_map(|(_, v)| v.try_into().ok())
             .collect::<Vec<_>>()
             .into_iter()
     }

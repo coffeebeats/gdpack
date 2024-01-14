@@ -17,7 +17,7 @@ pub(super) const MANIFEST_SECTION_TARGET: &str = "target";
 pub(super) struct Key<'a> {
     #[builder(setter(into))]
     pub name: &'a str,
-    pub query: &'a Query,
+    pub query: &'a Query<'a>,
 }
 
 /* -------------------------------- Impl: Key ------------------------------- */
@@ -65,18 +65,18 @@ impl<'a> Key<'a> {
 /// registered in the [`super::Manifest`]. The provided methods allow for
 /// viewing and managing these addons as [`crate::addon::Dependency`] instances.
 #[derive(Clone, Debug, Default, Eq, PartialEq, TypedBuilder)]
-pub struct Query {
+pub struct Query<'a> {
     pub dev: bool,
     #[builder(default)]
-    pub target: Option<String>,
+    pub target: Option<&'a str>,
 }
 
 /* ------------------------------- Impl: Query ------------------------------ */
 
-impl Query {
+impl<'a> Query<'a> {
     /* -------------------------- Methods: Private -------------------------- */
 
-    pub(super) fn get<'a>(&self, doc: &'a Document) -> Option<&'a Item> {
+    pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
         match self.target.as_ref() {
             None => doc.get(self.key_addons()),
             Some(target) => doc
@@ -88,7 +88,7 @@ impl Query {
         }
     }
 
-    pub(super) fn get_mut<'a>(&self, doc: &'a mut Document) -> Option<&'a mut Item> {
+    pub(super) fn get_mut<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
         match self.target.as_ref() {
             None => doc.get_mut(self.key_addons()),
             Some(target) => doc
@@ -107,7 +107,7 @@ impl Query {
             .unwrap_or(true)
     }
 
-    pub(super) fn insert<'a>(&self, doc: &'a mut Document) -> Option<&'a mut Item> {
+    pub(super) fn insert<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
         match self.target.as_ref() {
             None => Some(doc.entry(self.key_addons()).or_insert(toml_edit::table())),
             Some(t) => {

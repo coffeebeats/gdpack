@@ -3,8 +3,12 @@ use std::path::PathBuf;
 
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
+use crate::config::Configuration;
 use crate::config::Parsable;
 use crate::config::Persistable;
+
+use super::install::handle as install;
+use super::install::Args as InstallArgs;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -36,31 +40,46 @@ pub struct Args {
 /* -------------------------------------------------------------------------- */
 
 pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path = super::parse_project(args.project)?;
+    let path = super::parse_project(args.project.as_ref())?;
 
-    let mut m = Manifest::parse_file(&path)?;
+    let path_manifest = path.join(Manifest::file_name().unwrap());
+    let mut m = Manifest::parse_file(&path_manifest)?;
 
     let targets = match args.target.is_empty() {
         true => vec![None],
-        false => args.target.into_iter().map(Some).collect(),
+        false => args.target.iter().map(Some).collect(),
     };
 
     let name = args.name.as_str();
 
-    for target in targets {
+    for target in &targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
             return Err(anyhow!("missing target"));
         }
 
-        if let Some(_prev) = m
-            .addons_mut(Query::builder().dev(args.dev).target(target).build())
-            .remove(name)
-        {}
+        let prev = m
+            .addons_mut(
+                Query::builder()
+                    .dev(args.dev)
+                    .target(target.map(String::as_str))
+                    .build(),
+            )
+            .remove(name);
+
+        if prev.is_some_and(|d| d.name().is_some_and(|n| n == name)) {
+            println!("removed dependency: {}", name);
+        }
     }
 
-    m.persist(&path)?;
+    m.persist(path_manifest)?;
 
-    println!("removed dependency: {}", args.name);
+    install(
+        InstallArgs::builder()
+            .production(false)
+            .project(args.project)
+            .target(args.target)
+            .build(),
+    )?;
 
     Ok(())
 }

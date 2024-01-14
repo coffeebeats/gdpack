@@ -6,6 +6,8 @@ use super::Configuration;
 use super::Parsable;
 use super::ParsableError;
 
+const PLUGIN_CFG_FILENAME: &str = "plugin.cfg";
+
 /* -------------------------------------------------------------------------- */
 /*                               Struct: Plugin                               */
 /* -------------------------------------------------------------------------- */
@@ -16,16 +18,19 @@ pub struct Plugin(Ini);
 /* ------------------------------ Impl: Plugin ------------------------------ */
 
 impl Plugin {
+    #[allow(dead_code)]
     pub fn name(&self) -> Option<&str> {
         self.0.section(Some("plugin")).and_then(|s| s.get("name"))
     }
 
+    #[allow(dead_code)]
     pub fn subfolder(&self) -> Option<&str> {
         self.0
             .section(Some("plugin"))
             .and_then(|s| s.get("subfolder"))
     }
 
+    #[allow(dead_code)]
     pub fn version(&self) -> Option<Version> {
         self.0
             .section(Some("plugin"))
@@ -37,8 +42,14 @@ impl Plugin {
 /* --------------------------- Impl: Configuration -------------------------- */
 
 impl Configuration for Plugin {
+    fn file_name<'a>() -> Option<&'a str> {
+        Some(PLUGIN_CFG_FILENAME)
+    }
+
     fn matches(path: impl AsRef<std::path::Path>) -> bool {
-        path.as_ref().file_name().is_some_and(|s| s == "plugin.cfg")
+        path.as_ref()
+            .file_name()
+            .is_some_and(|s| s == PLUGIN_CFG_FILENAME)
     }
 }
 

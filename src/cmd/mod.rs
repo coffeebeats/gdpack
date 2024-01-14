@@ -53,5 +53,5 @@ fn parse_project(project: Option<impl AsRef<Path>>) -> anyhow::Result<PathBuf> {
         path = std::env::current_dir()?;
     }
 
-    Ok(path.join(crate::config::Manifest::file_name()))
+    Ok(path)
 }

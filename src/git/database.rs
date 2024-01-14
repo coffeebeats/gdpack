@@ -1,10 +1,10 @@
-use anyhow::anyhow;
 use git2::Oid;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
 use super::Checkout;
+use super::Error;
 use super::Reference;
 use super::Remote;
 use super::Source;
@@ -26,16 +26,18 @@ impl Database {
 
     /// Checks out the specific [Reference] into the appropriate "checkout"
     /// directory in the `gdpack` store.
-    pub fn checkout(&self, reference: Option<&Reference>) -> anyhow::Result<Checkout> {
+    pub fn checkout(&self, reference: Option<&Reference>) -> Result<Checkout, Error> {
         let path_db = Database::get_path(&self.0)?;
 
-        let repo = git2::Repository::open(&path_db)?;
+        let repo = git2::Repository::open(&path_db).map_err(Error::Git)?;
 
-        let obj = repo.revparse_single(
-            &reference
-                .map(Reference::to_string)
-                .unwrap_or(String::from("HEAD")),
-        )?;
+        let obj = repo
+            .revparse_single(
+                &reference
+                    .map(Reference::to_string)
+                    .unwrap_or(String::from("HEAD")),
+            )
+            .map_err(Error::Git)?;
 
         let source = &Source::builder()
             .reference(Some(Reference::Rev(obj.id().to_string())))
@@ -58,14 +60,17 @@ impl Database {
             );
 
             let repo =
-                git2::Repository::clone(path_db.to_str().expect("invalid path"), &path_checkout)?;
+                git2::Repository::clone(path_db.to_str().expect("invalid path"), &path_checkout)
+                    .map_err(Error::Git)?;
 
             repo.checkout_tree(
                 &repo
-                    .find_commit(Oid::from_str(&obj.id().to_string())?)?
+                    .find_commit(Oid::from_str(&obj.id().to_string()).map_err(Error::Git)?)
+                    .map_err(Error::Git)?
                     .into_object(),
                 Some(git2::build::CheckoutBuilder::new().force().refresh(true)),
-            )?;
+            )
+            .map_err(Error::Git)?;
 
             repo.set_head_detached(obj.id()).unwrap();
         }
@@ -80,7 +85,7 @@ impl Database {
 
     /// Fetches the latest git [refspecs](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec)
     /// in the "database" bare clone for the provided [Reference].
-    pub fn fetch_latest(&self, reference: Option<&Reference>) -> anyhow::Result<()> {
+    pub fn fetch_latest(&self, reference: Option<&Reference>) -> Result<(), super::Error> {
         println!(
             "fetching latest for dependency: {}",
             self.0.name().expect("missing remote name")
@@ -88,19 +93,23 @@ impl Database {
 
         let path = Database::get_path(&self.0)?;
 
-        let repo = git2::Repository::open(path)?;
+        let repo = git2::Repository::open(path).map_err(Error::Git)?;
 
-        let mut remote = repo.remote_anonymous(&self.0.to_string())?;
+        let mut remote = repo
+            .remote_anonymous(&self.0.to_string())
+            .map_err(Error::Git)?;
 
-        remote.fetch(
-            &Reference::refspecs(reference),
-            Some(
-                git2::FetchOptions::default()
-                    .prune(git2::FetchPrune::On)
-                    .update_fetchhead(true),
-            ),
-            None,
-        )?;
+        remote
+            .fetch(
+                &Reference::refspecs(reference),
+                Some(
+                    git2::FetchOptions::default()
+                        .prune(git2::FetchPrune::On)
+                        .update_fetchhead(true),
+                ),
+                None,
+            )
+            .map_err(Error::Git)?;
 
         Ok(())
     }
@@ -109,7 +118,7 @@ impl Database {
 
     /// Returns a path to the "database" bare clone for the specified [Remote] in
     /// the `gdpack` store.
-    pub(super) fn get_path(remote: &Remote) -> anyhow::Result<PathBuf> {
+    pub(super) fn get_path(remote: &Remote) -> Result<PathBuf, Error> {
         let mut path = super::get_store_path()?;
         path.extend(&["git", "repo", &Database::id(remote)?]);
 
@@ -118,23 +127,23 @@ impl Database {
 
     /// Returns the directory name for the "database" bare clone for the specified
     /// [Remote] in the `gdpack` store.
-    pub(super) fn id(remote: &Remote) -> anyhow::Result<String> {
+    pub(super) fn id(remote: &Remote) -> Result<String, Error> {
         let host = remote
             .host()
             .map(|s| s.replace('.', "_"))
             .map(|s| s.to_lowercase())
-            .ok_or(anyhow!("missing repository host: {}", remote))?;
+            .ok_or(Error::MissingInput(format!("repository host: {}", remote)))?;
 
         let owner = remote
             .owner()
             .map(|s| s.replace('/', "_"))
             .map(|s| s.to_lowercase())
-            .ok_or(anyhow!("missing repository owner: {}", remote))?;
+            .ok_or(Error::MissingInput(format!("repository owner: {}", remote)))?;
 
         let name = remote
             .name()
             .map(|s| s.to_lowercase())
-            .ok_or(anyhow!("missing repository name: {}", remote))?;
+            .ok_or(Error::MissingInput(format!("repository name: {}", remote)))?;
 
         Ok(format!("{}_{}_{}", host, owner, name))
     }
@@ -143,7 +152,7 @@ impl Database {
 /* ------------------------- Impl: TryFrom<&Source> ------------------------- */
 
 impl TryFrom<&Source> for Database {
-    type Error = anyhow::Error;
+    type Error = Error;
 
     fn try_from(value: &Source) -> Result<Self, Self::Error> {
         let db = Database(value.repo.clone());
@@ -161,10 +170,10 @@ impl TryFrom<&Source> for Database {
 
 /// Bare clones the provided repository, specified by [Source], into the
 /// appropriate "database" directory in the `gdpack` store.
-fn clone_bare(source: &Source, path: impl AsRef<Path>) -> anyhow::Result<()> {
+fn clone_bare(source: &Source, path: impl AsRef<Path>) -> Result<(), Error> {
     println!("downloading dependency: {}", source.repo);
 
-    std::fs::create_dir_all(&path)?;
+    std::fs::create_dir_all(&path).map_err(Error::Io)?;
 
     let mut clone_cmd = Command::new("git");
 
@@ -180,7 +189,8 @@ fn clone_bare(source: &Source, path: impl AsRef<Path>) -> anyhow::Result<()> {
 
     let output = clone_cmd
         .args(["--bare", path.as_ref().to_str().unwrap()])
-        .output()?;
+        .output()
+        .map_err(Error::Io)?;
 
     if !output.status.success() {
         if let Ok(s) = std::str::from_utf8(&output.stderr) {

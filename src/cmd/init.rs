@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::config::Configuration;
 use crate::config::Manifest;
 use crate::config::Persistable;
 
@@ -28,7 +29,10 @@ pub struct Args {
 pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
-    Manifest::persist(&Manifest::default(), &path)?;
+    Manifest::persist(
+        &Manifest::default(),
+        path.join(Manifest::file_name().unwrap()),
+    )?;
 
     println!("{}", STR_USAGE);
 
