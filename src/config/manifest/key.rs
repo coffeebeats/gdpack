@@ -28,6 +28,7 @@ impl<'a> Key<'a> {
     /// Retrieve the [`toml_edit::Item`] for the addon specified by the [`Key`],
     /// if it exists.
     pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
+        // TODO: Verify entry is unique across addon environments.
         self.query.get(doc).and_then(|t| t.get(self.name))
     }
 
@@ -35,12 +36,14 @@ impl<'a> Key<'a> {
     /// [`Key`], if it exists.
     #[allow(dead_code)]
     pub(super) fn get_mut<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
+        // TODO: Verify entry is unique across addon environments.
         self.query.get_mut(doc).and_then(|t| t.get_mut(self.name))
     }
 
     /// Insert the provided [`toml_edit::Item`] into the provided
     /// [`toml_edit::Document`] under the path corresponding to the [`Key`].
     pub(super) fn insert(&self, doc: &mut Document, value: Item) -> Option<Item> {
+        // TODO: Verify entry is unique across addon environments.
         self.query
             .insert(doc)
             .and_then(|t| t.as_table_like_mut())
@@ -50,6 +53,7 @@ impl<'a> Key<'a> {
     /// Remove the [`toml_edit::Item`] at the path corresponding to [`Key`] from
     /// the provided [`toml_edit::Document`] and return it, if it exists.
     pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
+        // TODO: Verify entry is unique across addon environments.
         self.query
             .get_mut(doc)
             .and_then(|t| t.as_table_like_mut())

@@ -179,6 +179,7 @@ jobs:
             --all-targets \
             --frozen \
             --release \
+            --remap-path-prefix \
             --codecov \
             --output-path codecov.json
 
@@ -197,7 +198,7 @@ jobs:
         with:
           fail_ci_if_error: true
           files: codecov.json
-          flags: gdpack
+          move_coverage_to_trash: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   # Used to ensure all branch protection requirements are met. This is a workaround until
