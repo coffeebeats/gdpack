@@ -198,7 +198,6 @@ jobs:
         with:
           fail_ci_if_error: true
           files: codecov.json
-          flags: gdpack
           token: ${{ secrets.CODECOV_TOKEN }}
 
   # Used to ensure all branch protection requirements are met. This is a workaround until
