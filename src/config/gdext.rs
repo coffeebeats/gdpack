@@ -5,6 +5,8 @@ use super::Configuration;
 use super::Parsable;
 use super::ParsableError;
 
+const GDEXTENSION_FILE_EXTENSION: &str = "gdextension";
+
 /* -------------------------------------------------------------------------- */
 /*                              Struct: Extension                             */
 /* -------------------------------------------------------------------------- */
@@ -12,13 +14,21 @@ use super::ParsableError;
 #[derive(Clone, Debug, Default)]
 pub struct Extension(Ini);
 
+/* ----------------------------- Impl: Extension ---------------------------- */
+
+impl Extension {
+    pub fn extension() -> &'static str {
+        GDEXTENSION_FILE_EXTENSION
+    }
+}
+
 /* --------------------------- Impl: Configuration -------------------------- */
 
 impl Configuration for Extension {
     fn matches(path: impl AsRef<std::path::Path>) -> bool {
         path.as_ref()
             .extension()
-            .is_some_and(|s| s == "gdextension")
+            .is_some_and(|s| s == GDEXTENSION_FILE_EXTENSION)
     }
 }
 

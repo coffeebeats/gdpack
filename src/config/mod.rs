@@ -7,6 +7,7 @@ pub mod gdext;
 pub mod manifest;
 
 pub use manifest::Manifest;
+use typed_builder::TypedBuilder;
 
 /* ------------------------------- Mod: plugin ------------------------------ */
 
@@ -18,12 +19,17 @@ pub mod plugin;
 
 pub trait Configuration {
     fn matches(path: impl AsRef<Path>) -> bool;
+
+    fn file_name<'a>() -> Option<&'a str> {
+        None
+    }
 }
 
 /* -------------------------------------------------------------------------- */
 /*                               Trait: Parsable                              */
 /* -------------------------------------------------------------------------- */
 
+use std::marker::PhantomData;
 use std::path::Path;
 
 pub trait Parsable
@@ -65,7 +71,6 @@ pub enum ParsableError {
 /*                             Trait: Persistable                             */
 /* -------------------------------------------------------------------------- */
 
-use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -95,7 +100,7 @@ where
                 .map_err(|e| e.into())
                 .map_err(PersistableError::Serialize)?;
 
-            File::create(path)
+            std::fs::File::create(path)
                 .and_then(|mut f| f.write_all(contents.as_bytes()))
                 .map_err(PersistableError::Io)
         }
@@ -130,84 +135,106 @@ pub enum PersistableError {
 
 use walkdir::WalkDir;
 
-pub trait Findable
+#[derive(Debug, TypedBuilder)]
+pub struct FileQuery<T>
 where
-    Self: Configuration + Parsable,
+    T: Configuration + Parsable,
 {
-    fn find_in_ancestors(path: impl AsRef<Path>) -> Result<Self, FindableError> {
-        let mut path = path.as_ref();
+    #[builder(setter(into))]
+    path: PathBuf,
 
-        let mut paths: Vec<PathBuf> = vec![];
+    #[builder(default = 1, setter(into))]
+    min_depth: usize,
 
-        if path.is_file() {
-            paths.push(path.to_owned());
-            path = path.parent().unwrap() // This is safe because it's not empty.
-        }
+    #[builder(default = std::usize::MAX, setter(into))]
+    max_depth: usize,
 
-        // Beginning with the nearest directory of the path that was passed in,
-        // attempt to find the configuration in that directory or any ancestor
-        // directory.
-        loop {
-            if path.exists() {
-                paths.push(path.to_owned());
-            }
+    #[builder(default)]
+    _config: PhantomData<T>,
+}
 
-            match path.parent() {
-                None => return Self::find_in_paths(paths.iter()),
-                Some(p) => {
-                    path = p;
-                }
-            }
-        }
-    }
+impl<T> IntoIterator for FileQuery<T>
+where
+    T: Configuration + Parsable,
+{
+    type Item = (PathBuf, Result<T, ParsableError>);
 
-    fn find_in_folder(path: impl AsRef<Path>) -> Result<Self, FindableError> {
-        let mut path = path.as_ref();
+    type IntoIter = Box<dyn Iterator<Item = Self::Item>>;
 
-        if path.is_file() {
-            // Shortcut the directory walk if the passed-in path is a match.
-            if Self::matches(path) {
-                return Self::parse_file(path).map_err(FindableError::Parse);
-            }
-
-            path = path.parent().unwrap();
-        }
-
-        match WalkDir::new(path)
-            .follow_root_links(true)
-            .follow_links(true)
-            .max_depth(1) // Only look at files directly in the folder.
-            .min_depth(1) // Skip the walked directory itself.
-            .into_iter()
-            .filter_map(Result::ok)
-            .filter(|e| e.path().is_file()) // Skip directories.
-            .take_while(|e| Self::matches(e.path()))
-            .next()
-        {
-            None => Err(FindableError::NotFound),
-            Some(e) => Self::parse_file(e.path()).map_err(FindableError::Parse),
-        }
-    }
-
-    fn find_in_paths(paths: impl Iterator<Item = impl AsRef<Path>>) -> Result<Self, FindableError> {
-        paths
-            .filter_map(|p| match Self::find_in_folder(p) {
-                Err(FindableError::NotFound) => None,
-                r => Some(r),
-            })
-            .next()
-            .unwrap_or(Err(FindableError::NotFound))
+    fn into_iter(self) -> Self::IntoIter {
+        Box::new(
+            WalkDir::new(self.path)
+                .follow_root_links(true)
+                .follow_links(true)
+                .max_depth(self.max_depth) // Only look at files directly in the folder.
+                .min_depth(self.min_depth) // Skip the walked directory itself.
+                .into_iter()
+                .filter_map(Result::ok) // Skip unreadable or invalid files.
+                .filter(|e| e.path().is_file()) // Skip directories.
+                .filter_map(|e| match T::matches(e.path()) {
+                    false => None,
+                    true => Some((e.path().to_owned(), T::parse_file(e.path()))),
+                }),
+        )
     }
 }
 
-/* --------------------------- Enum: FindableError -------------------------- */
+// pub trait Findable
+// where
+//     Self: Configuration + Parsable,
+// {
+//     fn find_in_folder(path: impl AsRef<Path>) -> Vec<File<Self>> {
+//         let mut path = path.as_ref();
 
-#[derive(Debug, thiserror::Error)]
-pub enum FindableError {
-    #[allow(dead_code)]
-    #[error("not found")]
-    NotFound,
-    #[allow(dead_code)]
-    #[error(transparent)]
-    Parse(ParsableError),
-}
+//         if path.is_file() {
+//             path = path.parent().unwrap();
+//         }
+
+//         let mut out = vec![];
+
+//         for entry in WalkDir::new(path)
+//             .follow_root_links(true)
+//             .follow_links(true)
+//             .max_depth(1) // Only look at files directly in the folder.
+//             .min_depth(1) // Skip the walked directory itself.
+//             .into_iter()
+//             .filter_map(Result::ok)
+//             .filter(|e| e.path().is_file()) // Skip directories.
+//             .take_while(|e| Self::matches(e.path()))
+//         {
+//             let path = entry.path();
+
+//             if let Ok(f) = Self::parse_file(path)
+//                 .map(|c| File::builder().config(c).path(path.to_owned()).build())
+//                 .map_err(FindableError::Parse)
+//             {
+//                 out.push(f);
+//             }
+//         }
+
+//         out
+//     }
+
+//     fn find_in_paths(paths: impl Iterator<Item = impl AsRef<Path>>) -> Vec<File<Self>> {
+//         paths
+//             .filter_map(|p| match Self::find_in_folder(p) {
+//                 Err(FindableError::NotFound) => None,
+//                 Ok(r) => Some(r),
+//             })
+//             .collect()
+//     }
+// }
+
+// /* ----------------------------- Impl: Findable ----------------------------- */
+// impl<T> Findable for T where T: Configuration + Parsable {}
+
+// /* --------------------------- Enum: FindableError -------------------------- */
+// #[derive(Debug, thiserror::Error)]
+// pub enum FindableError {
+//     #[allow(dead_code)]
+//     #[error("not found")]
+//     NotFound,
+//     #[allow(dead_code)]
+//     #[error(transparent)]
+//     Parse(ParsableError),
+// }
