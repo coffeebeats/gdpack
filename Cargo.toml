@@ -23,11 +23,3 @@ typed-builder = "0.18.0"
 url = { version = "2.5.0", features = ["serde"] }
 walkdir = "2.4.0"
 zip = "0.6.6"
-
-# FIXME(https://github.com/actions-rs/cargo/issues/227): This works around a
-# cross-compilation issue seen in GitHub actions runs where `openssl-sys` cannot
-# be compiled when using `cross`. This approach does affect _all_ usage of
-# `openssl-sys`, but consistency is preferred at the moment over trying to set
-# this per target.
-[dependencies.'openssl-sys']
-features = ["vendored"]
