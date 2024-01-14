@@ -1,0 +1,3 @@
+ignore:
+  - "src/cmd" # Ignore the CLI command implementations.
+  - "src/main.rs" # Ignore the application entry point.
