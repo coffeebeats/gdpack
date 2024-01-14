@@ -66,6 +66,9 @@ jobs:
       - uses: "./.github/actions/cargo-build"
         with:
           profile: release
+          extra_args: |
+            $([[ "true" == "true"  ]] && \
+              echo --config 'replace."openssl-sys".features=["vendored"]')
 
   format:
     needs: ["changes"]
