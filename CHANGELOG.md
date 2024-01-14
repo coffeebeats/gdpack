@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.13 (2024-01-14)
+
+## What's Changed
+* fix(ci): vendor `openssl` to support cross-compilation on CI hosts by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/83
+* feat(ci/cargo-build): allow passing additional build arguments via `extra_args` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/85
+* fix(cmd): improve command handling and when `gdpack` triggers a reinstallation of addons by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/86
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.12...v0.0.13
+
 ## 0.0.12 (2024-01-14)
 
 ## What's Changed
