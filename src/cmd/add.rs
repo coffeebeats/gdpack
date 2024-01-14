@@ -217,8 +217,6 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         }
     }
 
-    // TEST: Trigger rebuild.
-
     m.persist(path_manifest)
         .map_err(|e| anyhow!("failed to persist manifest: {:}", e))?;
 
