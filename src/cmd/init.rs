@@ -27,11 +27,11 @@ pub struct Args {
 /* -------------------------------------------------------------------------- */
 
 pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path = super::parse_project(args.project)?;
+    let path_project = super::parse_project(args.project)?;
 
     Manifest::persist(
         &Manifest::default(),
-        path.join(Manifest::file_name().unwrap()),
+        path_project.join(Manifest::file_name().unwrap()),
     )?;
 
     println!("{}", STR_USAGE);

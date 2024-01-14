@@ -37,15 +37,22 @@ pub struct Args {
 /* -------------------------------------------------------------------------- */
 
 pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path = super::parse_project(args.project)?;
+    let path_project = super::parse_project(args.project)?;
 
-    let path_manifest = path.join(Manifest::file_name().unwrap());
-    let m = Manifest::parse_file(path_manifest)?;
+    let path_manifest = path_project.join(Manifest::file_name().unwrap());
+    let m = Manifest::parse_file(path_manifest)
+        .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
 
     let targets = match args.target.is_empty() {
         true => vec![None],
         false => args.target.iter().map(Some).collect(),
     };
+
+    let path_project_addons = path_project.as_path().join("addons");
+    if path_project_addons.is_dir() {
+        std::fs::remove_dir_all(path_project_addons)
+            .map_err(|e| anyhow!("failed to remove existing 'addons' directory: {}", e))?;
+    }
 
     for target in &targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
@@ -66,13 +73,8 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .map_err(|e| anyhow!("failed to load addon from disk: {:}", e))?;
 
             addon
-                .install_to(&path)
+                .install_to(&path_project)
                 .map_err(|e| anyhow!("failed to install addon: {:}", e))?;
-
-            match &dep.name() {
-                None => println!("Installed addon with unknown name!"),
-                Some(name) => println!("Installed addon: {}", name),
-            }
         }
 
         if args.production {
@@ -88,12 +90,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .target(target.map(String::as_str))
                 .build(),
         ) {
-            Addon::try_from(&dep)?.install_to(&path)?;
-
-            match &dep.name() {
-                None => println!("Installed addon with unknown name!"),
-                Some(name) => println!("Installed addon: {}", name),
-            }
+            Addon::try_from(&dep)?.install_to(&path_project)?;
         }
     }
 

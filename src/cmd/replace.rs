@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use std::path::PathBuf;
 
+use crate::addon::Addon;
 use crate::config::manifest::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
@@ -44,10 +45,11 @@ pub struct Args {
 /* -------------------------------------------------------------------------- */
 
 pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path = super::parse_project(args.project.as_ref())?;
+    let path_project = super::parse_project(args.project.as_ref())?;
 
-    let path_manifest = path.join(Manifest::file_name().unwrap());
-    let mut m = Manifest::parse_file(&path_manifest)?;
+    let path_manifest = path_project.join(Manifest::file_name().unwrap());
+    let mut m = Manifest::parse_file(&path_manifest)
+        .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
 
     let mut dep = Dependency::from(args.source);
     dep.replace = Some(args.addon.clone());
@@ -55,6 +57,11 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     if &args.addon == dep.name().as_ref().ok_or(anyhow!("missing addon name"))? {
         let _ = dep.replace.take();
     }
+
+    // Determine whether an installation is required by default. This is the
+    // case when there is no "addons" directory or the [`Addon`] isn't found.
+    let path_addons = path_project.as_path().join("addons");
+    let mut should_install = !path_addons.as_path().is_dir();
 
     let targets = match args.target.is_empty() {
         true => vec![None],
@@ -65,6 +72,12 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
             return Err(anyhow!("missing target"));
         }
+
+        // Install if the [`Addon`] isn't present in the project's "addons"
+        // folder, even if the [`Manifest`] doesn't change.
+        should_install = should_install
+            || (target.is_none()
+                && !Addon::try_from(&dep).is_ok_and(|a| path_addons.join(a.subfolder).is_dir()));
 
         let prev = m
             .addons_mut(
@@ -81,8 +94,20 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             );
 
         if prev.is_none() || prev.is_some_and(|p| p != dep) {
+            // Fetch the [`Dependency`] before continuing.
+            dep.source.fetch()?;
+
+            // Install if the [`Manifest`] was modified somehow. Note that the
+            // implicit installation performed by `gdpack` manifest
+            // modification commands should never use a target.
+            should_install = should_install || target.is_none();
+
             println!(
-                "added dependency to replace '{}': {}",
+                "added dependency{} to replace '{}': {}",
+                match target {
+                    None => "".to_owned(),
+                    Some(t) => format!(" in target '{}'", t),
+                },
                 args.addon,
                 dep.name().unwrap_or(String::from("unknown"))
             );
@@ -91,11 +116,14 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     m.persist(path_manifest)?;
 
+    if !should_install {
+        return Ok(());
+    }
+
     install(
         InstallArgs::builder()
             .production(false)
             .project(args.project)
-            .target(args.target)
             .build(),
     )?;
 
