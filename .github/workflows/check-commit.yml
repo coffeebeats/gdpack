@@ -180,7 +180,7 @@ jobs:
             --frozen \
             --release \
             --remap-path-prefix \
-            --codecov \
+            --lcov \
             --output-path codecov.json
 
       - name: Test source code
