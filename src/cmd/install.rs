@@ -69,6 +69,8 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 .target(target.map(String::as_str))
                 .build(),
         ) {
+            dep.source.fetch()?;
+
             let addon = Addon::try_from(&dep)
                 .map_err(|e| anyhow!("failed to load addon from disk: {:}", e))?;
 

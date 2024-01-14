@@ -11,6 +11,10 @@ rust-version = "1.75.0"
 anyhow = "1.0.79"
 clap = { version = "4.4.16", features = ["cargo", "derive"] }
 git2 = "0.18.1"
+# NOTE: This works around a cross-compilation issue seen in GitHub actions runs
+# where `openssl-sys` cannot find `openssl` because "pkg-config has not been
+# configured to support cross-compilation".
+openssl-sys = { version = "*", features = ["vendored"] }
 reqwest = { version = "0.11.23", features = ["blocking"] }
 rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.21"
