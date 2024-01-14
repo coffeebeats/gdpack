@@ -66,9 +66,9 @@ jobs:
       - uses: "./.github/actions/cargo-build"
         with:
           profile: release
+          use_cross: true
           extra_args: |
-            $([[ "true" == "true"  ]] && \
-              echo --config 'replace."openssl-sys".features=["vendored"]')
+            --config 'replace."openssl-sys".features=["vendored"]'
 
   format:
     needs: ["changes"]
@@ -167,7 +167,9 @@ jobs:
 
       - uses: "./.github/actions/cargo-build"
         with:
-          profile: release
+          use_cross: true
+          extra_args: |
+            --config 'replace."openssl-sys".features=["vendored"]'
 
       # See https://github.com/taiki-e/cargo-llvm-cov?tab=readme-ov-file#installation.
       - name: Install 'cargo-llvm-cov'
