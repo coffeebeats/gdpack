@@ -98,12 +98,15 @@ runs:
     - name: Install 'cross' for cross-compilation
       if: |
         inputs.use_cross == 'true' &&
-        steps.cache-cargo-home.outputs.cache-hit != 'true'
+        steps.cache-cargo-home.outputs.cache-hit != 'true' &&
+        steps.cache-cargo-build.outputs.cache-hit != 'true'
       shell: bash
       run: cargo install --force cross --git https://github.com/cross-rs/cross
 
     - name: Fetch project dependencies
-      if: steps.cache-cargo-registry.outputs.cache-hit != 'true'
+      if: |
+        steps.cache-cargo-registry.outputs.cache-hit != 'true' &&
+        steps.cache-cargo-build.outputs.cache-hit != 'true'
       shell: bash
       run: cargo fetch --target ${{ steps.rs-props.outputs.platform }}
 
