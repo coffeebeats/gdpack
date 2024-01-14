@@ -179,6 +179,7 @@ jobs:
             --all-targets \
             --frozen \
             --release \
+            --remap-path-prefix \
             --codecov \
             --output-path codecov.json
 
