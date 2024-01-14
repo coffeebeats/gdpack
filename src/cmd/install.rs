@@ -40,7 +40,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let path = super::parse_project(args.project)?;
 
     let path_manifest = path.join(Manifest::file_name().unwrap());
-    let m = Manifest::parse_file(&path_manifest)?;
+    let m = Manifest::parse_file(path_manifest)?;
 
     let targets = match args.target.is_empty() {
         true => vec![None],

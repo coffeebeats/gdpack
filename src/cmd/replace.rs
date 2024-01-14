@@ -80,7 +80,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                 &dep,
             );
 
-        if prev.is_none() || prev.is_some_and(|p| &p != &dep) {
+        if prev.is_none() || prev.is_some_and(|p| p != dep) {
             println!(
                 "added dependency to replace '{}': {}",
                 args.addon,
