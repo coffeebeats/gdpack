@@ -14,7 +14,6 @@ pub fn checkout(source: &Source) -> Result<Checkout, super::Error> {
     let db = Database::try_from(source)?;
     let checkout = db.checkout(source.reference.as_ref())?;
 
-    // Test comment
     Ok(checkout)
 }
 
