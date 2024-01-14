@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.12 (2024-01-14)
+
+## What's Changed
+* chore(ci): auto merge patch-level dependabot dependency bumps by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/71
+* chore(deps): bump semver from 1.0.20 to 1.0.21 by @dependabot in https://github.com/coffeebeats/gdpack/pull/67
+* fix(ci): squash auto merges of Dependabot PRs by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/73
+* chore(deps): bump anyhow from 1.0.77 to 1.0.79 by @dependabot in https://github.com/coffeebeats/gdpack/pull/68
+* fix(ci): correctly invoke `gh pr merge` with squash option by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/74
+* refactor(config): create a `config` module with largely refactored configuration implementations by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/75
+* chore(deps): bump serde from 1.0.193 to 1.0.195 by @dependabot in https://github.com/coffeebeats/gdpack/pull/76
+* chore(deps): bump clap from 4.4.12 to 4.4.13 by @dependabot in https://github.com/coffeebeats/gdpack/pull/70
+* feat(ci): add support for code coverage via `cargo-llvm-cov` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/77
+* chore(deps): bump clap from 4.4.13 to 4.4.14 by @dependabot in https://github.com/coffeebeats/gdpack/pull/78
+* chore(deps): bump clap from 4.4.14 to 4.4.15 by @dependabot in https://github.com/coffeebeats/gdpack/pull/79
+* chore(deps): bump clap from 4.4.15 to 4.4.16 by @dependabot in https://github.com/coffeebeats/gdpack/pull/80
+* feat(addons): implement `Addon` installation from `Dependency` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/81
+* fix(ci): use relative paths in code coverage report by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/82
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.11...v0.0.12
+
 ## 0.0.11 (2024-01-01)
 
 ## What's Changed
