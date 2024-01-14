@@ -3,13 +3,14 @@
 mod addon;
 
 pub use addon::Addon;
-pub use addon::Error as AddonError;
 
 /* -------------------------------------------------------------------------- */
 /*                             Trait: Installable                             */
 /* -------------------------------------------------------------------------- */
 
 pub trait Installable {
+    /// `install_to` installs the implementer (typically an [`Addon`]) into the
+    /// _Godot_ project specified by `target`.
     fn install_to(&self, target: impl AsRef<Path>) -> std::io::Result<()>;
 }
 

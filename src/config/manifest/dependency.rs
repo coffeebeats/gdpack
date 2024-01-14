@@ -3,6 +3,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
 use std::path::PathBuf;
+use toml_edit::de::ValueDeserializer;
+use toml_edit::Item;
 use typed_builder::TypedBuilder;
 
 use crate::git;
@@ -56,6 +58,20 @@ impl Dependency {
     }
 }
 
+/* ---------------------------- Impl: From<&Item> --------------------------- */
+
+impl TryFrom<&Item> for Dependency {
+    type Error = toml_edit::de::Error;
+
+    fn try_from(value: &Item) -> Result<Self, Self::Error> {
+        value
+            .to_string()
+            .trim()
+            .parse::<ValueDeserializer>()
+            .and_then(Dependency::deserialize)
+    }
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                Enum: Source                                */
 /* -------------------------------------------------------------------------- */
@@ -76,6 +92,9 @@ pub enum Source {
 /* ------------------------------ Impl: Source ------------------------------ */
 
 impl Source {
+    /// `fetch` retrieves the [`Dependency`] and stores it in the `gdpack`
+    /// store. This method has no effect if the [`Dependency`] is already
+    /// downloaded.
     pub fn fetch(&self) -> anyhow::Result<PathBuf> {
         let path = match self {
             Source::Path { path } => Ok(path.to_owned()),

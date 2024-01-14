@@ -42,19 +42,14 @@ pub struct Manifest(Document);
 impl Manifest {
     /* --------------------------- Methods: Public -------------------------- */
 
-    /// The file name associated with [`Manifest`] files.
-    pub fn file_name() -> &'static str {
-        MANIFEST_FILENAME
-    }
-
     /// Returns an _immutable_ view of the addons recorded for the provided
     /// [`Query`].
-    pub fn addons(&self, query: Query) -> Addons {
+    pub fn addons<'a>(&'a self, query: Query<'a>) -> Addons {
         Addons::builder().document(&self.0).query(query).build()
     }
 
     /// Returns a mutable view of the addons recorded for the provided [`Query`].
-    pub fn addons_mut(&mut self, query: Query) -> AddonsMut {
+    pub fn addons_mut<'a>(&'a mut self, query: Query<'a>) -> AddonsMut {
         AddonsMut::builder()
             .document(&mut self.0)
             .query(query)
@@ -65,6 +60,10 @@ impl Manifest {
 /* --------------------------- Impl: Configuration -------------------------- */
 
 impl Configuration for Manifest {
+    fn file_name<'a>() -> Option<&'a str> {
+        Some(MANIFEST_FILENAME)
+    }
+
     fn matches(path: impl AsRef<std::path::Path>) -> bool {
         path.as_ref()
             .file_name()

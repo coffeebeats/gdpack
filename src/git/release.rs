@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serde::Serialize;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::PathBuf;
@@ -26,6 +27,8 @@ pub struct GitHubRelease {
 /* --------------------------- Impl: GitHubRelease -------------------------- */
 
 impl GitHubRelease {
+    /* --------------------------- Methods: Public -------------------------- */
+
     /// Returns a path to the release-specific directory for the specified
     /// [super::Remote] in the `gdpack` store.
     pub fn get_path(&self) -> Result<PathBuf, Error> {
@@ -34,17 +37,17 @@ impl GitHubRelease {
 
         path.push(&self.tag);
 
-        let filename = PathBuf::from(&self.asset);
-        let extension = filename
-            .extension()
-            .and_then(std::ffi::OsStr::to_str)
-            .unwrap_or("");
+        let mut asset = self.get_asset_name();
 
-        path.push(
-            self.asset
-                .strip_suffix(&format!(".{}", extension))
-                .unwrap_or(&self.asset),
-        );
+        let filename = PathBuf::from(&self.asset);
+        if let Some(ext) = filename.extension().and_then(OsStr::to_str) {
+            asset = asset
+                .strip_suffix(&format!(".{}", ext))
+                .unwrap_or(&asset)
+                .to_owned()
+        }
+
+        path.push(asset);
 
         Ok(path)
     }
@@ -52,12 +55,12 @@ impl GitHubRelease {
     pub fn download(&self) -> Result<(), Error> {
         let base = self.repo.assets()?;
         let asset_url = base
-            .join(&format!("{}/{}", self.tag, self.asset))
+            .join(&format!("{}/{}", self.tag, self.get_asset_name()))
             .map_err(Error::Url)?;
 
         let tmp = tempdir().map_err(Error::Io)?;
 
-        let path = tmp.path().join(&self.asset);
+        let path = tmp.path().join(self.get_asset_name());
 
         let mut file = File::create(path.as_path()).map_err(Error::Io)?;
 
@@ -117,5 +120,15 @@ impl GitHubRelease {
         }
 
         Ok(())
+    }
+
+    /* -------------------------- Methods: Private -------------------------- */
+
+    /// `get_asset_name` returns the name of the release asset after hydrating
+    /// template variables.
+    fn get_asset_name(&self) -> String {
+        self.asset
+            .replace("{tag}", &self.tag)
+            .replace("{release}", &self.tag)
     }
 }
