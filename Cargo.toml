@@ -24,8 +24,12 @@ url = { version = "2.5.0", features = ["serde"] }
 walkdir = "2.4.0"
 zip = "0.6.6"
 
-[target.'aarch64-apple-darwin'.dependencies]
 # NOTE: This works around a cross-compilation issue seen in GitHub actions runs
 # where `openssl-sys` cannot find `openssl` because "pkg-config has not been
 # configured to support cross-compilation".
+
+[target.'aarch64-apple-darwin'.dependencies]
+openssl-sys = { version = "*", features = ["vendored"] }
+
+[target.'x86_64-unknown-linux-gnu'.dependencies]
 openssl-sys = { version = "*", features = ["vendored"] }
