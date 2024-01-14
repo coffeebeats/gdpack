@@ -7,10 +7,3 @@ pre-build = [
     "dpkg --add-architecture $CROSS_DEB_ARCH",
     "apt-get update && apt-get install --assume-yes libssl-dev:$CROSS_DEB_ARCH",
 ]
-
-[target.aarch64-apple-darwin]
-# Pre-install a compatible version of `openssl` (see https://github.com/cross-rs/cross/wiki/Recipes#openssl).
-pre-build = [
-    "dpkg --add-architecture $CROSS_DEB_ARCH",
-    "apt-get update && apt-get install --assume-yes libssl-dev:$CROSS_DEB_ARCH",
-]
