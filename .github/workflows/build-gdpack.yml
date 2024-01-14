@@ -24,6 +24,41 @@ on:
         type: boolean
         default: false
 
+  # Triggered from the UI (see
+  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch).
+  workflow_dispatch:
+    inputs:
+      # Required
+      archive-name:
+        required: true
+        type: string
+      target:
+        required: true
+        type: choice
+        options:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-pc-windows-msvc
+      os:
+        required: true
+        type: choice
+        options:
+          - "ubuntu-latest"
+          - "macos-latest"
+          - "windows-latest"
+
+      # Optional
+      timeout:
+        required: false
+        type: number
+        default: 4
+      use_cross:
+        required: false
+        type: boolean
+        default: false
+
 jobs:
   build:
     runs-on: ${{ inputs.os }}
