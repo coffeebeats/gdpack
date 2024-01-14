@@ -88,6 +88,7 @@ runs:
       with:
         key: cache-cargo-build-${{ runner.os }}-${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('src/**/*.rs', 'Cargo.toml', 'Cargo.lock', '.cargo/config.toml') }}
         path: |
+          ${{ steps.rs-props.outputs.crate_dir }}/.cargo/config.toml
           ${{ steps.rs-props.outputs.crate_dir }}/target
           ${{ steps.rs-props.outputs.crate_dir }}/vendor
         restore-keys: |
@@ -109,7 +110,18 @@ runs:
     - name: Vendor project dependencies
       if: steps.cache-cargo-build.outputs.cache-hit != 'true'
       shell: bash
-      run: cargo vendor --manifest-path=${{ inputs.manifest }} --frozen
+      run: |
+        cargo vendor --manifest-path=${{ inputs.manifest }} --frozen
+
+        mkdir -p "${{ steps.rs-props.outputs.crate_dir }}/.cargo"
+
+        cat > "${{ steps.rs-props.outputs.crate_dir }}/.cargo/config.toml" << EOM
+        [source.crates-io]
+        replace-with = "vendored-sources"
+
+        [source.vendored-sources]
+        directory = "vendor"
+        EOM
 
     - name: Compile the project
       if: steps.cache-cargo-build.outputs.cache-hit != 'true'
