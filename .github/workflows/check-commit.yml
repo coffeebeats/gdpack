@@ -47,6 +47,17 @@ jobs:
           files: |
             src/**/*.rs
 
+  debug:
+    needs: ["changes"]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - if: needs.changes.outputs.has_change == 'true'
+        run: echo '${{ needs.changes.outputs.has_change == 'true' }}'
+      - if: needs.changes.outputs.has_source_change == 'true'
+        run: echo '${{ needs.changes.outputs.has_source_change == 'true' }}'
+
   build:
     needs: ["changes"]
     if: needs.changes.outputs.has_change == 'true'
