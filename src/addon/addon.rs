@@ -290,3 +290,29 @@ impl TryFrom<&Dependency> for Addon {
         Addon::find_in_dir(root, name)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[allow(unused_macros)]
+    macro_rules! setup_files {
+        ($($path:expr),+$(,)?) => {
+            let tmp = tempfile::tempdir().expect("failed to create temporary directory");
+
+            $(
+                let p = std::path::PathBuf::from($path);
+                if p.is_absolute() {
+                    panic!(
+                        "invalid path; must be relative: {}",
+                        p.to_str().unwrap_or("''")
+                    );
+                }
+
+                let p = tmp.path().join(p);
+                match p.extension().is_some() {
+                    true => {std::fs::File::create(p).expect("failed to create file");},
+                    false => std::fs::create_dir_all(p).expect("failed to create directory")
+                }
+            )+
+        };
+    }
+}
