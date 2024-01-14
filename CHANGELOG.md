@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.14 (2024-01-14)
+
+## What's Changed
+* fix(ci): vendor `openssl` so that `cross` builds succeed by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/87
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.13...v0.0.14
+
 ## 0.0.13 (2024-01-14)
 
 ## What's Changed
