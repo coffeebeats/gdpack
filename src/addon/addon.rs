@@ -40,7 +40,6 @@ pub struct Addon {
 
     /// The name of the directory under `addons` in which the [`Addon`] will be
     /// installed into in the target _Godot_ project.
-    #[builder(default)]
     pub subfolder: String,
 
     /// The [`Version`] of the [`Addon`], if known.
@@ -291,28 +290,153 @@ impl TryFrom<&Dependency> for Addon {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 Mod: Tests                                 */
+/* -------------------------------------------------------------------------- */
+
 #[cfg(test)]
 mod tests {
-    #[allow(unused_macros)]
-    macro_rules! setup_files {
-        ($($path:expr),+$(,)?) => {
-            let tmp = tempfile::tempdir().expect("failed to create temporary directory");
+    use semver::Version;
+    use std::fs::create_dir_all;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
 
-            $(
-                let p = std::path::PathBuf::from($path);
-                if p.is_absolute() {
-                    panic!(
-                        "invalid path; must be relative: {}",
-                        p.to_str().unwrap_or("''")
-                    );
-                }
+    use crate::addon::Addon;
 
-                let p = tmp.path().join(p);
-                match p.extension().is_some() {
-                    true => {std::fs::File::create(p).expect("failed to create file");},
-                    false => std::fs::create_dir_all(p).expect("failed to create directory")
-                }
-            )+
+    macro_rules! write_file {
+        ($path:expr, $content:expr$(,)?) => {
+            create_dir_all($path.parent().expect("invalid path"))
+                .expect("failed to create directory");
+
+            File::create($path)
+                .and_then(|mut f| f.write_all($content.as_bytes()))
+                .expect("failed to create file");
         };
+    }
+
+    macro_rules! assert_eq_addon {
+        ($left:expr, $right:expr$(,)?) => {
+            assert_eq!($left.path, $right.path);
+            assert_eq!($left.script_templates, $right.script_templates);
+            assert_eq!($left.subfolder, $right.subfolder);
+            assert_eq!($left.version, $right.version)
+        };
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_fails_if_mismatching_plugin() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        let invalid = "[plugin]\nname='invalid'\nversion='1.2.3'";
+        write_file!(&tmp.path().join("plugin.cfg"), invalid);
+
+        assert!(Addon::find_in_dir(tmp.path(), "addon").is_err());
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_fails_if_mismatching_extension() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        write_file!(&tmp.path().join("invalid.gdextension"), "");
+
+        assert!(Addon::find_in_dir(tmp.path(), "addon").is_err());
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_with_root_plugin() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+        let path = tmp.path().join("plugin.cfg");
+
+        let plugin = "[plugin]\nname='addon'\nversion='1.2.3'";
+        write_file!(&path, plugin);
+
+        assert_eq_addon!(
+            Addon::find_in_dir(tmp.path(), "addon").expect("couldn't find addon"),
+            Addon::builder()
+                .path(path.parent().unwrap())
+                .subfolder(String::from("addon"))
+                .version(Some(Version::new(1, 2, 3)))
+                .build()
+        );
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_with_root_ext() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+        let path = tmp.path().join("addon.ext");
+
+        write_file!(&path, "");
+
+        assert_eq_addon!(
+            Addon::find_in_dir(tmp.path(), "addon").expect("couldn't find addon"),
+            Addon::builder()
+                .path(path.parent().unwrap())
+                .subfolder(String::from("addon"))
+                .build()
+        );
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_with_plugin_in_addons() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+        let path = tmp.path().join("addons/addon/plugin.cfg");
+
+        let plugin = "[plugin]\nname='addon'\nversion='1.2.3'";
+        write_file!(&path, plugin);
+
+        assert_eq_addon!(
+            Addon::find_in_dir(tmp.path(), "addon").expect("couldn't find addon"),
+            Addon::builder()
+                .path(path.parent().unwrap())
+                .subfolder(String::from("addon"))
+                .version(Some(Version::new(1, 2, 3)))
+                .build()
+        );
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_with_extension_in_addons() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+        let path = tmp.path().join("addons/addon/addon.gdextension");
+
+        write_file!(&path, "");
+
+        assert_eq_addon!(
+            Addon::find_in_dir(tmp.path(), "addon").expect("couldn't find addon"),
+            Addon::builder()
+                .path(path.parent().unwrap())
+                .subfolder(String::from("addon"))
+                .build()
+        );
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_with_static_in_addons() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+        let path = tmp.path().join("addons/addon/project.godot");
+
+        write_file!(&path, "");
+
+        assert_eq_addon!(
+            Addon::find_in_dir(tmp.path(), "addon").expect("couldn't find addon"),
+            Addon::builder()
+                .path(path.parent().unwrap())
+                .subfolder(String::from("addon"))
+                .build()
+        );
+    }
+
+    #[test]
+    fn test_addons_find_in_dir_with_static_root() {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        assert_eq_addon!(
+            Addon::find_in_dir(tmp.path(), "addon").expect("couldn't find addon"),
+            Addon::builder()
+                .path(tmp.path())
+                .subfolder(String::from("addon"))
+                .build()
+        );
     }
 }
