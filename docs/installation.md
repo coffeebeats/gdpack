@@ -69,7 +69,7 @@ Invoke-WebRequest `
 `gdpack` is a Rust project and can be installed using `cargo build`. This option is not recommended as it requires having the Rust toolchain installed, it's slower than downloading a prebuilt binary, and there may be instability due to using a different version of Rust than it was developed with.
 
 ```sh
-cargo install --git github.com/coffeebeats/gdpack/cmd/gdpack --tag v0.0.15 # x-release-please-version
+cargo install --git github.com/coffeebeats/gdpack/cmd/gdpack --tag v0.0.16 # x-release-please-version
 ```
 
 Once `gdpack` is installed a few things need to be configured. Follow the instructions below based on your operating system.
