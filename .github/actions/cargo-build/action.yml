@@ -13,6 +13,10 @@ inputs:
   platform:
     description: "Compile the project for the target platform (defaults to host triple)."
     required: false
+  features:
+    description: "A comma- or new line-separated list of project features to build."
+    required: false
+    default: "all"
   targets:
     description: "A comma- or new line-separated list of project targets to build (e.g. lib or bins)."
     required: false
@@ -132,12 +136,18 @@ runs:
       run: |
         TARGETS=()
         case "${{ inputs.targets }}" in
-        "" | "*" | "all") TARGETS+=("--all-targets") ;;
+        "" | "*" | "all" | "all-targets") TARGETS+=("--all-targets") ;;
         *)
           for t in $(printf "${{ inputs.targets }}" | tr ',' \\n); do
             TARGETS+=("--$t")
           done
           ;;
+        esac
+
+        FEATURES=""
+        case "${{ inputs.features }}" in
+        "" | "*" | "all" | "all-features") FEATURES="--all-features" ;;
+        *) FEATURES="$(printf "${{ inputs.features }}" | tr \\n ',')" ;;
         esac
 
         CMD=$([[ "${{ inputs.use_cross }}" == "true" ]] && echo cross || echo cargo)
@@ -148,4 +158,5 @@ runs:
           --profile=${{ inputs.profile }} \
           --target=${{ steps.rs-props.outputs.platform }} \
           "${TARGETS[@]}" \
+          "${FEATURES}" \
           $(echo "${{ inputs.extra_args }}" | tr '\n' ' ')

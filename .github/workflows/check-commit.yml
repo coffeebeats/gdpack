@@ -175,10 +175,11 @@ jobs:
         if: needs.changes.outputs.has_source_change == 'true'
         run: |
           cargo llvm-cov \
-            --all-features \
-            --all-targets \
             --frozen \
             --release \
+            --target=x86_64-unknown-linux-gnu \
+            --all-features \
+            --all-targets \
             --remap-path-prefix \
             --codecov \
             --output-path codecov.json
@@ -187,10 +188,11 @@ jobs:
         if: needs.changes.outputs.has_source_change != 'true'
         run: |
           cargo test \
-            --all-features \
-            --all-targets \
             --frozen \
-            --release
+            --release \
+            --target=x86_64-unknown-linux-gnu \
+            --all-features \
+            --all-targets
 
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3
