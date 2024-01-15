@@ -107,7 +107,7 @@ jobs:
           cat <<- EOM | python3 -c "$(</dev/stdin)"
           from zipfile import ZipFile
           with ZipFile("${{ inputs.archive-name }}", mode="w") as a:
-          a.write("target/${{ inputs.target }}/release/gdpack.exe", arcname="gdpack.exe")
+            a.write("target/${{ inputs.target }}/release/gdpack.exe", arcname="gdpack.exe")
           EOM
 
       - uses: actions/upload-artifact@v4
