@@ -49,6 +49,7 @@ jobs:
       target: ${{ matrix.target }}
       os: ${{ matrix.os }}
       use_cross: ${{ matrix.use_cross }}
+      timeout: 8
 
     strategy:
       fail-fast: false # do not exit early
