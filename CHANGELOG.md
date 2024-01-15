@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.16 (2024-01-15)
+
+## What's Changed
+* fix(ci): correctly pass boolean type to build workflow by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/98
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.15...v0.0.16
+
 ## 0.0.15 (2024-01-15)
 
 ## What's Changed
