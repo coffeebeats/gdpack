@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.0.15 (2024-01-15)
+
+## What's Changed
+* fix(ci): fix `openssl` cross-compilation issues by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/89
+* refactor(ci): extract `gdpack` build steps into reusable workflow by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/91
+* fix(ci): use correct build workflow name in release workflow by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/92
+* feat(ci): allow calling the build workflow from the GitHub UI by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/93
+* fix(ci): convert build workflow timeout type to expected type by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/94
+* chore(ci): skip `cross` install if build artifact is cached by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/95
+* fix(ci): set platform target in check workflow to utilize cached build artifacts by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/96
+* chore(ci): increase build timeouts to 8 minutes during release by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/97
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.14...v0.0.15
+
 ## 0.0.14 (2024-01-14)
 
 ## What's Changed
