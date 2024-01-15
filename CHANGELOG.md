@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.17 (2024-01-15)
+
+## What's Changed
+* fix(ci): ensure `bash` is used when building for Windows by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/100
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.16...v0.0.17
+
 ## 0.0.16 (2024-01-15)
 
 ## What's Changed
