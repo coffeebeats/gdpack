@@ -59,6 +59,10 @@ on:
         type: boolean
         default: false
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ${{ inputs.os }}
@@ -100,7 +104,7 @@ jobs:
       - name: Archive executable (Default)
         if: runner.os == 'Windows'
         run: |
-          cat  <<- EOM | python3 -c "$(</dev/stdin)"
+          cat <<- EOM | python3 -c "$(</dev/stdin)"
           from zipfile import ZipFile
           with ZipFile("${{ inputs.archive-name }}", mode="w") as a:
           a.write("target/${{ inputs.target }}/release/gdpack.exe", arcname="gdpack.exe")
