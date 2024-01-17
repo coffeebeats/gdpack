@@ -107,29 +107,13 @@ runs:
       shell: bash
       run: cargo install --force cross --git https://github.com/cross-rs/cross
 
-    - name: Fetch project dependencies
-      if: |
-        steps.cache-cargo-registry.outputs.cache-hit != 'true' &&
-        steps.cache-cargo-build.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        cargo update \
-          --dry-run \
-          --frozen \
-          --manifest-path=${{ inputs.manifest }}
-
-        cargo fetch \
-          --manifest-path=${{ inputs.manifest }} \
-          --target ${{ steps.rs-props.outputs.platform }}
-
     - name: Vendor project dependencies
       if: steps.cache-cargo-build.outputs.cache-hit != 'true'
       shell: bash
       run: |
         cargo vendor \
           --frozen \
-          --manifest-path=${{ inputs.manifest }} \
-          --offline
+          --manifest-path=${{ inputs.manifest }}
 
         mkdir -p "${{ steps.rs-props.outputs.crate_dir }}/.cargo"
 
