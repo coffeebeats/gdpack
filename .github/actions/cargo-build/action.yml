@@ -112,17 +112,24 @@ runs:
         steps.cache-cargo-registry.outputs.cache-hit != 'true' &&
         steps.cache-cargo-build.outputs.cache-hit != 'true'
       shell: bash
-      run: cargo fetch \
-        --manifest-path=${{ inputs.manifest }} \
-        --target ${{ steps.rs-props.outputs.platform }}
+      run: |
+        cargo update \
+          --dry-run \
+          --frozen \
+          --manifest-path=${{ inputs.manifest }}
+
+        cargo fetch \
+          --manifest-path=${{ inputs.manifest }} \
+          --target ${{ steps.rs-props.outputs.platform }}
 
     - name: Vendor project dependencies
       if: steps.cache-cargo-build.outputs.cache-hit != 'true'
       shell: bash
       run: |
         cargo vendor \
+          --frozen \
           --manifest-path=${{ inputs.manifest }} \
-          --frozen
+          --offline
 
         mkdir -p "${{ steps.rs-props.outputs.crate_dir }}/.cargo"
 
@@ -159,6 +166,7 @@ runs:
         $CMD build \
           --frozen \
           --manifest-path=${{ inputs.manifest }} \
+          --offline \
           --profile=${{ inputs.profile }} \
           --target=${{ steps.rs-props.outputs.platform }} \
           "${TARGETS[@]}" \
