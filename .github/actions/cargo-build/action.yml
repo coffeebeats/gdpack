@@ -112,7 +112,6 @@ runs:
       shell: bash
       run: |
         cargo vendor \
-          --frozen \
           --manifest-path=${{ inputs.manifest }}
 
         mkdir -p "${{ steps.rs-props.outputs.crate_dir }}/.cargo"
