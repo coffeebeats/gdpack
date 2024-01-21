@@ -231,7 +231,7 @@ impl Addon {
 impl Installable for Addon {
     fn install_to(&self, target: impl AsRef<Path>) -> Result<(), std::io::Error> {
         if !target.as_ref().is_dir() {
-            return Err(std::io::ErrorKind::InvalidInput.into());
+            std::fs::create_dir_all(target.as_ref())?;
         }
 
         let mut target = target.as_ref().canonicalize()?;
@@ -277,16 +277,12 @@ impl TryFrom<&Dependency> for Addon {
     fn try_from(value: &Dependency) -> Result<Self, Self::Error> {
         let root = value.source.fetch().map_err(|e| anyhow!(e))?;
 
-        // Determine the addon's name. This will either be the repository name,
-        // directory name, or a name specified in the 'Dependency'.
-        let name = value.name(); // The name of the 'Dependency' source.
         let name = value
             .addon
-            .as_deref()
-            .or(name.as_deref())
+            .as_ref()
             .ok_or(anyhow!("cannot determine addon name"))?;
 
-        Addon::find_in_dir(root, name)
+        Addon::find_in_dir(root, &name)
     }
 }
 

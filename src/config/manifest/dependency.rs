@@ -28,7 +28,13 @@ pub struct Dependency {
     /// NOTE: If no matching `plugin.cfg` or `*.gdextension` file is found
     /// (i.e. if the entire root directory is to be included) then specifying
     /// this value is an error.
+    ///
+    /// TODO: This value is not serialized into the [`super::Manifest`] table
+    /// value. Instead, it's populated post-parse from the entry key. This
+    /// should eventually be split out of this type and placed in some sort of
+    /// wrapper struct which isn't used to serialize/deserialize TOML values.
     #[builder(default)]
+    #[serde(skip)]
     pub addon: Option<String>,
     /// Name of an addon to replace during installation.
     ///
@@ -36,26 +42,9 @@ pub struct Dependency {
     #[builder(default)]
     pub replace: Option<String>,
     /// A specification of the source location of the addon repository/directory.
-    #[serde(flatten)]
     #[builder(setter(into))]
+    #[serde(flatten)]
     pub source: Source,
-}
-
-/* ---------------------------- Impl: Dependency ---------------------------- */
-
-impl Dependency {
-    /// The name of the addon's project; this value is used as the key within
-    /// the [`super::Manifest`] addon sections.
-    pub fn name(&self) -> Option<String> {
-        match &self.source {
-            Source::Release(r) => r.repo.name(),
-            Source::Git(g) => g.repo.name(),
-            Source::Path { path } => path
-                .file_name()
-                .and_then(std::ffi::OsStr::to_str)
-                .map(str::to_owned),
-        }
-    }
 }
 
 /* ---------------------------- Impl: From<&Item> --------------------------- */
@@ -92,6 +81,19 @@ pub enum Source {
 /* ------------------------------ Impl: Source ------------------------------ */
 
 impl Source {
+    /// The name of the [`Dependency`]'s project; this value is used as a fall-
+    /// back key within the [`super::Manifest`] "addon" sections.
+    pub fn name(&self) -> Option<String> {
+        match self {
+            Source::Release(r) => r.repo.name(),
+            Source::Git(g) => g.repo.name(),
+            Source::Path { path } => path
+                .file_name()
+                .and_then(std::ffi::OsStr::to_str)
+                .map(str::to_owned),
+        }
+    }
+
     /// `fetch` retrieves the [`Dependency`] and stores it in the `gdpack`
     /// store. This method has no effect if the [`Dependency`] is already
     /// downloaded.

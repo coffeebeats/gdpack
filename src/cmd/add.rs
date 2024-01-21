@@ -62,8 +62,9 @@ pub struct SourceArgs {
     #[arg(value_name = "URI", value_parser = Uri::parse)]
     pub uri: Uri,
 
-    /// Install the addon named `NAME` from a multi-addon dependency; if
-    /// omitted, assumed to be repository name or filepath base name.
+    /// Install the addon named `NAME` from a multi-addon dependency or a
+    /// dependency named differently than its addon. If omitted, assumed to be
+    /// repository name or filepath base name.
     #[arg(short, long, value_name = "NAME")]
     pub name: Option<String>,
 
@@ -96,7 +97,7 @@ impl From<SourceArgs> for Dependency {
         };
 
         Dependency::builder()
-            .addon(value.name.to_owned())
+            .addon(value.name.or(source.name()))
             .source(source)
             .build()
     }
@@ -183,6 +184,10 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             || (target.is_none()
                 && !Addon::try_from(&dep).is_ok_and(|a| path_addons.join(a.subfolder).is_dir()));
 
+        if dep.addon.as_ref().is_none() {
+            return Err(anyhow!("missing dependency name"));
+        }
+
         let prev = m
             .addons_mut(
                 Query::builder()
@@ -190,12 +195,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                     .target(target.map(String::as_str))
                     .build(),
             )
-            .insert(
-                &dep.name()
-                    .ok_or(anyhow!("missing dependency name"))?
-                    .to_owned(),
-                &dep,
-            );
+            .insert(&dep);
 
         if prev.is_none() || prev.is_some_and(|p| p != dep) {
             // Fetch the [`Dependency`] before continuing.
@@ -212,7 +212,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                     None => "".to_owned(),
                     Some(t) => format!(" in target '{}'", t),
                 },
-                dep.name().unwrap_or(String::from("unknown")),
+                dep.addon.as_ref().unwrap_or(&String::from("unknown")),
             );
         }
     }

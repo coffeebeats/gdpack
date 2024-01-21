@@ -75,7 +75,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             .remove(name);
 
         let prev = prev_prod.or(prev_dev); // Prioritize a production dependency.
-        if prev.is_some_and(|d| d.name().is_some_and(|n| n == name)) {
+        if prev.is_some_and(|d| d.addon.is_some_and(|n| n == name)) {
             // Install if the [`Manifest`] was modified somehow. Note that the
             // implicit installation performed by `gdpack` manifest
             // modification commands should never use a target.

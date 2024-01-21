@@ -63,7 +63,7 @@ impl<'a> Key<'a> {
 
 /// [`Query`] defines a target- and environment-specific collection of addons
 /// registered in the [`super::Manifest`]. The provided methods allow for
-/// viewing and managing these addons as [`crate::addon::Dependency`] instances.
+/// viewing and managing these addons as [`toml_edit::Item`] instances.
 #[derive(Clone, Debug, Default, Eq, PartialEq, TypedBuilder)]
 pub struct Query<'a> {
     pub dev: bool,
