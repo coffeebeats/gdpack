@@ -129,6 +129,8 @@ impl GitHubRelease {
     fn get_asset_name(&self) -> String {
         self.asset
             .replace("{tag}", &self.tag)
+            .replace("{name}", self.repo.name().as_deref().unwrap_or("{name}"))
+            .replace("{repo}", self.repo.name().as_deref().unwrap_or("{repo}"))
             .replace("{release}", &self.tag)
     }
 }

@@ -13,7 +13,10 @@
         }
       },
       "args": [],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "GDPACK_HOME": "${workspaceFolder}/.gdpack"
+      }
     },
     {
       "type": "lldb",

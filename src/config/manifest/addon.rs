@@ -28,7 +28,12 @@ impl<'a> Addons<'a> {
     pub fn get(&self, name: &str) -> Option<Dependency> {
         let key = Key::builder().query(&self.query).name(name).build();
 
-        key.get(self.document).and_then(|t| t.try_into().ok())
+        key.get(self.document)
+            .and_then(|t| Dependency::try_from(t).ok())
+            .map(|mut d| {
+                d.addon.replace(name.to_owned());
+                d
+            })
     }
 }
 
@@ -45,7 +50,12 @@ impl<'a> IntoIterator for Addons<'a> {
             .and_then(|v| v.as_table_like())
             .map(|t| t.iter())
             .unwrap_or(Box::new(std::iter::empty()))
-            .filter_map(|(_, v)| v.try_into().ok())
+            .filter_map(|(k, v)| {
+                Dependency::try_from(v).ok().map(|mut d| {
+                    d.addon.replace(k.to_owned());
+                    d
+                })
+            })
             .collect::<Vec<_>>()
             .into_iter()
     }
@@ -79,7 +89,9 @@ impl<'a> AddonsMut<'a> {
 
     /// Insert a new [`Dependency`] with the specified `name`; overrides any
     /// existing values and returns the previously stored value, if any.
-    pub fn insert(&mut self, name: &str, dep: &Dependency) -> Option<Dependency> {
+    pub fn insert(&mut self, dep: &Dependency) -> Option<Dependency> {
+        let name = dep.addon.as_ref()?.to_owned();
+
         // When inserting a [`Dependency`], ensure that it's not present in the
         // opposite environment (i.e. 'dev' vs. non-'dev'). Note that this is an
         // invariant, which is why it's implemented here instead of requiring
@@ -94,16 +106,22 @@ impl<'a> AddonsMut<'a> {
             .document(self.document)
             .query(self.query.invert_dev())
             .build()
-            .remove(name);
+            .remove(name.as_str());
 
-        let key = Key::builder().query(&self.query).name(name).build();
+        let key = Key::builder()
+            .query(&self.query)
+            .name(name.as_str())
+            .build();
 
         let prev = dep
             .serialize(ValueSerializer::new())
             .ok()
             .and_then(|v| key.insert(self.document, toml_edit::value(v)));
 
-        (&prev?).try_into().ok()
+        Dependency::try_from(&prev?).ok().map(|mut d| {
+            d.addon.replace(name);
+            d
+        })
     }
 
     /// Remove the [`Dependency`] with the specified `name`; returns the
@@ -111,7 +129,12 @@ impl<'a> AddonsMut<'a> {
     pub fn remove(&mut self, name: &str) -> Option<Dependency> {
         let key = Key::builder().query(&self.query).name(name).build();
 
-        let out = key.remove(self.document).and_then(|v| (&v).try_into().ok());
+        let out = key.remove(self.document).and_then(|v| {
+            Dependency::try_from(&v).ok().map(|mut d| {
+                d.addon.replace(name.to_owned());
+                d
+            })
+        });
 
         if key.query.is_empty(self.document) {
             key.query.remove(self.document);
@@ -134,7 +157,12 @@ impl<'a> IntoIterator for AddonsMut<'a> {
             .and_then(|v| v.as_table_like())
             .map(|t| t.iter())
             .unwrap_or(Box::new(std::iter::empty()))
-            .filter_map(|(_, v)| v.try_into().ok())
+            .filter_map(|(k, v)| {
+                Dependency::try_from(v).ok().map(|mut d| {
+                    d.addon.replace(k.to_owned());
+                    d
+                })
+            })
             .collect::<Vec<_>>()
             .into_iter()
     }
@@ -166,8 +194,10 @@ mod tests {
         let mut got = Manifest::default();
 
         let prev = got.addons_mut(Query::default()).insert(
-            "abc",
-            &Dependency::builder().source(PathBuf::from("a/b/c")).build(),
+            &Dependency::builder()
+                .addon(Some(String::from("abc")))
+                .source(PathBuf::from("a/b/c"))
+                .build(),
         );
 
         assert_eq!(
@@ -182,8 +212,10 @@ mod tests {
         let mut got = Manifest::default();
 
         got.addons_mut(Query::default()).insert(
-            "abc",
-            &Dependency::builder().source(PathBuf::from("a/b/c")).build(),
+            &Dependency::builder()
+                .addon(Some(String::from("abc")))
+                .source(PathBuf::from("a/b/c"))
+                .build(),
         );
 
         let prev = got.addons_mut(Query::default()).remove("abc");
@@ -191,7 +223,12 @@ mod tests {
         assert_eq!(String::from(&got), String::from(&Manifest::default()));
         assert_eq!(
             prev,
-            Some(Dependency::builder().source(PathBuf::from("a/b/c")).build())
+            Some(
+                Dependency::builder()
+                    .addon(Some(String::from("abc")))
+                    .source(PathBuf::from("a/b/c"))
+                    .build()
+            )
         );
     }
 
@@ -302,7 +339,7 @@ mod tests {
 
         assert_eq!(
             dep.serialize(ValueSerializer::new())?.to_string(),
-            r#"{ addon = "abc", replace = "def", path = "a/b/c" }"#
+            r#"{ replace = "def", path = "a/b/c" }"#
         );
 
         Ok(())
@@ -408,11 +445,10 @@ mod tests {
     #[test]
     fn test_dependency_deserializes_with_attrs_to_table() -> Result<(), toml_edit::de::Error> {
         assert_eq!(
-            r#"{ addon = "abc", git = "https://github.com", replace = "def" }"#
+            r#"{ git = "https://github.com", replace = "def" }"#
                 .parse::<ValueDeserializer>()
                 .and_then(Dependency::deserialize)?,
             Dependency::builder()
-                .addon(Some(String::from("abc")))
                 .replace(Some(String::from("def")))
                 .source(Source::Git(
                     git::Source::builder()

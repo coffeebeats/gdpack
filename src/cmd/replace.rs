@@ -29,7 +29,11 @@ pub struct Args {
 
     /// Replace the dependency only for TARGET (can be specified more than once
     /// and accepts multiple values delimited by `,`).
-    #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
+    ///
+    /// NOTE: This value is **required** because a replacement specified in the
+    /// default target should just be expressed as _replacing the entry in the
+    /// [`Manifest`]_.
+    #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 0..)]
     pub target: Vec<String>,
 
     /// The `NAME` of an installed addon to replace.
@@ -54,7 +58,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let mut dep = Dependency::from(args.source);
     dep.replace = Some(args.addon.clone());
 
-    if &args.addon == dep.name().as_ref().ok_or(anyhow!("missing addon name"))? {
+    if &args.addon == dep.addon.as_ref().ok_or(anyhow!("missing addon name"))? {
         let _ = dep.replace.take();
     }
 
@@ -79,6 +83,10 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             || (target.is_none()
                 && !Addon::try_from(&dep).is_ok_and(|a| path_addons.join(a.subfolder).is_dir()));
 
+        if dep.addon.as_ref().is_none() {
+            return Err(anyhow!("missing dependency name"));
+        }
+
         let prev = m
             .addons_mut(
                 Query::builder()
@@ -86,12 +94,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                     .target(target.map(String::as_str))
                     .build(),
             )
-            .insert(
-                &dep.name()
-                    .ok_or(anyhow!("missing dependency name"))?
-                    .to_owned(),
-                &dep,
-            );
+            .insert(&dep);
 
         if prev.is_none() || prev.is_some_and(|p| p != dep) {
             // Fetch the [`Dependency`] before continuing.
@@ -109,7 +112,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
                     Some(t) => format!(" in target '{}'", t),
                 },
                 args.addon,
-                dep.name().unwrap_or(String::from("unknown"))
+                dep.addon.as_ref().unwrap_or(&String::from("unknown"))
             );
         }
     }

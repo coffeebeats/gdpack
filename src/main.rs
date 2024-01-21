@@ -6,6 +6,7 @@ mod git;
 use anyhow::Result;
 use clap::Parser;
 use cmd::Commands;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "gdpack", author, version, about)]
@@ -13,6 +14,10 @@ use cmd::Commands;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    /// A `PATH` to the Godot project containing the manifest.
+    #[arg(short, long, global = true, value_name = "PATH")]
+    project: Option<PathBuf>,
 
     /// Silences all non-essential logging.
     #[arg(short, long, global = true, conflicts_with = "verbose")]
