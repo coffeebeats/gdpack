@@ -3,14 +3,14 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
-use crate::addon::Addon;
-use crate::config::manifest::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
-use crate::config::manifest::Source;
 use crate::config::Configuration;
 use crate::config::Parsable;
 use crate::config::Persistable;
+use crate::core::Addon;
+use crate::core::Dependency;
+use crate::core::Source;
 use crate::git;
 
 use super::install::handle as install;

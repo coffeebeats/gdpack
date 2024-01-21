@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use typed_builder::TypedBuilder;
 
 use crate::config::gdext::Extension;
-use crate::config::manifest::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::plugin::Plugin;
 use crate::config::Configuration;
@@ -13,6 +12,7 @@ use crate::config::FileQuery;
 use crate::config::Parsable;
 use crate::config::ParsableError;
 
+use super::Dependency;
 use super::Installable;
 
 /* -------------------------------------------------------------------------- */
@@ -298,7 +298,7 @@ mod tests {
     use std::io::Write;
     use tempfile::tempdir;
 
-    use crate::addon::Addon;
+    use crate::core::Addon;
 
     macro_rules! write_file {
         ($path:expr, $content:expr$(,)?) => {

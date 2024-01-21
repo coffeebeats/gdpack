@@ -4,6 +4,13 @@ mod addon;
 
 pub use addon::Addon;
 
+/* ----------------------------- Mod: dependency ---------------------------- */
+
+mod dependency;
+
+pub use dependency::Dependency;
+pub use dependency::Source;
+
 /* -------------------------------------------------------------------------- */
 /*                             Trait: Installable                             */
 /* -------------------------------------------------------------------------- */
