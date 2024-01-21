@@ -1,13 +1,13 @@
 use anyhow::anyhow;
 use std::path::PathBuf;
 
-use crate::addon::Addon;
-use crate::addon::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
 use crate::config::Configuration;
 use crate::config::Parsable;
 use crate::config::Persistable;
+use crate::core::Addon;
+use crate::core::Dependency;
 
 use super::add::SourceArgs;
 use super::install::handle as install;

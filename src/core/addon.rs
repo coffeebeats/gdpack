@@ -298,7 +298,7 @@ mod tests {
     use std::io::Write;
     use tempfile::tempdir;
 
-    use crate::addon::Addon;
+    use crate::core::Addon;
 
     macro_rules! write_file {
         ($path:expr, $content:expr$(,)?) => {

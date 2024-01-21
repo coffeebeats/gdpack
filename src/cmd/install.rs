@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use typed_builder::TypedBuilder;
 
-use crate::addon::Addon;
-use crate::addon::Dependency;
-use crate::addon::Installable;
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
 use crate::config::Configuration;
 use crate::config::Parsable;
+use crate::core::Addon;
+use crate::core::Dependency;
+use crate::core::Installable;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */

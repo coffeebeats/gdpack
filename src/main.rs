@@ -1,6 +1,6 @@
-mod addon;
 mod cmd;
 mod config;
+mod core;
 mod git;
 
 use anyhow::Result;

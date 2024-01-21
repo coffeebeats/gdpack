@@ -3,7 +3,7 @@ use toml_edit::ser::ValueSerializer;
 use toml_edit::Document;
 use typed_builder::TypedBuilder;
 
-use crate::addon::Dependency;
+use crate::core::Dependency;
 
 use super::key::Key;
 use super::Query;
@@ -181,8 +181,8 @@ mod tests {
     use toml_edit::de::ValueDeserializer;
     use toml_edit::ser::ValueSerializer;
 
-    use crate::addon::Dependency;
-    use crate::addon::Source;
+    use crate::core::Dependency;
+    use crate::core::Source;
 
     use crate::config::manifest::Manifest;
     use crate::config::manifest::Query;
