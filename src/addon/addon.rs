@@ -282,7 +282,7 @@ impl TryFrom<&Dependency> for Addon {
             .as_ref()
             .ok_or(anyhow!("cannot determine addon name"))?;
 
-        Addon::find_in_dir(root, &name)
+        Addon::find_in_dir(root, name)
     }
 }
 

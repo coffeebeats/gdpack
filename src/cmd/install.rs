@@ -70,8 +70,8 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             return Err(anyhow!("missing target"));
         }
 
-        let dev = m.addons(Query::builder().dev(true).target(target.clone()).build());
-        let prod = m.addons(Query::builder().dev(false).target(target.clone()).build());
+        let dev = m.addons(Query::builder().dev(true).target(target).build());
+        let prod = m.addons(Query::builder().dev(false).target(target).build());
 
         let target_deps: Vec<_> = if args.production {
             prod.into_iter().collect()
@@ -80,13 +80,12 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         };
 
         for dep in target_deps {
-            if !deps.contains_key(&target) {
-                deps.insert(target, vec![]);
-            }
-
-            if let Some(list) = deps.get_mut(&target) {
-                list.push(dep);
-            }
+            match deps.get_mut(&target) {
+                None => {
+                    deps.insert(target, vec![dep]);
+                }
+                Some(existing) => existing.push(dep),
+            };
         }
     }
 
@@ -173,7 +172,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let deps: Vec<&Dependency> = declared
         .into_iter()
         .filter(|(name, _)| !replaced.contains_key(name))
-        .filter_map(|(_, (_, dep))| Some(dep))
+        .map(|(_, (_, dep))| dep)
         .collect::<Vec<_>>();
 
     let mut addons: Vec<Addon> = vec![];
