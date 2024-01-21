@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use typed_builder::TypedBuilder;
 
 use crate::config::gdext::Extension;
-use crate::config::manifest::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::plugin::Plugin;
 use crate::config::Configuration;
@@ -13,6 +12,7 @@ use crate::config::FileQuery;
 use crate::config::Parsable;
 use crate::config::ParsableError;
 
+use super::Dependency;
 use super::Installable;
 
 /* -------------------------------------------------------------------------- */

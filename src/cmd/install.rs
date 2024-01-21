@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use typed_builder::TypedBuilder;
 
 use crate::addon::Addon;
+use crate::addon::Dependency;
 use crate::addon::Installable;
-use crate::config::manifest::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
 use crate::config::Configuration;

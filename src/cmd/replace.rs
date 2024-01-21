@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use std::path::PathBuf;
 
 use crate::addon::Addon;
-use crate::config::manifest::Dependency;
+use crate::addon::Dependency;
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
 use crate::config::Configuration;
