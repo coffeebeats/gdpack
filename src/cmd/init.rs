@@ -42,7 +42,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     }
 
     Manifest::persist(
-        &Manifest::default(),
+        &Manifest::new(),
         path_project.join(Manifest::file_name().unwrap()),
     )?;
 

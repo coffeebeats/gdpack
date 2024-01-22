@@ -49,6 +49,29 @@ pub struct Manifest(Document);
 impl Manifest {
     /* --------------------------- Methods: Public -------------------------- */
 
+    /// New creates a new [`Manifest`] using a template suitable for end users.
+    /// This is in contrast to the [`Manifest::default`] implementation which
+    /// creates an empty manifest.
+    pub fn new() -> Manifest {
+        let template = r#"# Use `gdpack add` to import addon dependencies into your project.
+# 
+# For example:
+#    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
+
+[project]
+# Merge additional script templates from these directories into the project.
+include_script_templates = []
+
+# Export non-imported script templates found in these directories.
+export_script_templates = []
+
+[dev-addons]
+Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
+"#;
+
+        Manifest(template.parse::<Document>().unwrap())
+    }
+
     /// Returns an _immutable_ view of the addons recorded for the provided
     /// [`Query`].
     pub fn addons<'a>(&'a self, query: &'a Query) -> Addons {
@@ -320,23 +343,7 @@ impl From<Document> for Manifest {
 
 impl Default for Manifest {
     fn default() -> Self {
-        let template = r#"# Use `gdpack add` to import addon dependencies into your project.
-# 
-# For example:
-#    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
-
-[project]
-# Merge additional script templates from these directories into the project.
-include_script_templates = []
-
-# Export non-imported script templates found in these directories.
-export_script_templates = []
-
-[dev-addons]
-Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
-"#;
-
-        Manifest(template.parse::<Document>().unwrap())
+        Manifest(Document::new())
     }
 }
 
