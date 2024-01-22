@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0 (2024-01-22)
+
+## What's Changed
+* chore(ci): specify manifest path to cargo fetch and vendor commands by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/105
+* fix(ci): update `crates.io` registry prior to running `cargo fetch` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/107
+* fix(ci): eliminate redundant `cargo fetch` step by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/108
+* fix(ci): remove `--frozen` limitation from `cargo vendor` step by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/109
+* chore(deps): bump clap from 4.4.16 to 4.4.18 by @dependabot in https://github.com/coffeebeats/gdpack/pull/103
+* chore(deps): bump typed-builder from 0.18.0 to 0.18.1 by @dependabot in https://github.com/coffeebeats/gdpack/pull/104
+* chore(deps): bump h2 from 0.3.22 to 0.3.24 by @dependabot in https://github.com/coffeebeats/gdpack/pull/110
+* feat(cmd/install): implement `install` command without transitive dependencies by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/111
+* chore(core): refactor `addon` module into `core` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/112
+* feat(core)!: create an `Install` implementation which supports transitive dependencies by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/113
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.0.17...v0.1.0
+
 ## 0.0.17 (2024-01-15)
 
 ## What's Changed
