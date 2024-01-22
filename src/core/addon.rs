@@ -275,14 +275,39 @@ impl TryFrom<&Dependency> for Addon {
     type Error = anyhow::Error;
 
     fn try_from(value: &Dependency) -> Result<Self, Self::Error> {
-        let root = value.source.fetch().map_err(|e| anyhow!(e))?;
+        let root = (&value.source).fetch().map_err(|e| anyhow!(e))?;
 
         let name = value
             .addon
             .as_ref()
             .ok_or(anyhow!("cannot determine addon name"))?;
 
-        Addon::find_in_dir(root, name)
+        let mut addon = Addon::find_in_dir(root, name)?;
+
+        // In the event that this isn't a [`Plugin`], try to parse the version
+        // from a 'git' tag.
+        if addon.version.is_none() {
+            match &value.source {
+                super::Source::Release(r) => {
+                    let tag = r.tag.as_str().strip_prefix("v").unwrap_or(&r.tag);
+                    if let Ok(v) = semver::Version::parse(tag) {
+                        addon.version.replace(v);
+                    }
+                }
+                super::Source::Git(g) => {
+                    if let Some(reference) = &g.reference {
+                        if let crate::git::Reference::Tag(tag) = reference {
+                            if let Ok(v) = semver::Version::parse(&tag) {
+                                addon.version.replace(v);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            };
+        }
+
+        Ok(addon)
     }
 }
 
