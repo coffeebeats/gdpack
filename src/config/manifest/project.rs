@@ -61,7 +61,7 @@ mod tests {
 
     test_de_templates!(
         test_de_templates_include_succeeds,
-        r#"{ include = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
+        r#"{ include_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
         ScriptTemplates::builder()
             .include(
                 vec!["./a.gd", "../a.gd", "a.gd", "/a.gd"]
@@ -74,7 +74,7 @@ mod tests {
 
     test_de_templates!(
         test_de_templates_export_from_inline_table_succeeds,
-        r#"{ export = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
+        r#"{ export_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
         ScriptTemplates::builder()
             .export(
                 vec!["./a.gd", "../a.gd", "a.gd", "/a.gd"]
@@ -87,7 +87,7 @@ mod tests {
 
     test_de_templates!(
         test_de_templates_include_and_export_succeeds,
-        r#"{ include = ["./a.gd", "../a.gd", "a.gd", "/a.gd"], export = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
+        r#"{ include_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"], export_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
         ScriptTemplates::builder()
             .include(
                 vec!["./a.gd", "../a.gd", "a.gd", "/a.gd"]
