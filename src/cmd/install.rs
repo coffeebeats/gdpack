@@ -5,7 +5,6 @@ use typed_builder::TypedBuilder;
 use crate::config::manifest::Manifest;
 use crate::config::Configuration;
 use crate::config::Parsable;
-use crate::core::Installable;
 
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
@@ -60,11 +59,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
         .root(&m)
         .build();
 
-    let addons = install.resolve_addons()?;
-
-    for addon in addons {
-        addon.install_to(&path_addons)?;
-    }
+    install.install_to(path_addons)?;
 
     Ok(())
 }
