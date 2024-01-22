@@ -24,6 +24,9 @@ url = { version = "2.5.0", features = ["serde"] }
 walkdir = "2.4.0"
 zip = "0.6.6"
 
+[dev-dependencies]
+rstest = { version = "0.18.2", default-features = false }
+
 # NOTE: This works around a cross-compilation issue seen in GitHub actions runs
 # where `openssl-sys` cannot find `openssl` because "pkg-config has not been
 # configured to support cross-compilation".
