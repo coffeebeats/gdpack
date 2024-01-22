@@ -64,8 +64,9 @@ impl<'a> Key<'a> {
 /// [`Query`] defines a target- and environment-specific collection of addons
 /// registered in the [`super::Manifest`]. The provided methods allow for
 /// viewing and managing these addons as [`toml_edit::Item`] instances.
-#[derive(Clone, Debug, Default, Eq, PartialEq, TypedBuilder)]
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, TypedBuilder)]
 pub struct Query {
+    #[builder(default = true)]
     pub dev: bool,
     #[builder(default)]
     pub target: Option<String>,
@@ -75,6 +76,18 @@ pub struct Query {
 
 impl Query {
     /* --------------------------- Methods: Public -------------------------- */
+
+    /// Returns a new [`Query`] for the default target in the development
+    /// environment.
+    pub fn dev() -> Query {
+        Query::builder().dev(true).build()
+    }
+
+    /// Returns a new [`Query`] for the default target in the production
+    /// environment.
+    pub fn prod() -> Query {
+        Query::builder().dev(false).build()
+    }
 
     /// `invert_dev` turns `self` into a new [`Query`] instance for the opposing
     /// addon environment (i.e. 'dev' vs. non-'dev').
