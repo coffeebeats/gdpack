@@ -7,9 +7,6 @@ use crate::config::Configuration;
 use crate::config::Parsable;
 use crate::config::Persistable;
 
-use super::install::handle as install;
-use super::install::Args as InstallArgs;
-
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
 /* -------------------------------------------------------------------------- */
@@ -41,14 +38,20 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let mut m = Manifest::parse_file(&path_manifest)
         .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
 
+    // Determine whether an installation is required by default. This is the
+    // case when there is no "addons" directory or the [`Addon`] isn't found.
+    let path_addons = path_project.as_path().join("addons");
+    let mut should_install = !path_addons.as_path().is_dir();
+
     let targets = match args.target.is_empty() {
         true => vec![None],
-        false => args.target.iter().map(Some).collect(),
+        false => args.target.iter().map(String::as_str).map(Some).collect(),
     };
 
     let name = args.name.as_str();
 
-    let mut should_install = !path_project.as_path().join("addons").is_dir();
+    let mut logs: Vec<String> = vec![];
+
     for target in &targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
             return Err(anyhow!("missing target"));
@@ -58,18 +61,18 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
         let prev_prod = m
             .addons_mut(
-                Query::builder()
+                &Query::builder()
                     .dev(false)
-                    .target(target.map(String::as_str))
+                    .target(target.map(str::to_owned))
                     .build(),
             )
             .remove(name);
 
         let prev_dev = m
             .addons_mut(
-                Query::builder()
+                &Query::builder()
                     .dev(true)
-                    .target(target.map(String::as_str))
+                    .target(target.map(str::to_owned))
                     .build(),
             )
             .remove(name);
@@ -81,29 +84,33 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             // modification commands should never use a target.
             should_install = should_install || target.is_none();
 
-            println!(
+            logs.push(format!(
                 "removed dependency{}: {}",
                 match target {
                     None => "".to_owned(),
                     Some(t) => format!(" from target '{}'", t),
                 },
                 name,
-            );
+            ));
         }
     }
 
-    m.persist(path_manifest)?;
+    if should_install {
+        let install = crate::core::Install::builder()
+            .dev(true)
+            .targets(targets)
+            .root(&m)
+            .build();
 
-    if !should_install {
-        return Ok(());
+        install.install_to(path_addons)?;
     }
 
-    install(
-        InstallArgs::builder()
-            .production(false)
-            .project(args.project)
-            .build(),
-    )?;
+    m.persist(path_manifest)
+        .map_err(|e| anyhow!("failed to persist manifest: {:}", e))?;
+
+    for log in logs {
+        println!("{}", log);
+    }
 
     Ok(())
 }
