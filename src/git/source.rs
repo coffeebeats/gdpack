@@ -10,7 +10,7 @@ use url::Url;
 
 /// Remote is a newtype wrapper around [Url] which adds helpful methods for
 /// extracting parts of a remotely-hosted git repository.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Remote(Url);
 
 /* ------------------------------ Impl: Remote ------------------------------ */
@@ -84,7 +84,9 @@ impl From<Url> for Remote {
 /* -------------------------------------------------------------------------- */
 
 /// Captures a specific version of a remotely hosted git repository.
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize, TypedBuilder)]
+#[derive(
+    Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, TypedBuilder,
+)]
 pub struct Source {
     #[serde(flatten)]
     #[builder(default)]
@@ -98,7 +100,7 @@ pub struct Source {
 /* -------------------------------------------------------------------------- */
 
 /// Specifies a particular revision in a git repository.
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Reference {
     Branch(String),

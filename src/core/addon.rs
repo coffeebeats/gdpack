@@ -21,7 +21,7 @@ use super::Installable;
 
 /// A handle to a downloaded [`Dependency`], along with the necessary metadata
 /// for installing it into a _Godot_ project.
-#[derive(Clone, Debug, TypedBuilder)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, TypedBuilder)]
 pub struct Addon {
     /// The addon's parsed [`Manifest`], if one exists.
     #[builder(default)]
