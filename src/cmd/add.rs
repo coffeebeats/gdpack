@@ -13,9 +13,6 @@ use crate::core::Dependency;
 use crate::core::Source;
 use crate::git;
 
-use super::install::handle as install;
-use super::install::Args as InstallArgs;
-
 /* -------------------------------------------------------------------------- */
 /*                                Struct: Args                                */
 /* -------------------------------------------------------------------------- */
@@ -170,8 +167,10 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
     let targets = match args.target.is_empty() {
         true => vec![None],
-        false => args.target.iter().map(Some).collect(),
+        false => args.target.iter().map(String::as_str).map(Some).collect(),
     };
+
+    let mut logs: Vec<String> = vec![];
 
     for target in &targets {
         if target.as_ref().is_some_and(|t| t.is_empty()) {
@@ -190,9 +189,9 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
         let prev = m
             .addons_mut(
-                Query::builder()
+                &Query::builder()
                     .dev(args.dev)
-                    .target(target.map(String::as_str))
+                    .target(target.map(str::to_owned))
                     .build(),
             )
             .insert(&dep);
@@ -206,30 +205,33 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             // modification commands should never use a target.
             should_install = should_install || target.is_none();
 
-            println!(
+            logs.push(format!(
                 "added dependency{}: {}",
                 match target {
                     None => "".to_owned(),
                     Some(t) => format!(" in target '{}'", t),
                 },
                 dep.addon.as_ref().unwrap_or(&String::from("unknown")),
-            );
+            ));
         }
+    }
+
+    if should_install {
+        let install = crate::core::Install::builder()
+            .dev(args.dev)
+            .targets(targets)
+            .root(&m)
+            .build();
+
+        install.install_to(path_addons)?;
     }
 
     m.persist(path_manifest)
         .map_err(|e| anyhow!("failed to persist manifest: {:}", e))?;
 
-    if !should_install {
-        return Ok(());
+    for log in logs {
+        println!("{}", log);
     }
-
-    install(
-        InstallArgs::builder()
-            .production(false)
-            .project(args.project)
-            .build(),
-    )?;
 
     Ok(())
 }

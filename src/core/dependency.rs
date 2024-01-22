@@ -17,7 +17,9 @@ use crate::git;
 /// sourced from either a local path, a remote Git repository, or a release
 /// asset of a hosted Git repository. [`Dependency`] also tracks whether the
 /// addon it represents should replace another [`Dependency`] during installs.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, TypedBuilder)]
+#[derive(
+    Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, TypedBuilder,
+)]
 pub struct Dependency {
     /// A specific addon name used to distinguish between addons within a multi-
     /// addon repository. This value will be used to match against either a
@@ -66,7 +68,7 @@ impl TryFrom<&Item> for Dependency {
 /* -------------------------------------------------------------------------- */
 
 /// [`Source`] specifies where the addon source code is located.
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Hash, Ord, PartialEq, PartialOrd, Eq, Serialize)]
 #[serde(untagged, rename_all = "lowercase")]
 pub enum Source {
     // NOTE: `Source::Release` must come before `Source::Git` because of their

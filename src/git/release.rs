@@ -15,7 +15,9 @@ use super::Remote;
 /*                            Struct: GitHubRelease                           */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, TypedBuilder)]
+#[derive(
+    Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, TypedBuilder,
+)]
 pub struct GitHubRelease {
     #[serde(rename = "git")]
     pub repo: Remote,
@@ -53,6 +55,16 @@ impl GitHubRelease {
     }
 
     pub fn download(&self) -> Result<(), Error> {
+        // TODO: Save compressed archives instead of extracted contents so that
+        // less space is consumed and checksum validation is easier.
+        // If the asset exists already, skip the download.
+        let path_store = self.get_path()?;
+        if path_store.as_path().is_dir()
+            && std::fs::read_dir(path_store).map_err(Error::Io)?.count() > 0
+        {
+            return Ok(());
+        }
+
         let base = self.repo.assets()?;
         let asset_url = base
             .join(&format!("{}/{}", self.tag, self.get_asset_name()))

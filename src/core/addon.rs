@@ -21,7 +21,7 @@ use super::Installable;
 
 /// A handle to a downloaded [`Dependency`], along with the necessary metadata
 /// for installing it into a _Godot_ project.
-#[derive(Clone, Debug, TypedBuilder)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, TypedBuilder)]
 pub struct Addon {
     /// The addon's parsed [`Manifest`], if one exists.
     #[builder(default)]
@@ -282,7 +282,30 @@ impl TryFrom<&Dependency> for Addon {
             .as_ref()
             .ok_or(anyhow!("cannot determine addon name"))?;
 
-        Addon::find_in_dir(root, name)
+        let mut addon = Addon::find_in_dir(root, name)?;
+
+        // In the event that this isn't a [`Plugin`], try to parse the version
+        // from a 'git' tag.
+        if addon.version.is_none() {
+            match &value.source {
+                super::Source::Release(r) => {
+                    let tag = r.tag.as_str().strip_prefix('v').unwrap_or(&r.tag);
+                    if let Ok(v) = semver::Version::parse(tag) {
+                        addon.version.replace(v);
+                    }
+                }
+                super::Source::Git(g) => {
+                    if let Some(crate::git::Reference::Tag(tag)) = &g.reference {
+                        if let Ok(v) = semver::Version::parse(tag) {
+                            addon.version.replace(v);
+                        }
+                    }
+                }
+                _ => {}
+            };
+        }
+
+        Ok(addon)
     }
 }
 
