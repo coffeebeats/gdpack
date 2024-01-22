@@ -34,7 +34,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     let path_project = super::parse_project(args.project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
-    if (&path_manifest).is_file() && Manifest::parse_file(&path_manifest).is_ok() {
+    if path_manifest.is_file() && Manifest::parse_file(&path_manifest).is_ok() {
         return Err(anyhow!(
             "manifest already exists: {}",
             path_manifest.to_str().unwrap()

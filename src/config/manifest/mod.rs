@@ -120,7 +120,7 @@ impl Manifest {
 
     /// Returns an _immutable_ view of the project configuration within the
     /// [`Manifest`].
-    pub fn project<'a>(&'a self) -> Project {
+    pub fn project(&self) -> Project {
         Project::builder().document(&self.0).build()
     }
 
