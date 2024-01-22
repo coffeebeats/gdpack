@@ -11,6 +11,12 @@ mod key;
 
 pub use key::Query;
 
+/* ------------------------------ Mod: project ------------------------------ */
+
+mod project;
+
+pub use project::Project;
+
 /* -------------------------------------------------------------------------- */
 /*                              Struct: Manifest                              */
 /* -------------------------------------------------------------------------- */
@@ -110,6 +116,12 @@ impl Manifest {
         Manifest::check_for_double_replace(&out)?;
 
         Ok(out.into_iter().map(|(_, d)| d).collect())
+    }
+
+    /// Returns an _immutable_ view of the project configuration within the
+    /// [`Manifest`].
+    pub fn project<'a>(&'a self) -> Project {
+        Project::builder().document(&self.0).build()
     }
 
     /* -------------------------- Methods: Private -------------------------- */
@@ -308,11 +320,23 @@ impl From<Document> for Manifest {
 
 impl Default for Manifest {
     fn default() -> Self {
-        let mut doc = Document::new();
+        let template = r#"# Use `gdpack add` to import addon dependencies into your project.
+# 
+# For example:
+#    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
 
-        doc.insert(key::MANIFEST_SECTION_ADDONS, toml_edit::table());
+[project]
+# Merge additional script templates from these directories into the project.
+include_script_templates = []
 
-        Manifest(doc)
+# Export non-imported script templates found in these directories.
+export_script_templates = []
+
+[dev-addons]
+Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
+"#;
+
+        Manifest(template.parse::<Document>().unwrap())
     }
 }
 
