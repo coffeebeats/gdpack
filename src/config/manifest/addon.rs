@@ -27,7 +27,7 @@ impl<'a> Addons<'a> {
 
     /// Immutably look up the [`Dependency`] with the specified `name`.
     pub fn get(&self, name: &str) -> Option<Dependency> {
-        let key = Key::builder().query(&self.query).name(name).build();
+        let key = Key::builder().query(self.query).name(name).build();
 
         key.get(self.document)
             .and_then(|t| Dependency::try_from(t).ok())
@@ -109,10 +109,7 @@ impl<'a> AddonsMut<'a> {
             .build()
             .remove(name.as_str());
 
-        let key = Key::builder()
-            .query(&self.query)
-            .name(name.as_str())
-            .build();
+        let key = Key::builder().query(self.query).name(name.as_str()).build();
 
         let prev = dep
             .serialize(ValueSerializer::new())
@@ -128,7 +125,7 @@ impl<'a> AddonsMut<'a> {
     /// Remove the [`Dependency`] with the specified `name`; returns the
     /// previously stored value, if any.
     pub fn remove(&mut self, name: &str) -> Option<Dependency> {
-        let key = Key::builder().query(&self.query).name(name).build();
+        let key = Key::builder().query(self.query).name(name).build();
 
         let out = key.remove(self.document).and_then(|v| {
             Dependency::try_from(&v).ok().map(|mut d| {

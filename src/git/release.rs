@@ -58,11 +58,7 @@ impl GitHubRelease {
         // If the asset exists already, skip the download.
         let path_store = self.get_path()?;
         if path_store.as_path().is_dir()
-            && std::fs::read_dir(path_store)
-                .map_err(Error::Io)?
-                .into_iter()
-                .count()
-                > 0
+            && std::fs::read_dir(path_store).map_err(Error::Io)?.count() > 0
         {
             return Ok(());
         }
