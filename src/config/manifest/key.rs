@@ -17,7 +17,7 @@ pub(super) const MANIFEST_SECTION_TARGET: &str = "target";
 pub(super) struct Key<'a> {
     #[builder(setter(into))]
     pub name: &'a str,
-    pub query: &'a Query<'a>,
+    pub query: &'a Query,
 }
 
 /* -------------------------------- Impl: Key ------------------------------- */
@@ -65,21 +65,24 @@ impl<'a> Key<'a> {
 /// registered in the [`super::Manifest`]. The provided methods allow for
 /// viewing and managing these addons as [`toml_edit::Item`] instances.
 #[derive(Clone, Debug, Default, Eq, PartialEq, TypedBuilder)]
-pub struct Query<'a> {
+pub struct Query {
     pub dev: bool,
     #[builder(default)]
-    pub target: Option<&'a str>,
+    pub target: Option<String>,
 }
 
 /* ------------------------------- Impl: Query ------------------------------ */
 
-impl<'a> Query<'a> {
+impl Query {
     /* --------------------------- Methods: Public -------------------------- */
 
     /// `invert_dev` turns `self` into a new [`Query`] instance for the opposing
     /// addon environment (i.e. 'dev' vs. non-'dev').
-    pub fn invert_dev(&self) -> Query<'a> {
-        Query::builder().dev(!self.dev).target(self.target).build()
+    pub fn invert_dev(&self) -> Query {
+        Query::builder()
+            .dev(!self.dev)
+            .target(self.target.clone())
+            .build()
     }
 
     /* -------------------------- Methods: Private -------------------------- */

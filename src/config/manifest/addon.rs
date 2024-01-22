@@ -17,7 +17,7 @@ use super::Query;
 #[derive(Debug, TypedBuilder)]
 pub struct Addons<'a> {
     document: &'a Document,
-    query: Query<'a>,
+    query: &'a Query,
 }
 
 /* ------------------------------ Impl: Addons ------------------------------ */
@@ -71,7 +71,7 @@ impl<'a> IntoIterator for Addons<'a> {
 #[derive(Debug, TypedBuilder)]
 pub struct AddonsMut<'a> {
     document: &'a mut Document,
-    query: Query<'a>,
+    query: &'a Query,
 }
 
 /* ----------------------------- Impl: AddonsMut ---------------------------- */
@@ -83,7 +83,7 @@ impl<'a> AddonsMut<'a> {
     pub fn get(&self, name: &str) -> Option<Dependency> {
         Addons::builder()
             .document(self.document)
-            .query(self.query.clone())
+            .query(self.query)
             .build()
             .get(name)
     }
@@ -105,7 +105,7 @@ impl<'a> AddonsMut<'a> {
         // trying to remove the [`Dependency`] from the opposite environment.
         let _ = AddonsMut::builder()
             .document(self.document)
-            .query(self.query.invert_dev())
+            .query(&self.query.invert_dev())
             .build()
             .remove(name.as_str());
 
@@ -195,7 +195,7 @@ mod tests {
     fn test_addons_insert() {
         let mut got = Manifest::default();
 
-        let prev = got.addons_mut(Query::default()).insert(
+        let prev = got.addons_mut(&Query::default()).insert(
             &Dependency::builder()
                 .addon(Some(String::from("abc")))
                 .source(PathBuf::from("a/b/c"))
@@ -213,14 +213,14 @@ mod tests {
     fn test_addons_remove() {
         let mut got = Manifest::default();
 
-        got.addons_mut(Query::default()).insert(
+        got.addons_mut(&Query::default()).insert(
             &Dependency::builder()
                 .addon(Some(String::from("abc")))
                 .source(PathBuf::from("a/b/c"))
                 .build(),
         );
 
-        let prev = got.addons_mut(Query::default()).remove("abc");
+        let prev = got.addons_mut(&Query::default()).remove("abc");
 
         assert_eq!(String::from(&got), String::from(&Manifest::default()));
         assert_eq!(
