@@ -17,6 +17,7 @@ pub use key::Query;
 
 use anyhow::anyhow;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use toml_edit::Document;
 
 use crate::core::Dependency;
@@ -57,7 +58,8 @@ impl Manifest {
     }
 
     /// Returns the [`Dependency`] list found within the [`Manifest`] for the
-    /// specified `target` list and environment.
+    /// specified `target` list and environment. The default target will always
+    /// be included for the returned dependencies.
     ///
     /// NOTE: There are a few invariants upheld when gathering dependencies
     /// within a manifest. These are as follows:
@@ -73,6 +75,11 @@ impl Manifest {
         targets: impl IntoIterator<Item = Option<&'a str>>,
     ) -> Result<Vec<Dependency>, Error> {
         let mut out: Vec<(Query, Dependency)> = vec![];
+
+        let mut targets = targets.into_iter().collect::<Vec<_>>();
+        if !targets.contains(&None) {
+            targets.push(None);
+        }
 
         let mut queries: Vec<Query> = targets
             .into_iter()
@@ -187,6 +194,39 @@ impl Manifest {
     }
 }
 
+/* --------------------------- Impl: IntoIterator --------------------------- */
+
+impl IntoIterator for &Manifest {
+    type Item = (Query, Dependency);
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let targets_self = self
+            .0
+            .get(key::MANIFEST_SECTION_TARGET)
+            .and_then(|v| v.as_table_like())
+            .map(|t| t.iter().map(|(a, _)| Some(a)).collect::<Vec<_>>())
+            .unwrap_or_default();
+
+        let queries_self = targets_self
+            .iter()
+            .chain(&None)
+            .map(|t| Query::builder().target(t.map(str::to_owned)).build())
+            .chain(targets_self.iter().chain(&None).map(|t| {
+                Query::builder()
+                    .dev(false)
+                    .target(t.map(str::to_owned))
+                    .build()
+            }));
+
+        queries_self
+            .flat_map(|q| self.addons(&q).into_iter().map(move |d| (q.clone(), d)))
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
+
 /* --------------------------- Impl: Configuration -------------------------- */
 
 impl Configuration for Manifest {
@@ -212,6 +252,39 @@ impl Parsable for Manifest {
         // TODO: Add validation to ensure sections are correct.
 
         Ok(Manifest(doc))
+    }
+}
+
+/* ------------------------------- Impl: Hash ------------------------------- */
+
+impl std::hash::Hash for Manifest {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let mut deps = self.into_iter().collect::<Vec<_>>();
+        deps.sort();
+
+        deps.iter().for_each(|(q, d)| {
+            q.hash(state);
+            d.hash(state);
+        });
+    }
+}
+
+/* ----------------------------- Impl: PartialEq ---------------------------- */
+
+impl Eq for Manifest {}
+
+impl PartialEq for Manifest {
+    fn eq(&self, other: &Self) -> bool {
+        let deps_self = self
+            .into_iter()
+            .map(|(_, d)| d)
+            .collect::<HashSet<Dependency>>();
+        let deps_other = other
+            .into_iter()
+            .map(|(_, d)| d)
+            .collect::<HashSet<Dependency>>();
+
+        deps_self == deps_other
     }
 }
 
