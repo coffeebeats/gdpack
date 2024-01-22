@@ -16,8 +16,10 @@ use super::Installable;
 
 #[derive(Debug, TypedBuilder)]
 pub struct Install<'a> {
+    #[builder(default = true)]
     pub dev: bool,
     pub root: &'a Manifest,
+    #[builder(default)]
     pub targets: Vec<Option<&'a str>>,
 }
 
@@ -140,7 +142,7 @@ impl<'a> Install<'a> {
                 let targets = self.targets.iter().copied(); // TODO: This just
                 let dev = false; // Don't install transitive dev-only addons.
 
-                to_visit.extend(m.dependencies(dev, targets).map_err(Error::Config)?)
+                to_visit.extend(m.dependencies(dev, targets).map_err(Error::Config)?);
             }
 
             to_install.insert(name, (addon, dep.clone()));
@@ -180,101 +182,264 @@ pub enum Error {
 
 #[cfg(test)]
 mod tests {
-    // use semver::Version;
-    // use std::fmt::Display;
-    // use std::path::Path;
-    // use std::path::PathBuf;
-    // use typed_builder::TypedBuilder;
+    use rstest::rstest;
+    use semver::Version;
+    use std::collections::HashSet;
+    use std::path::Path;
+    use typed_builder::TypedBuilder;
 
-    // use crate::config::gdext::Extension;
-    // use crate::config::manifest::Query;
-    // use crate::config::plugin::Plugin;
-    // use crate::config::Configuration;
-    // use crate::config::Manifest;
-    // use crate::core::Addon;
-    // use crate::core::Dependency;
+    use crate::config::gdext::Extension;
+    use crate::config::manifest::Query;
+    use crate::config::plugin::Plugin;
+    use crate::config::Configuration;
+    use crate::config::Manifest;
+    use crate::config::Persistable;
+    use crate::core::Addon;
+    use crate::core::Dependency;
+    use crate::core::Source;
 
-    // use super::Install;
+    use super::Install;
 
-    // /* ------------------------------ Test: run ----------------------------- */
+    /* ------------------------------ Test: run ----------------------------- */
 
-    // #[test]
-    // fn test_installer_run() {
-    //     // Given: A temporary test directory for creating dependencies.
+    macro_rules! assert_addons_eq {
+        ($got:expr, $want:expr$(,)?) => {
+            assert_eq!(
+                $got.into_iter().collect::<HashSet<Addon>>(),
+                $want.into_iter().collect::<HashSet<Addon>>(),
+            )
+        };
+    }
 
-    //     // Given: A root manifest with no dependencies.
+    #[rstest]
+    fn test_installer_run_empty_succeeds() {
+        // Given: A root manifest with no dependencies.
+        let m = Manifest::default();
 
-    //     // When: An installation is run.
+        // When: An installation is run for the default target/environment.
+        let got = Install::builder().root(&m).build().resolve_addons();
 
-    //     // Then: An empty list is returned.
-    // }
+        // Then: An empty list is returned.
+        assert_addons_eq!(got.unwrap(), vec![])
+    }
 
-    // #[derive(Clone, Debug, TypedBuilder)]
-    // struct TestDep {
-    //     name: String,
-    //     addon: DepType,
-    // }
+    #[rstest]
+    fn test_installer_run_direct_deps_succeeds(
+        #[values(
+            DepType::Assets,
+            DepType::Extension,
+            DepType::Plugin(Version::new(1, 0, 0)),
+            DepType::RootExtension,
+            DepType::RootPlugin(Version::new(1, 0, 0))
+        )]
+        dep_type_1: DepType,
+        #[values(
+            DepType::Assets,
+            DepType::Extension,
+            DepType::Plugin(Version::new(1, 0, 0)),
+            DepType::RootExtension,
+            DepType::RootPlugin(Version::new(1, 0, 0))
+        )]
+        dep_type_2: DepType,
+    ) {
+        // Given: A temporary test directory for creating dependencies.
+        let tmp = tempfile::tempdir().unwrap();
 
-    // impl TestDep {
-    //     fn write(&self, root: impl AsRef<Path>) -> std::io::Result<Dependency> {
-    //         let root = root.as_ref();
+        // Given: Two simple de pendencies that exist on disk.
+        let dep1 = TestDep::builder()
+            .name("1")
+            .addon(dep_type_1)
+            .build()
+            .init(tmp.path().join("1"))
+            .unwrap();
+        let dep2 = TestDep::builder()
+            .name("2")
+            .addon(dep_type_2)
+            .build()
+            .init(tmp.path().join("2"))
+            .unwrap();
 
-    //         if !root.is_dir() {
-    //             return Err(std::io::ErrorKind::NotFound.into());
-    //         }
+        // Given: A root manifest with direct dependencies.
+        let mut m = Manifest::default();
+        m.addons_mut(&Query::prod()).insert(&dep1);
+        m.addons_mut(&Query::prod()).insert(&dep2);
 
-    //         let path = match &self.addon {
-    //             DepType::Assets => root.to_owned(),
-    //             DepType::Extension => root.join("addons").join(&self.name),
-    //             DepType::Plugin(_) => root.join("addons").join(&self.name),
-    //             DepType::RootExtension => root.to_owned(),
-    //             DepType::RootPlugin(_) => root.to_owned(),
-    //         };
+        // When: An installation is run for the default target/environment.
+        let got = Install::builder().root(&m).build().resolve_addons();
 
-    //         match &self.addon {
-    //             DepType::Assets => {
-    //                 std::fs::create_dir_all(root)?;
-    //                 std::fs::write(root.join("asset.txt"), "")?;
-    //             }
-    //             DepType::Extension => {
-    //                 let path = root.join("addons").join(&self.name);
-    //                 std::fs::create_dir_all(&path)?;
-    //                 std::fs::write(
-    //                     path.join(format!("{}.{}", self.name, Extension::extension())),
-    //                     "",
-    //                 )?;
-    //             }
-    //             DepType::Plugin(v) => {
-    //                 let path = root.join("addons").join(&self.name);
-    //                 std::fs::create_dir_all(&path)?;
-    //                 std::fs::write(
-    //                     path.join(Plugin::file_name().unwrap()),
-    //                     format!("[plugin]\nname={}\nversion={}", self.name, v),
-    //                 )?;
-    //             }
-    //             DepType::RootExtension => {
-    //                 std::fs::create_dir_all(root)?;
-    //                 std::fs::write(
-    //                     root.join(format!("{}.{}", self.name, Extension::extension())),
-    //                     "",
-    //                 )?;
-    //             }
-    //             DepType::RootPlugin(v) => {
-    //                 std::fs::create_dir_all(root.join(""))?;
-    //                 std::fs::write(path, format!("[plugin]\nname={}\nversion={}", self.name, v))?;
-    //             }
-    //         };
+        // Then: An empty list is returned.
+        assert_addons_eq!(
+            got.unwrap(),
+            vec![
+                Addon::try_from(&dep1).unwrap(),
+                Addon::try_from(&dep2).unwrap()
+            ]
+        )
+    }
 
-    //         Ok(())
-    //     }
-    // }
+    #[rstest]
+    fn test_installer_run_transitive_deps_succeeds(
+        #[values(
+            DepType::Assets,
+            DepType::Extension,
+            DepType::Plugin(Version::new(1, 0, 0)),
+            DepType::RootExtension,
+            DepType::RootPlugin(Version::new(1, 0, 0))
+        )]
+        dep_type_1: DepType,
+        #[values(
+            DepType::Assets,
+            DepType::Extension,
+            DepType::Plugin(Version::new(1, 0, 0)),
+            DepType::RootExtension,
+            DepType::RootPlugin(Version::new(1, 0, 0))
+        )]
+        dep_type_2: DepType,
+        #[values(
+            DepType::Assets,
+            DepType::Extension,
+            DepType::Plugin(Version::new(1, 0, 0)),
+            DepType::RootExtension,
+            DepType::RootPlugin(Version::new(1, 0, 0))
+        )]
+        dep_type_3: DepType,
+    ) {
+        // Given: A temporary test directory for creating dependencies.
+        let tmp = tempfile::tempdir().unwrap();
 
-    // #[derive(Clone, Debug)]
-    // enum DepType {
-    //     Assets,
-    //     Extension,
-    //     Plugin(Version),
-    //     RootExtension,
-    //     RootPlugin(Version),
-    // }
+        // Given: Two simple dependencies that exist on disk.
+        let dep1 = TestDep::builder()
+            .name("1")
+            .addon(dep_type_1)
+            .build()
+            .init(tmp.path().join("1"))
+            .unwrap();
+        let dep2 = TestDep::builder()
+            .name("2")
+            .addon(dep_type_2)
+            .deps(vec![dep1.clone()])
+            .build()
+            .init(tmp.path().join("2"))
+            .unwrap();
+        let dep3 = TestDep::builder()
+            .name("3")
+            .addon(dep_type_3)
+            .deps(vec![dep2.clone()])
+            .build()
+            .init(tmp.path().join("3"))
+            .unwrap();
+
+        // Given: A root manifest with direct dependencies.
+        let mut m = Manifest::default();
+        m.addons_mut(&Query::prod()).insert(&dep3);
+
+        // When: An installation is run for the default target/environment.
+        let got = Install::builder().root(&m).build().resolve_addons();
+
+        // Then: An empty list is returned.
+        assert_addons_eq!(
+            got.unwrap(),
+            vec![
+                Addon::try_from(&dep1).unwrap(),
+                Addon::try_from(&dep2).unwrap(),
+                Addon::try_from(&dep3).unwrap(),
+            ]
+        )
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /*                             Struct: TestDep                            */
+    /* ---------------------------------------------------------------------- */
+
+    #[derive(Clone, Debug, TypedBuilder)]
+    struct TestDep {
+        #[builder(default = DepType::Assets)]
+        addon: DepType,
+        #[builder(default)]
+        deps: Vec<Dependency>,
+        #[builder(setter(into))]
+        name: String,
+    }
+
+    /* ---------------------------- Enum: DepType --------------------------- */
+
+    #[derive(Clone, Debug)]
+    enum DepType {
+        Assets,
+        Extension,
+        Plugin(Version),
+        RootExtension,
+        RootPlugin(Version),
+    }
+
+    /* ---------------------------- Impl: TestDep --------------------------- */
+
+    impl TestDep {
+        #[allow(dead_code)]
+        fn init(&self, root: impl AsRef<Path>) -> anyhow::Result<Dependency> {
+            let root = root.as_ref();
+
+            let path = match &self.addon {
+                DepType::Assets => root.to_owned(),
+                DepType::Extension => root.join("addons").join(&self.name),
+                DepType::Plugin(_) => root.join("addons").join(&self.name),
+                DepType::RootExtension => root.to_owned(),
+                DepType::RootPlugin(_) => root.to_owned(),
+            };
+
+            match &self.addon {
+                DepType::Assets => {
+                    std::fs::create_dir_all(&path)?;
+                    std::fs::write(path.join("asset.txt"), "")?;
+                }
+                DepType::Extension => {
+                    std::fs::create_dir_all(&path)?;
+                    std::fs::write(
+                        path.join(format!("{}.{}", self.name, Extension::extension())),
+                        "",
+                    )?;
+                }
+                DepType::Plugin(v) => {
+                    std::fs::create_dir_all(&path)?;
+                    std::fs::write(
+                        path.join(Plugin::file_name().unwrap()),
+                        format!("[plugin]\nname={}\nversion={}", self.name, v),
+                    )?;
+                }
+                DepType::RootExtension => {
+                    std::fs::create_dir_all(&path)?;
+                    std::fs::write(
+                        path.join(format!("{}.{}", self.name, Extension::extension())),
+                        "",
+                    )?;
+                }
+                DepType::RootPlugin(v) => {
+                    std::fs::create_dir_all(&path)?;
+                    std::fs::write(
+                        path.join(Plugin::file_name().unwrap()),
+                        format!("[plugin]\nname={}\nversion={}", self.name, v),
+                    )?;
+                }
+            };
+
+            if !self.deps.is_empty() {
+                let mut m = Manifest::default();
+
+                for dep in &self.deps {
+                    m.addons_mut(&Query::prod()).insert(dep);
+                }
+
+                std::fs::create_dir_all(root)?;
+                m.persist(root.join(Manifest::file_name().unwrap()))?;
+            }
+
+            Ok(Dependency::builder()
+                .addon(Some(self.name.to_owned()))
+                .replace(None)
+                .source(Source::Path {
+                    path: root.to_owned(),
+                })
+                .build())
+        }
+    }
 }
