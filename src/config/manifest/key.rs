@@ -166,17 +166,7 @@ impl Query {
 
     pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
         match self.target.as_ref() {
-            None => {
-                let prev = doc.remove(self.key_addons());
-
-                // NOTE: The default (i.e. "production") addons sections should
-                // never be completely removed.
-                if !self.dev {
-                    self.insert(doc);
-                }
-
-                prev
-            }
+            None => doc.remove(self.key_addons()),
             Some(target) => {
                 // Remove the target- and environment-specific section.
                 let prev = doc
