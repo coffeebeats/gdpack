@@ -68,17 +68,17 @@ impl ScriptTemplates {
         let mut out = HashSet::new();
 
         for pattern in &self.include {
-            let path_actual = if pattern.is_absolute() {
+            let path = if pattern.is_absolute() {
                 pattern.to_owned()
             } else {
                 path.join(pattern)
             };
 
-            let path_actual = path_actual
+            let path = path
                 .canonicalize()
                 .map_err(|_| Error::Invalid(pattern.into()))?;
 
-            let templates = ScriptTemplates::find_scripts_in_dir(path_actual)?;
+            let templates = ScriptTemplates::find_scripts_in_dir(path)?;
             out.extend(templates);
         }
 
@@ -99,13 +99,15 @@ impl ScriptTemplates {
         let mut out = HashSet::new();
 
         for pattern in &self.export {
-            let path_actual = if pattern.is_absolute() {
-                pattern.to_owned()
+            let root = path;
+
+            let path = if pattern.is_absolute() {
+                pattern.clone()
             } else {
                 path.join(pattern)
             };
 
-            let path_actual = path_actual.canonicalize().map_err(|e| match e.kind() {
+            let path = path.canonicalize().map_err(|e| match e.kind() {
                 std::io::ErrorKind::NotFound => Error::MissingDir(pattern.into()),
                 _ => Error::Insecure(pattern.into()),
             })?;
@@ -113,15 +115,15 @@ impl ScriptTemplates {
             // NOTE: Any exported script templates must be defined within the
             // same directory that the search is rooted from (typically the
             // addon's directory).
-            if let Err(_) = path_actual.strip_prefix(path) {
+            if let Err(_) = path.strip_prefix(root) {
                 return Err(Error::Insecure(pattern.into()));
             }
 
-            let templates = ScriptTemplates::find_scripts_in_dir(path.join(pattern))?;
+            let templates = ScriptTemplates::find_scripts_in_dir(path)?;
             out.extend(templates);
         }
 
-        // NOTE: Remove any returned paths which are symlinks pointing to
+        // NOTE: Return an error if any returned paths are symlinks pointing to
         // locations outside of the provided directory.
         for p in &out {
             if !p.canonicalize().is_ok_and(|p| p.strip_prefix(path).is_ok()) {
