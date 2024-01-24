@@ -59,7 +59,9 @@ impl Manifest {
 #    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
 
 [project]
-# Merge additional script templates from these directories into the project.
+# Include additional script templates from these directories into the project.
+# The directory structure within the folder pointed to by each pattern will be
+# merged into this project's 'script_templates' folder.
 include_script_templates = []
 
 # Export non-imported script templates found in these directories.
