@@ -122,12 +122,12 @@ impl Dependency {
         };
 
         if let Ok(path) = path.canonicalize() {
-            if path.strip_prefix(&path_root).is_ok() {
+            if path.strip_prefix(path_root).is_ok() {
                 return Ok(path);
             }
         }
 
-        return Err(Error::InsecurePath(path.to_owned()));
+        Err(Error::InsecurePath(path.to_owned()))
     }
 }
 

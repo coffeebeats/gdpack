@@ -8,7 +8,6 @@ use crate::config::Parsable;
 use crate::config::Persistable;
 use crate::core::Addon;
 use crate::core::Dependency;
-use crate::core::Source;
 
 use super::add::SourceArgs;
 

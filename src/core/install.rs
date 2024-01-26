@@ -63,7 +63,7 @@ impl<'a> Install<'a> {
 
         for addon in addons {
             addon
-                .install_to(&path)
+                .install_to(path)
                 .map_err(|e| Error::Install(addon.subfolder, e))?;
         }
 
@@ -98,7 +98,7 @@ impl<'a> Install<'a> {
         let mut to_remove: HashSet<PathBuf> = HashSet::new();
 
         for path_template in ScriptTemplateScan::builder()
-            .path(&path)
+            .path(path)
             .contents_first(true)
             .skip_imported(false)
             .skip_nonimported(true)
@@ -418,7 +418,7 @@ mod tests {
             .name("1")
             .addon(dep_type_1)
             .build()
-            .init(&path_project, "./3/2/1")
+            .init(path_project, "./3/2/1")
             .unwrap()
             .rooted_at(tmp.path());
         let dep2 = TestDep::builder()
@@ -426,14 +426,14 @@ mod tests {
             .addon(dep_type_2)
             .deps(vec![dep1.clone()])
             .build()
-            .init(&path_project, "./3/2")
+            .init(path_project, "./3/2")
             .unwrap();
         let dep3 = TestDep::builder()
             .name("3")
             .addon(dep_type_3)
             .deps(vec![dep2.clone()])
             .build()
-            .init(&path_project, "./3")
+            .init(path_project, "./3")
             .unwrap();
 
         // Given: A root manifest with direct dependencies.
@@ -444,7 +444,7 @@ mod tests {
         let got = Install::builder()
             .manifest(&m)
             .build()
-            .resolve_addons(&path_project);
+            .resolve_addons(path_project);
 
         // Then: The resolved addons match expectations.
         assert_addons_eq!(

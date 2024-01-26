@@ -121,7 +121,7 @@ impl ScriptTemplates {
             // NOTE: Any exported script templates must be defined within the
             // same directory that the search is rooted from (typically the
             // addon's directory).
-            if let Err(_) = path.strip_prefix(root) {
+            if path.strip_prefix(root).is_err() {
                 return Err(Error::Insecure(pattern.into()));
             }
 
@@ -296,7 +296,7 @@ mod tests {
         write_file!(path.join("./a/b/c.txt")); // ignored
 
         // When: An empty root directory is searched.
-        let got = ScriptTemplates::find_scripts_in_dir(&path);
+        let got = ScriptTemplates::find_scripts_in_dir(path);
 
         assert_eq!(
             got,
