@@ -21,6 +21,7 @@ pub use install::Install;
 
 mod project;
 
+pub use project::ScriptTemplateScan;
 pub use project::ScriptTemplates;
 
 /* -------------------------------------------------------------------------- */

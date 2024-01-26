@@ -7,7 +7,24 @@ use std::path::PathBuf;
 use toml_edit::de::ValueDeserializer;
 use toml_edit::Item;
 use typed_builder::TypedBuilder;
+use walkdir::DirEntry;
 use walkdir::WalkDir;
+
+/* -------------------------------------------------------------------------- */
+/*                                 Enum: Error                                */
+/* -------------------------------------------------------------------------- */
+
+#[derive(Debug, Eq, PartialEq, thiserror::Error)]
+pub enum Error {
+    #[error("insecure path (escapes addon): {0:?}")]
+    Insecure(PathBuf),
+    #[error("invalid path: {0}")]
+    Invalid(PathBuf),
+    #[error("directory not found: {0}")]
+    MissingDir(PathBuf),
+    #[error(transparent)]
+    NotRelative(std::path::StripPrefixError),
+}
 
 /* -------------------------------------------------------------------------- */
 /*                           Struct: ScriptTemplates                          */
@@ -38,24 +55,13 @@ impl ScriptTemplates {
             return Err(Error::MissingDir(path.to_owned()));
         }
 
-        let templates = WalkDir::new(path)
-            .min_depth(1)
-            .follow_root_links(true)
-            .follow_links(true)
-            .contents_first(true)
-            .sort_by_file_name()
+        let templates = ScriptTemplateScan::builder()
+            .path(path)
+            .skip_imported(true)
+            .skip_nonimported(false)
+            .build()
             .into_iter()
-            .filter_map(Result::ok)
-            .filter(|entry| entry.path().extension().is_some_and(|s| s == "gd"))
-            .filter(|entry| {
-                entry
-                    .path()
-                    .file_stem()
-                    .and_then(OsStr::to_str)
-                    .is_some_and(|s| !s.starts_with("gdpack__"))
-            })
-            .filter_map(|entry| entry.path().strip_prefix(path).map(Path::to_owned).ok())
-            .collect::<Vec<_>>();
+            .collect();
 
         Ok(templates)
     }
@@ -150,19 +156,60 @@ impl TryFrom<&Item> for ScriptTemplates {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                 Enum: Error                                */
+/*                         Struct: ScriptTemplateScan                         */
 /* -------------------------------------------------------------------------- */
 
-#[derive(Debug, Eq, PartialEq, thiserror::Error)]
-pub enum Error {
-    #[error("insecure path (escapes addon): {0:?}")]
-    Insecure(PathBuf),
-    #[error("invalid path: {0}")]
-    Invalid(PathBuf),
-    #[error("directory not found: {0}")]
-    MissingDir(PathBuf),
-    #[error(transparent)]
-    NotRelative(std::path::StripPrefixError),
+/// `ScriptTemplateScan` defines a scan of a directory for GDScript templates
+/// files. Different parameters can be set to customize the results of the
+/// query.
+#[derive(Clone, Debug, Eq, PartialEq, TypedBuilder)]
+pub struct ScriptTemplateScan {
+    #[builder(setter(into))]
+    pub path: PathBuf,
+
+    #[builder(default = true)]
+    pub contents_first: bool,
+    #[builder(default = false)]
+    pub skip_nonimported: bool,
+    #[builder(default = false)]
+    pub skip_imported: bool,
+}
+
+/* --------------------------- Impl: IntoIterator --------------------------- */
+
+impl IntoIterator for ScriptTemplateScan {
+    type Item = PathBuf;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let script_templates = WalkDir::new(&self.path)
+            .min_depth(1)
+            .follow_root_links(true)
+            .follow_links(true)
+            .contents_first(self.contents_first)
+            .sort_by_file_name()
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.path().extension().is_some_and(|s| s == "gd"))
+            .filter(|entry| {
+                let is_imported = entry
+                    .path()
+                    .file_stem()
+                    .and_then(OsStr::to_str)
+                    .is_some_and(|s| s.starts_with("gdpack__"));
+
+                if is_imported {
+                    !self.skip_imported
+                } else {
+                    !self.skip_nonimported
+                }
+            })
+            .map(DirEntry::into_path)
+            .collect::<Vec<_>>();
+
+        script_templates.into_iter()
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -256,6 +303,7 @@ mod tests {
             Ok(vec!["a/b/c.gd", "a/b.gd", "a.gd",]
                 .into_iter()
                 .map(PathBuf::from)
+                .map(|p| path.join(p))
                 .collect())
         )
     }
@@ -263,28 +311,35 @@ mod tests {
     /* ------------------------- Test: exported_from ------------------------ */
 
     #[rstest]
-    #[case(|_| "/some/absolute/path".into(), |_| Err(Error::Insecure("/some/absolute/path".into())))]
-    #[case(|_| "../insecure".into(), |_| Err(Error::Insecure("../insecure".into())))]
-    #[case(|tmp: PathBuf| tmp.join("missing"), |tmp: PathBuf| Err(Error::MissingDir(tmp.join("missing"))))]
-    #[case(|tmp: PathBuf| tmp, |_| Ok(HashSet::default()))]
+    #[case(|p: PathBuf| p.join("root"), |_: PathBuf| Ok(HashSet::default()))]
+    #[case(|p: PathBuf| p, |p: PathBuf| Err(Error::Insecure(p)))]
+    #[case(|p: PathBuf| p.join("root/.."), |p: PathBuf| Err(Error::Insecure(p.join("root/.."))))]
+    #[case(|p: PathBuf| p.join("missing"), |p: PathBuf| Err(Error::MissingDir(p.join("missing"))))]
+    // NOTE: On macos, the temporary directory is a symlink to `/private/...`,
+    // meaning the case below will fail.
+    #[case(|p: PathBuf| p.join("root"), |p: PathBuf| if cfg!(target_os = "macos") { Err(Error::Insecure(p.join("root"))) } else { Ok(HashSet::default())})]
     fn test_exported_from_prevents_insecure_patterns(
         once_tmp: TempDir,
         #[case] pattern: fn(PathBuf) -> PathBuf,
         #[case] result_fn: fn(PathBuf) -> Result<HashSet<PathBuf>, Error>,
     ) {
+        // Given: A temporary directory to write test files to.
+        let path_tmp = once_tmp.path().to_owned();
+
         // Given: A path to search for scripts in.
-        let path = once_tmp.path();
+        let path_root = once_tmp.path().join("root");
+        std::fs::create_dir(&path_root).unwrap();
 
         // Given: A [`ScriptTemplates`] with the exported pattern.
         let templates = ScriptTemplates::builder()
-            .export(vec![pattern(path.to_owned())])
+            .export(vec![pattern(path_tmp.clone())])
             .build();
 
         // When: The exported script template paths are collected.
-        let got = templates.exported_from(path);
+        let got = templates.exported_from(&path_root);
 
         // Then: The results match expectations.
-        assert_eq!(got, result_fn(path.to_owned()));
+        assert_eq!(got, result_fn(path_tmp));
     }
 
     #[rstest]
@@ -303,12 +358,13 @@ mod tests {
         write_file!(&path_ext);
 
         // Given: An included symlink to the external file.
-        std::os::unix::fs::symlink(&path_ext, path.join("template.gd")).unwrap();
+        let path_file = path.join("template.gd");
+        std::os::unix::fs::symlink(&path_ext, &path_file).unwrap();
 
         // When: The exported script template paths are collected.
         let got = templates.exported_from(path);
 
         // Then: An error is returned warning about the insecure path.
-        assert_eq!(got, Err(Error::Insecure("template.gd".into())));
+        assert_eq!(got, Err(Error::Insecure(path_file)));
     }
 }
