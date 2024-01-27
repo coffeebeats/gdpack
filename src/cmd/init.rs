@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::config::Configuration;
 use crate::config::Manifest;
@@ -16,22 +16,11 @@ For example:
 ";
 
 /* -------------------------------------------------------------------------- */
-/*                                Struct: Args                                */
-/* -------------------------------------------------------------------------- */
-
-#[derive(clap::Args, Debug)]
-pub struct Args {
-    /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH")]
-    pub project: Option<PathBuf>,
-}
-
-/* -------------------------------------------------------------------------- */
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path_project = super::parse_project(args.project)?;
+pub fn handle(project: Option<impl AsRef<Path>>) -> anyhow::Result<()> {
+    let path_project = super::parse_project(project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
     if path_manifest.is_file() && Manifest::parse_file(&path_manifest).is_ok() {

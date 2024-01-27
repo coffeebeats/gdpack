@@ -32,12 +32,6 @@ pub struct Addon {
     #[builder(setter(into))]
     pub path: PathBuf,
 
-    /// A list of paths to the [`Addon`]'s exported script templates. These will
-    /// be installed in dependent project's template directory if this addon is
-    /// a direct dependency of that project.
-    #[builder(default)]
-    pub script_templates: Vec<PathBuf>,
-
     /// The name of the directory under `addons` in which the [`Addon`] will be
     /// installed into in the target _Godot_ project.
     pub subfolder: String,
@@ -123,8 +117,6 @@ impl Addon {
             if path_manifest.exists() && path_manifest.is_file() {
                 m.replace(Manifest::parse_file(path_manifest)?);
             }
-
-            // TODO: Parse script templates from the manifest/addon.
 
             return Ok(Addon::builder()
                 .manifest(m)
@@ -215,8 +207,6 @@ impl Addon {
             m.replace(Manifest::parse_file(path_manifest)?);
         }
 
-        // TODO: Parse script templates from the manifest/addon.
-
         Ok(Addon::builder()
             .manifest(m)
             .path(path)
@@ -265,7 +255,40 @@ impl Installable for Addon {
 
         super::clone_recursively(self.path.as_path(), &target, |src, dst| {
             std::fs::hard_link(src, dst)
-        })
+        })?;
+
+        // Set `target` as the project's 'script_templates' directory.
+        let target = target
+            .parent()
+            .and_then(|t| t.parent())
+            .unwrap()
+            .join("script_templates");
+        if !target.is_dir() {
+            std::fs::create_dir_all(&target)?;
+        }
+
+        // Install all exported script templates into the project's
+        // 'script_templates' directory.
+        if let Some(m) = &self.manifest {
+            if let Some(st) = m.project().get_script_templates() {
+                match st.exported_from(&self.path) {
+                    Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, e)),
+                    Ok(templates) => {
+                        for t in templates {
+                            let target = target.join(
+                                &t.make_included()
+                                    .expect("failed to rename script template")
+                                    .path,
+                            );
+                            std::fs::create_dir_all(target.parent().unwrap())?;
+                            std::fs::hard_link(t.get_full_path(), target)?;
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -275,7 +298,7 @@ impl TryFrom<&Dependency> for Addon {
     type Error = anyhow::Error;
 
     fn try_from(value: &Dependency) -> Result<Self, Self::Error> {
-        let root = value.source.fetch().map_err(|e| anyhow!(e))?;
+        let root = value.download()?;
 
         let name = value
             .addon
@@ -337,7 +360,6 @@ mod tests {
     macro_rules! assert_eq_addon {
         ($left:expr, $right:expr$(,)?) => {
             assert_eq!($left.path, $right.path);
-            assert_eq!($left.script_templates, $right.script_templates);
             assert_eq!($left.subfolder, $right.subfolder);
             assert_eq!($left.version, $right.version)
         };

@@ -23,7 +23,7 @@ pub enum Commands {
 
     /* --------------------------- Category: Init --------------------------- */
     /// Create a new `gdpack.toml` manifest for the Godot project.
-    Init(init::Args),
+    Init,
 
     /* -------------------------- Category: Install ------------------------- */
     /// Install addon dependencies into the Godot project's addons/ directory.
@@ -39,8 +39,12 @@ use anyhow::anyhow;
 use std::path::Path;
 use std::path::PathBuf;
 
+/// `parse_project` returns a [`PathBuf`] pointing to the directory in which
+/// commands should be applied. This is done by taking either the current
+/// directory or one provided in `project`.
 fn parse_project(project: Option<impl AsRef<Path>>) -> anyhow::Result<PathBuf> {
     let path: PathBuf;
+
     if let Some(project) = project {
         if !project.as_ref().is_dir() {
             return Err(anyhow!(
@@ -53,5 +57,5 @@ fn parse_project(project: Option<impl AsRef<Path>>) -> anyhow::Result<PathBuf> {
         path = std::env::current_dir()?;
     }
 
-    Ok(path)
+    Ok(path.canonicalize()?)
 }

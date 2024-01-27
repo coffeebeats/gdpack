@@ -24,6 +24,7 @@ pub use project::Project;
 use anyhow::anyhow;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::path::Path;
 use toml_edit::Document;
 
 use crate::core::Dependency;
@@ -59,7 +60,9 @@ impl Manifest {
 #    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
 
 [project]
-# Merge additional script templates from these directories into the project.
+# Include additional script templates from these directories into the project.
+# The directory structure within the folder pointed to by each pattern will be
+# merged into this project's 'script_templates' folder.
 include_script_templates = []
 
 # Export non-imported script templates found in these directories.
@@ -90,6 +93,10 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
     /// specified `target` list and environment. The default target will always
     /// be included for the returned dependencies.
     ///
+    /// NOTE: A `path` to the directory from which dependencies are being
+    /// included must be provided. This is so that a [`Dependency`] with a
+    /// relative [`crate::core::Source::Path`] can be properly resolved.
+    ///
     /// NOTE: There are a few invariants upheld when gathering dependencies
     /// within a manifest. These are as follows:
     ///     1. The same addon cannot be specified 2+ times. However, a target-
@@ -100,6 +107,7 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
     ///        is guaranteed to be an invalid state.
     pub fn dependencies<'a>(
         &self,
+        path: impl AsRef<Path>,
         is_dev: bool,
         targets: impl IntoIterator<Item = Option<&'a str>>,
     ) -> Result<Vec<Dependency>, Error> {
@@ -132,7 +140,10 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
                 return Err(Error::MissingTarget);
             }
 
-            out.extend(self.addons(&query).into_iter().map(|d| (query.clone(), d)));
+            out.extend(self.addons(&query).into_iter().map(|mut d| {
+                let _ = d.included_from.insert(path.as_ref().to_owned());
+                (query.clone(), d)
+            }));
         }
 
         Manifest::check_for_duplicate(&out)?;

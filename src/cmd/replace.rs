@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
@@ -20,10 +20,6 @@ pub struct Args {
     /// Replace a development-only dependency (will not be propagated to dependents' installs).
     #[arg(short, long)]
     pub dev: bool,
-
-    /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH")]
-    pub project: Option<PathBuf>,
 
     /// Replace the dependency only for TARGET (can be specified more than once
     /// and accepts multiple values delimited by `,`).
@@ -46,8 +42,8 @@ pub struct Args {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path_project = super::parse_project(args.project.as_ref())?;
+pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<()> {
+    let path_project = super::parse_project(project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
     let mut m = Manifest::parse_file(&path_manifest)
@@ -98,7 +94,7 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
 
         if prev.is_none() || prev.is_some_and(|p| p != dep) {
             // Fetch the [`Dependency`] before continuing.
-            dep.source.fetch()?;
+            dep.download()?;
 
             // Install if the [`Manifest`] was modified somehow. Note that the
             // implicit installation performed by `gdpack` manifest
@@ -120,8 +116,8 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     if should_install {
         let install = crate::core::Install::builder()
             .dev(true)
+            .manifest(&m)
             .targets(targets)
-            .root(&m)
             .build();
 
         install.install_to(path_addons)?;

@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::config::manifest::Manifest;
 use crate::config::manifest::Query;
@@ -13,10 +13,6 @@ use crate::config::Persistable;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
-    /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH")]
-    pub project: Option<PathBuf>,
-
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
     #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
@@ -31,8 +27,8 @@ pub struct Args {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path_project = super::parse_project(args.project.as_ref())?;
+pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<()> {
+    let path_project = super::parse_project(project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
     let mut m = Manifest::parse_file(&path_manifest)
@@ -98,8 +94,8 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
     if should_install {
         let install = crate::core::Install::builder()
             .dev(true)
+            .manifest(&m)
             .targets(targets)
-            .root(&m)
             .build();
 
         install.install_to(path_addons)?;

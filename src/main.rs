@@ -33,14 +33,14 @@ fn main() -> Result<()> {
 
     match cli.command {
         /* ----------------------- Category: Dependencies ---------------------- */
-        Commands::Add(args) => cmd::add::handle(args),
-        Commands::Remove(args) => cmd::remove::handle(args),
-        Commands::Replace(args) => cmd::replace::handle(args),
+        Commands::Add(args) => cmd::add::handle(cli.project, args),
+        Commands::Remove(args) => cmd::remove::handle(cli.project, args),
+        Commands::Replace(args) => cmd::replace::handle(cli.project, args),
 
         /* ------------------------- Category: Init ------------------------- */
-        Commands::Init(args) => cmd::init::handle(args),
+        Commands::Init => cmd::init::handle(cli.project),
 
         /* ------------------------ Category: Install ----------------------- */
-        Commands::Install(args) => cmd::install::handle(args),
+        Commands::Install(args) => cmd::install::handle(cli.project, args),
     }
 }

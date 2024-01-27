@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use std::path::PathBuf;
+use std::path::Path;
 use typed_builder::TypedBuilder;
 
 use crate::config::manifest::Manifest;
@@ -17,11 +17,6 @@ pub struct Args {
     #[arg(long, alias = "prod")]
     pub production: bool,
 
-    /// A `PATH` to the Godot project containing the manifest.
-    #[arg(short, long, value_name = "PATH")]
-    #[builder(default)]
-    pub project: Option<PathBuf>,
-
     /// Add the dependency only for `TARGET` (can be specified more than once
     /// and accepts multiple values delimited by `,`).
     #[arg(short, long, value_name = "TARGET", value_delimiter = ',', num_args = 1..)]
@@ -33,8 +28,8 @@ pub struct Args {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(args: Args) -> anyhow::Result<()> {
-    let path_project = super::parse_project(args.project)?;
+pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<()> {
+    let path_project = super::parse_project(project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
     let m = Manifest::parse_file(path_manifest)
@@ -47,19 +42,13 @@ pub fn handle(args: Args) -> anyhow::Result<()> {
             .collect(),
     };
 
-    let path_addons = path_project.as_path().join("addons");
-    if path_addons.is_dir() {
-        std::fs::remove_dir_all(&path_addons)
-            .map_err(|e| anyhow!("failed to remove existing 'addons' directory: {}", e))?;
-    }
-
     let install = crate::core::Install::builder()
         .dev(!args.production)
+        .manifest(&m)
         .targets(targets)
-        .root(&m)
         .build();
 
-    install.install_to(path_addons)?;
+    install.install_to(path_project)?;
 
     Ok(())
 }

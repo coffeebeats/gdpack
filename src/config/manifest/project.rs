@@ -4,7 +4,6 @@ use typed_builder::TypedBuilder;
 use crate::core::ScriptTemplates;
 
 pub(super) const MANIFEST_SECTION_PROJECT: &str = "project";
-pub(super) const MANIFEST_SECTION_SCRIPT_TEMPLATES: &str = "script_templates";
 
 /* -------------------------------------------------------------------------- */
 /*                               Struct: Project                              */
@@ -24,10 +23,11 @@ impl<'a> Project<'a> {
     /// within the `project` table of the [`super::Manifest`].
     pub fn get_script_templates(&self) -> Option<ScriptTemplates> {
         self.document
+            .as_table()
             .get(MANIFEST_SECTION_PROJECT)
-            .and_then(|v| v.as_table_like())
-            .and_then(|t| t.get(MANIFEST_SECTION_SCRIPT_TEMPLATES))
-            .and_then(|v| ScriptTemplates::try_from(v).ok())
+            .and_then(|v| v.as_table())
+            .map(|t| t.clone().into_inline_table())
+            .and_then(|t| ScriptTemplates::try_from(&toml_edit::value(t)).ok())
     }
 }
 

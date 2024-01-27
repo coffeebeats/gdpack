@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
@@ -8,6 +7,22 @@ use toml_edit::Item;
 use typed_builder::TypedBuilder;
 
 use crate::git;
+
+/* -------------------------------------------------------------------------- */
+/*                                 Enum: Error                                */
+/* -------------------------------------------------------------------------- */
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Git(git::Error),
+    #[error("insecure path found: {0}")]
+    InsecurePath(PathBuf),
+    #[error("cannot determine path to dependency")]
+    MissingPath,
+    #[error("dependency not found: {0}")]
+    NotFound(PathBuf),
+}
 
 /* -------------------------------------------------------------------------- */
 /*                             Struct: Dependency                             */
@@ -38,6 +53,15 @@ pub struct Dependency {
     #[builder(default)]
     #[serde(skip)]
     pub addon: Option<String>,
+    /// The on-disk path to the [`Dependency`] that included this one. Useful
+    /// for resolving a [`Source`] specification with a relative path.
+    ///
+    /// NOTE: This must be manually defined after downloading/extracting the
+    /// [`Dependency`] as it's dependent on install-time context. As such, it
+    /// should not be serialized.
+    #[builder(default)]
+    #[serde(skip)]
+    pub included_from: Option<PathBuf>,
     /// Name of an addon to replace during installation.
     ///
     /// NOTE: This value will not be propagated to consumers of this project.
@@ -47,6 +71,64 @@ pub struct Dependency {
     #[builder(setter(into))]
     #[serde(flatten)]
     pub source: Source,
+}
+
+/* ---------------------------- Impl: Dependency ---------------------------- */
+
+impl Dependency {
+    /* --------------------------- Methods: Public -------------------------- */
+
+    /// `download` retrieves the [`Dependency`] and stores it in the `gdpack`
+    /// store (defined by `$GDPACK_HOME`). This method has no effect if the
+    /// [`Dependency`] is already downloaded.
+    pub fn download(&self) -> Result<PathBuf, Error> {
+        let path = match &self.source {
+            Source::Git(s) => crate::git::checkout(s).map(|c| c.path).map_err(Error::Git),
+            Source::Path { path } => self
+                .included_from
+                .as_ref()
+                .ok_or(Error::MissingPath)
+                .and_then(|path_root| Dependency::get_rooted_path(path_root, path)),
+            Source::Release(release) => release
+                .download()
+                .and_then(|_| release.get_path())
+                .map_err(Error::Git),
+        }?;
+
+        if !path.is_dir() {
+            return Err(Error::NotFound(path));
+        }
+
+        Ok(path)
+    }
+
+    /* -------------------------- Methods: Private -------------------------- */
+
+    /// `get_rooted_path` is a convenience function for turning a potentially
+    /// relative path (`path`) into one joined onto `path_root`. Note that if
+    /// `path` is absolute then it must be prefixed by `path_root`, otherwise
+    /// an error will be returned.
+    fn get_rooted_path(
+        path_root: impl AsRef<Path>,
+        path: impl AsRef<Path>,
+    ) -> Result<PathBuf, Error> {
+        let path_root = path_root.as_ref();
+        let path = path.as_ref();
+
+        let path = if path.is_absolute() {
+            path.to_owned()
+        } else {
+            path_root.join(path)
+        };
+
+        if let Ok(path) = path.canonicalize() {
+            if path.strip_prefix(path_root).is_ok() {
+                return Ok(path);
+            }
+        }
+
+        Err(Error::InsecurePath(path.to_owned()))
+    }
 }
 
 /* ---------------------------- Impl: From<&Item> --------------------------- */
@@ -94,40 +176,6 @@ impl Source {
                 .and_then(std::ffi::OsStr::to_str)
                 .map(str::to_owned),
         }
-    }
-
-    /// `fetch` retrieves the [`Dependency`] and stores it in the `gdpack`
-    /// store. This method has no effect if the [`Dependency`] is already
-    /// downloaded.
-    pub fn fetch(&self) -> anyhow::Result<PathBuf> {
-        let path = match self {
-            Source::Path { path } => Ok(path.to_owned()),
-            Source::Git(s) => crate::git::checkout(s)
-                .map(|c| c.path)
-                .map_err(|e| anyhow!(e)),
-            Source::Release(release) => release
-                .download()
-                .and_then(|_| release.get_path())
-                .map_err(|e| anyhow!(e)),
-        }?;
-
-        if !path.exists() {
-            let err =
-                std::io::Error::new(std::io::ErrorKind::NotFound, path.to_str().unwrap_or(""));
-
-            return Err(anyhow!(err));
-        }
-
-        if !path.is_dir() {
-            let err = std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                format!("expected a directory: {}", path.to_str().unwrap_or("")),
-            );
-
-            return Err(anyhow!(err));
-        }
-
-        Ok(path)
     }
 }
 
