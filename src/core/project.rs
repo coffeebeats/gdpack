@@ -60,7 +60,9 @@ impl ScriptTemplate {
         self.root.as_path().join(&self.path)
     }
 
-    /// `get_full_path` returns the full, absolute path to the template.
+    /// `make_included` creates a new [`ScriptTemplate`] with a file stem name
+    /// denoting that this is a gdpack-included script template and deletion is
+    /// safe.
     pub fn make_included(&self) -> Option<Self> {
         self.path
             .file_stem()
