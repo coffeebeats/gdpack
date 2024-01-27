@@ -275,9 +275,13 @@ impl Installable for Addon {
                     Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, e)),
                     Ok(templates) => {
                         for t in templates {
-                            let target = target.join(&t);
+                            let target = target.join(
+                                &t.make_included()
+                                    .expect("failed to rename script template")
+                                    .path,
+                            );
                             std::fs::create_dir_all(target.parent().unwrap())?;
-                            std::fs::hard_link(self.path.join(&t), target)?;
+                            std::fs::hard_link(t.get_full_path(), target)?;
                         }
                     }
                 }

@@ -42,6 +42,35 @@ pub struct ScriptTemplates {
     pub export: Vec<PathBuf>,
 }
 
+/* ------------------------- Struct: ScriptTemplate ------------------------- */
+
+// [`ScriptTemplate`] is a reference to a GDScript template on disk.
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize, TypedBuilder)]
+pub struct ScriptTemplate {
+    /// A path to the root directory from which this template was found (this
+    /// is associated with a pattern on the [`crate::config::Manifest`]).
+    pub root: PathBuf,
+    /// A relative path from the `root` to the template file.
+    pub path: PathBuf,
+}
+
+impl ScriptTemplate {
+    /// `get_full_path` returns the full, absolute path to the template.
+    pub fn get_full_path(&self) -> PathBuf {
+        self.root.as_path().join(&self.path)
+    }
+
+    /// `get_full_path` returns the full, absolute path to the template.
+    pub fn make_included(&self) -> Option<Self> {
+        self.path
+            .file_stem()
+            .and_then(OsStr::to_str)
+            .map(|s| format!("gdpack__{}.gd", s))
+            .and_then(|n| self.path.parent().map(|p| p.join(n)))
+            .map(|p| Self::builder().root(self.root.clone()).path(p).build())
+    }
+}
+
 /* -------------------------- Impl: ScriptTemplates ------------------------- */
 
 impl ScriptTemplates {
@@ -57,6 +86,7 @@ impl ScriptTemplates {
 
         let templates = ScriptTemplateScan::builder()
             .path(path)
+            .map_to_relative(true)
             .skip_imported(true)
             .skip_nonimported(false)
             .build()
@@ -68,7 +98,7 @@ impl ScriptTemplates {
 
     /// `included_from` returns a set of script templates, relative to the
     /// provided path, which should be installed into a Godot project.
-    pub fn included_from(&self, path: impl AsRef<Path>) -> Result<HashSet<PathBuf>, Error> {
+    pub fn included_from(&self, path: impl AsRef<Path>) -> Result<HashSet<ScriptTemplate>, Error> {
         let path = path.as_ref();
 
         let mut out = HashSet::new();
@@ -84,7 +114,16 @@ impl ScriptTemplates {
                 .canonicalize()
                 .map_err(|_| Error::Invalid(pattern.into()))?;
 
-            let templates = ScriptTemplates::find_scripts_in_dir(path)?;
+            let templates = ScriptTemplates::find_scripts_in_dir(&path)?
+                .into_iter()
+                .map(|p| {
+                    ScriptTemplate::builder()
+                        .root(path.to_owned())
+                        .path(p)
+                        .build()
+                })
+                .collect::<Vec<ScriptTemplate>>();
+
             out.extend(templates);
         }
 
@@ -99,7 +138,7 @@ impl ScriptTemplates {
     /// located underneath the addon's root directory (i.e. where its installed
     /// from). This is to prevent a malicious addon from improperly accessing
     /// a user's file system.
-    pub fn exported_from(&self, path: impl AsRef<Path>) -> Result<HashSet<PathBuf>, Error> {
+    pub fn exported_from(&self, path: impl AsRef<Path>) -> Result<HashSet<ScriptTemplate>, Error> {
         let path = path.as_ref();
 
         let mut out = HashSet::new();
@@ -125,13 +164,24 @@ impl ScriptTemplates {
                 return Err(Error::Insecure(pattern.into()));
             }
 
-            let templates = ScriptTemplates::find_scripts_in_dir(path)?;
+            let templates = ScriptTemplates::find_scripts_in_dir(&path)?
+                .into_iter()
+                .map(|p| {
+                    ScriptTemplate::builder()
+                        .root(path.to_owned())
+                        .path(p)
+                        .build()
+                })
+                .collect::<Vec<ScriptTemplate>>();
+
             out.extend(templates);
         }
 
         // NOTE: Return an error if any returned paths are symlinks pointing to
         // locations outside of the provided directory.
-        for p in &out {
+        for t in &out {
+            let p = t.get_full_path();
+
             if !p.canonicalize().is_ok_and(|p| p.strip_prefix(path).is_ok()) {
                 return Err(Error::Insecure(p.to_owned()));
             }
@@ -170,6 +220,8 @@ pub struct ScriptTemplateScan {
     #[builder(default = true)]
     pub contents_first: bool,
     #[builder(default = false)]
+    pub map_to_relative: bool,
+    #[builder(default = false)]
     pub skip_nonimported: bool,
     #[builder(default = false)]
     pub skip_imported: bool,
@@ -206,6 +258,13 @@ impl IntoIterator for ScriptTemplateScan {
                 }
             })
             .map(DirEntry::into_path)
+            .filter_map(|p| {
+                if !self.map_to_relative {
+                    return Some(p);
+                }
+
+                p.strip_prefix(&self.path).ok().map(Path::to_owned)
+            })
             .collect::<Vec<_>>();
 
         script_templates.into_iter()
@@ -225,6 +284,7 @@ mod tests {
     use tempfile::TempDir;
 
     use super::Error;
+    use super::ScriptTemplate;
     use super::ScriptTemplates;
 
     /* ---------------------- Test: find_scripts_in_dir --------------------- */
@@ -303,7 +363,6 @@ mod tests {
             Ok(vec!["a/b/c.gd", "a/b.gd", "a.gd",]
                 .into_iter()
                 .map(PathBuf::from)
-                .map(|p| path.join(p))
                 .collect())
         )
     }
@@ -321,7 +380,7 @@ mod tests {
     fn test_exported_from_prevents_insecure_patterns(
         once_tmp: TempDir,
         #[case] pattern: fn(PathBuf) -> PathBuf,
-        #[case] result_fn: fn(PathBuf) -> Result<HashSet<PathBuf>, Error>,
+        #[case] result_fn: fn(PathBuf) -> Result<HashSet<ScriptTemplate>, Error>,
     ) {
         // Given: A temporary directory to write test files to.
         let path_tmp = once_tmp.path().to_owned();

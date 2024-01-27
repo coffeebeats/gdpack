@@ -55,6 +55,9 @@ impl<'a> Install<'a> {
         // valid.
         let addons = self.resolve_addons(path)?;
 
+        // Next, clean any imported GDScript templates from the project.
+        Install::clean_script_templates(path)?;
+
         // Next, install each addon into the project's "addons" folder.
         let path_addons = path.join("addons");
         if path_addons.is_dir() {
@@ -67,9 +70,6 @@ impl<'a> Install<'a> {
                 .map_err(|e| Error::Install(addon.subfolder, e))?;
         }
 
-        // Next, clean any imported GDScript templates from the project.
-        Install::clean_script_templates(path)?;
-
         // Finally, import all of the script templates defined for the project.
         let target = path.join("script_templates");
         if let Some(st) = self.manifest.project().get_script_templates() {
@@ -77,9 +77,13 @@ impl<'a> Install<'a> {
                 Err(e) => return Err(Error::Project(e)),
                 Ok(templates) => {
                     for t in templates {
-                        let target = target.join(&t);
+                        let target = target.join(
+                            &t.make_included()
+                                .expect("failed to rename script template")
+                                .path,
+                        );
                         std::fs::create_dir_all(target.parent().unwrap()).map_err(Error::Io)?;
-                        std::fs::hard_link(path.join(&t), target).map_err(Error::Io)?;
+                        std::fs::hard_link(t.get_full_path(), target).map_err(Error::Io)?;
                     }
                 }
             }
