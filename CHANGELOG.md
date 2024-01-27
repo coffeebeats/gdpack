@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1 (2024-01-27)
+
+## What's Changed
+* chore(deps): bump openssl-sys from 0.9.98 to 0.9.99 by @dependabot in https://github.com/coffeebeats/gdpack/pull/116
+* chore(deps): bump tj-actions/changed-files from 41 to 42 by @dependabot in https://github.com/coffeebeats/gdpack/pull/115
+* feat(config): add support for declaring included and exported script templates by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/114
+* chore(deps): bump serde from 1.0.195 to 1.0.196 by @dependabot in https://github.com/coffeebeats/gdpack/pull/118
+* feat: implement script template installation by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/119
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.1.0...v0.1.1
+
 ## 0.1.0 (2024-01-22)
 
 ## What's Changed
