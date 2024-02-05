@@ -44,7 +44,7 @@ pub struct Addon {
 /* ------------------------------- Impl: Addon ------------------------------ */
 
 impl Addon {
-    /* --------------------------- Method: Private -------------------------- */
+    /* --------------------------- Methods: Public -------------------------- */
 
     /// `find_in_dir` searches the specified directory `path` for the [`Addon`]
     /// source directory corresponding to the provided [`Addon`] `name`. An
@@ -66,7 +66,7 @@ impl Addon {
     /// and [`Plugin`]-specific fields are populated.
     ///
     /// TODO: Substitute in a custom [`Addon`]-specific error.
-    fn find_in_dir(path: impl AsRef<Path>, name: &str) -> anyhow::Result<Addon> {
+    pub fn find_in_dir(path: impl AsRef<Path>, name: &str) -> anyhow::Result<Addon> {
         if !path.as_ref().is_dir() {
             return Addon::find_in_dir(
                 path.as_ref().parent().ok_or(anyhow!(
@@ -263,9 +263,6 @@ impl Installable for Addon {
             .and_then(|t| t.parent())
             .unwrap()
             .join("script_templates");
-        if !target.is_dir() {
-            std::fs::create_dir_all(&target)?;
-        }
 
         // Install all exported script templates into the project's
         // 'script_templates' directory.
