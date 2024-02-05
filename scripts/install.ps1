@@ -10,7 +10,7 @@
 # NOTE: Unlike the 'install.sh' counterpart, this script exclusively installs
 # the 'gdpack' binary for 64-bit Windows. If an alternative 'gdpack' binary is
 # required, follow the documentation for an alternative means of installation:
-# https://github.com/coffeebeats/gdpack/blob/v0.1.1/docs/installation.md # x-release-please-version
+# https://github.com/coffeebeats/gdpack/blob/v0.1.2/docs/installation.md # x-release-please-version
 
 <#
 .SYNOPSIS
@@ -34,7 +34,7 @@
   $env:GDPACK_HOME\bin\gdpack.exe
 
 .NOTES
-  Version:        0.1.1 # x-release-please-version
+  Version:        0.1.2 # x-release-please-version
   Author:         https://github.com/coffeebeats
 
 .LINK
@@ -48,7 +48,7 @@ Param (
   [Switch] $NoModifyPath = $False,
 
   # Version - override the specific version of 'gdpack' to install
-  [String] $Version = "v0.1.1" # x-release-please-version
+  [String] $Version = "v0.1.2" # x-release-please-version
 )
 
 # ------------------------- Function: Get-GdPackHome ------------------------- #
