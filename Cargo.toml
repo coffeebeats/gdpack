@@ -18,7 +18,7 @@ serde = { version = "1.0.196", features = ["derive"] }
 tempfile = "3.9.0"
 thiserror = "1.0.56"
 toml = "0.8.10"
-toml_edit = { version = "0.21.1", features = ["serde"] }
+toml_edit = { version = "0.22.0", features = ["serde"] }
 typed-builder = "0.18.1"
 url = { version = "2.5.0", features = ["serde"] }
 walkdir = "2.4.0"
