@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2 (2024-02-05)
+
+## What's Changed
+* chore(deps): bump reqwest from 0.11.23 to 0.11.24 by @dependabot in https://github.com/coffeebeats/gdpack/pull/120
+* chore(deps): bump toml_edit from 0.21.0 to 0.21.1 by @dependabot in https://github.com/coffeebeats/gdpack/pull/122
+* chore(deps): bump toml from 0.8.8 to 0.8.9 by @dependabot in https://github.com/coffeebeats/gdpack/pull/121
+* feat: add support for `dev` addons overriding `prod` addons within a target by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/123
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.1.1...v0.1.2
+
 ## 0.1.1 (2024-01-27)
 
 ## What's Changed
