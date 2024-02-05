@@ -18,6 +18,8 @@ pub enum Error {
     Git(git::Error),
     #[error("insecure path found: {0}")]
     InsecurePath(PathBuf),
+    #[error("cannot access path to dependency: {0}: {1}")]
+    InvalidPath(PathBuf, std::io::Error),
     #[error("cannot determine path to dependency")]
     MissingPath,
     #[error("dependency not found: {0}")]
@@ -102,6 +104,16 @@ impl Dependency {
         Ok(path)
     }
 
+    /// `rooted_at` returns a new [`Dependency`] with the `included_from` field
+    /// set to the provided path. This is a convenience method for specifying
+    /// where local dependencies of this [`Dependency`] should be relative to.
+    pub fn rooted_at(&self, path: impl AsRef<Path>) -> Dependency {
+        let mut dep = self.clone();
+        dep.included_from.replace(path.as_ref().to_owned());
+
+        dep
+    }
+
     /* -------------------------- Methods: Private -------------------------- */
 
     /// `get_rooted_path` is a convenience function for turning a potentially
@@ -121,11 +133,14 @@ impl Dependency {
             path_root.join(path)
         };
 
-        if let Ok(path) = path.canonicalize() {
-            if path.strip_prefix(path_root).is_ok() {
-                return Ok(path);
+        match path.canonicalize() {
+            Err(e) => return Err(Error::InvalidPath(path, e)),
+            Ok(path) => {
+                if path.strip_prefix(path_root).is_ok() {
+                    return Ok(path);
+                }
             }
-        }
+        };
 
         Err(Error::InsecurePath(path.to_owned()))
     }
