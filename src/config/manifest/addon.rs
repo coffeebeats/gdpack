@@ -93,22 +93,6 @@ impl<'a> AddonsMut<'a> {
     pub fn insert(&mut self, dep: &Dependency) -> Option<Dependency> {
         let name = dep.addon.as_ref()?.to_owned();
 
-        // When inserting a [`Dependency`], ensure that it's not present in the
-        // opposite environment (i.e. 'dev' vs. non-'dev'). Note that this is an
-        // invariant, which is why it's implemented here instead of requiring
-        // callers to handle this themselves (which is the case for
-        // [`AddonsMut::Remove()`]).
-        //
-        // NOTE: This must be done _before_ inserting the new [`Dependency`]
-        // because if a `target` is set in this [`Query`], then
-        // [`AddonsMut::remove()`] might remove the entire `target` table when
-        // trying to remove the [`Dependency`] from the opposite environment.
-        let _ = AddonsMut::builder()
-            .document(self.document)
-            .query(&self.query.invert_dev())
-            .build()
-            .remove(name.as_str());
-
         let key = Key::builder().query(self.query).name(name.as_str()).build();
 
         let prev = dep

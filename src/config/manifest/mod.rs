@@ -99,9 +99,9 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
     ///
     /// NOTE: There are a few invariants upheld when gathering dependencies
     /// within a manifest. These are as follows:
-    ///     1. The same addon cannot be specified 2+ times. However, a target-
-    ///        specified addon may override the value declared in the default
-    ///        target.
+    ///     1. The same addon cannot be specified 2+ times within the same
+    ///        environment or in multiple targets. However, an addon specified
+    ///        within a target may override the default target.
     ///     2. The same addon cannot be replaced by 2+ addons. Note that because
     ///        replacements can only be specified within a target, any collision
     ///        is guaranteed to be an invalid state.
@@ -149,6 +149,19 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
         Manifest::check_for_duplicate(&out)?;
         Manifest::check_for_double_replace(&out)?;
 
+        // Remove any production addons overriden by development addons.
+        let dev_addons: HashSet<String> = out
+            .iter()
+            .filter(|(q, _)| q.dev)
+            .filter(|(_, d)| d.addon.is_some())
+            .map(|(_, d)| d.addon.as_ref().unwrap().to_owned())
+            .collect();
+
+        let out: Vec<(Query, Dependency)> = out
+            .into_iter()
+            .filter(|(q, d)| q.dev || d.addon.as_ref().is_some_and(|a| !dev_addons.contains(a)))
+            .collect();
+
         Ok(out.into_iter().map(|(_, d)| d).collect())
     }
 
@@ -161,10 +174,10 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
     /* -------------------------- Methods: Private -------------------------- */
 
     /// `check_for_duplicate` validates that the provided [`Dependency`] list
-    /// does not contain duplicate sepcifications of an [`crate::core::Addon`].
+    /// does not contain duplicate specifications of an [`crate::core::Addon`].
     fn check_for_duplicate(deps: &[(Query, Dependency)]) -> Result<(), Error> {
         // Map from addon name to the target which specified it.
-        let mut declared: HashMap<String, Option<&str>> = HashMap::new();
+        let mut declared: HashMap<String, Query> = HashMap::new();
 
         for (query, dep) in deps {
             let name = dep
@@ -173,27 +186,59 @@ Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
                 .map(String::to_owned)
                 .ok_or(Error::MissingName)?;
 
-            let target = query.target.as_deref();
-
             // Insert the addon as-is the first time it's encountered.
             if !declared.contains_key(&name) {
-                declared.insert(name.to_owned(), target);
+                declared.insert(name.to_owned(), query.clone());
                 continue;
             }
 
-            match target {
-                // Skip the default target because a specified target
-                // declares this addon as a dependency.
-                None => continue,
-                Some(t) => match declared.remove(&name).unwrap() {
+            let existing = declared.remove(&name).unwrap();
+
+            // If the [`Query`] targets are equivalent then override a
+            // production addon with a development one. If the environments are
+            // the same, return an error.
+            if query.target.as_ref() == existing.target.as_ref() {
+                match &query.dev {
+                    true => match &existing.dev {
+                        true => {}
+                        false => {
+                            let _ = declared.insert(name.to_owned(), query.clone());
+                            continue;
+                        }
+                    },
+                    false => match &existing.dev {
+                        false => {}
+                        true => {
+                            let _ = declared.insert(name.to_owned(), existing);
+                            continue;
+                        }
+                    },
+                }
+
+                return Err(Error::Duplicate(
+                    name,
+                    vec![query.clone(), existing.to_owned()],
+                ));
+            }
+
+            match query.target.as_deref() {
+                None => match existing.target.as_ref() {
+                    // Skip the default target because a specified target
+                    // declares this addon as a dependency.
+                    Some(_) => continue,
+                    None => unreachable!(),
+                },
+                Some(_) => match &existing.target {
                     // Override the default target because this target
                     // declares this addon as a dependency.
-                    None => declared.insert(name.to_owned(), Some(t)),
-                    Some(t_duplicate) => {
+                    None => declared.insert(name.to_owned(), existing),
+                    // Equivalent targets have already been handled, so this
+                    // will always be an error.
+                    Some(_) => {
                         return Err(Error::Duplicate(
                             name,
-                            vec![t.to_owned(), t_duplicate.to_owned()],
-                        ));
+                            vec![query.clone(), existing.to_owned()],
+                        ))
                     }
                 },
             };
@@ -368,8 +413,8 @@ pub enum Error {
     MissingName,
     #[error("missing target")]
     MissingTarget,
-    #[error("duplicate addon found between targets {0}: {1:?}")]
-    Duplicate(String, Vec<String>),
+    #[error("duplicate addon found {0}: {1:?}")]
+    Duplicate(String, Vec<Query>),
     #[error("duplicate replacement of addon found between targets {0}: {1:?}")]
     DoubleReplace(String, Vec<String>),
     #[error("cannot specify replacement without a target: {0}")]
