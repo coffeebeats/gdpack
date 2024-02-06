@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3 (2024-02-06)
+
+## What's Changed
+* chore(deps): bump codecov/codecov-action from 3 to 4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/125
+* chore(deps): bump toml from 0.8.9 to 0.8.10 by @dependabot in https://github.com/coffeebeats/gdpack/pull/128
+* chore(deps): bump tempfile from 3.9.0 to 3.10.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/127
+* chore(deps): bump toml_edit from 0.21.1 to 0.22.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/129
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.1.2...v0.1.3
+
 ## 0.1.2 (2024-02-05)
 
 ## What's Changed
