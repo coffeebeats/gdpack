@@ -13,7 +13,7 @@ clap = { version = "4.5.1", features = ["cargo", "derive"] }
 git2 = "0.18.2"
 reqwest = { version = "0.11.24", features = ["blocking"] }
 rust-ini = { version = "0.20.0", features = ["inline-comment"] }
-semver = "1.0.21"
+semver = "1.0.22"
 serde = { version = "1.0.196", features = ["derive"] }
 tempfile = "3.10.0"
 thiserror = "1.0.57"
