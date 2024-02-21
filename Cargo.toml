@@ -14,7 +14,7 @@ git2 = "0.18.2"
 reqwest = { version = "0.11.24", features = ["blocking"] }
 rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.22"
-serde = { version = "1.0.196", features = ["derive"] }
+serde = { version = "1.0.197", features = ["derive"] }
 tempfile = "3.10.0"
 thiserror = "1.0.57"
 toml = "0.8.10"
