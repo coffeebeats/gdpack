@@ -15,7 +15,7 @@ reqwest = { version = "0.11.24", features = ["blocking"] }
 rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.22"
 serde = { version = "1.0.197", features = ["derive"] }
-tempfile = "3.10.0"
+tempfile = "3.10.1"
 thiserror = "1.0.57"
 toml = "0.8.10"
 toml_edit = { version = "0.22.6", features = ["serde"] }
