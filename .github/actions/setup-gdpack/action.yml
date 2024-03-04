@@ -1,0 +1,64 @@
+name: "🤖 Set up: 'gdpack' executable"
+description: "Install the specified version of 'gdpack'."
+
+inputs:
+  version:
+    description: "The version of 'gdpack' to install."
+    required: false
+    default: "latest"
+  install-dir:
+    description: "The 'gdpack' installation directory."
+    required: false
+    default: "~/.gdpack"
+  modify-path:
+    description: "Whether to add the 'gdpack' command to 'PATH'."
+    required: false
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache the 'gdpack' home directory
+      id: cache-gdpack
+      uses: actions/cache@v4
+      with:
+        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}
+        path: ${{ inputs.install-dir }}
+    
+    - name: Export the 'GDPACK_HOME' environment variable
+      shell: bash
+      run: export GDPACK_HOME="${{ inputs.install-dir }}"
+
+    # See https://github.com/coffeebeats/gdpack/blob/main/docs/installation.md#linuxmacos.
+    - name: Install 'gdpack' (latest)
+      if: steps.cache-gdpack.outputs.cache-hit != 'true' && inputs.version == 'latest'
+      shell: bash
+      run: |
+        curl https://raw.githubusercontent.com/coffeebeats/gdpack/main/scripts/install.sh | sh -s -- --no-modify-path
+
+    # See https://github.com/coffeebeats/gdpack/blob/main/docs/installation.md#manual-download.
+    - name: Install 'gdpack'
+      if: steps.cache-gdpack.outputs.cache-hit != 'true' && inputs.version != 'latest'
+      shell: bash
+      run: |
+        ARCH=x86_64
+        OS="$(echo "$(uname -s)" | tr '[:upper:]' '[:lower:]')"
+        VERSION="$(echo "${{ inputs.version }}" | sed 's/^v//')"
+
+        curl -LO "https://github.com/coffeebeats/gdpack/releases/download/v${VERSION#v}/gdpack-$VERSION-$OS-$ARCH.tar.gz"
+
+        mkdir -p $GDPACK_HOME/bin && \
+        tar -C $GDPACK_HOME/bin -xf gdpack-$VERSION-$OS-$ARCH.tar.gz
+    
+    - name: Update the 'PATH' environment variable
+      if: inputs.modify-path == 'true'
+      shell: bash
+      run: export PATH="$GDPACK_HOME/bin:$PATH"
+
+    - name: Validate that the 'gdpack' executable was installed
+      shell: bash
+      run: |
+        if ! command -v gdpack >/dev/null; then
+          echo "Failed to install 'gdpack'!"
+          exit 1
+        fi
