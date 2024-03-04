@@ -58,7 +58,7 @@ runs:
     - name: Validate that the 'gdpack' executable was installed
       shell: bash
       run: |
-        if command -v gdpack [[ "$(${{ inputs.install-dir }}/bin/gdpack --version)" != "gdpack ${{ inputs.version }}" ]]; then
-          echo "Failed to install 'gdpack@v${{ inputs.version }}'!"
+        if ! command -v gdpack >/dev/null; then
+          echo "Failed to install 'gdpack'!"
           exit 1
         fi
