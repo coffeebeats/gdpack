@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.4 (2024-03-06)
+
+## What's Changed
+* chore(deps): bump toml_edit from 0.22.0 to 0.22.4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/130
+* chore(deps): bump git2 from 0.18.1 to 0.18.2 by @dependabot in https://github.com/coffeebeats/gdpack/pull/131
+* chore(deps): bump clap from 4.4.18 to 4.5.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/132
+* chore(deps): bump thiserror from 1.0.56 to 1.0.57 by @dependabot in https://github.com/coffeebeats/gdpack/pull/134
+* chore(deps): bump toml_edit from 0.22.4 to 0.22.5 by @dependabot in https://github.com/coffeebeats/gdpack/pull/135
+* chore(deps): bump toml_edit from 0.22.5 to 0.22.6 by @dependabot in https://github.com/coffeebeats/gdpack/pull/136
+* chore(deps): bump clap from 4.5.0 to 4.5.1 by @dependabot in https://github.com/coffeebeats/gdpack/pull/137
+* chore(deps): bump anyhow from 1.0.79 to 1.0.80 by @dependabot in https://github.com/coffeebeats/gdpack/pull/139
+* chore(deps): bump semver from 1.0.21 to 1.0.22 by @dependabot in https://github.com/coffeebeats/gdpack/pull/140
+* chore(deps): bump openssl-sys from 0.9.99 to 0.9.100 by @dependabot in https://github.com/coffeebeats/gdpack/pull/138
+* chore(deps): bump serde from 1.0.196 to 1.0.197 by @dependabot in https://github.com/coffeebeats/gdpack/pull/141
+* chore(deps): bump openssl-sys from 0.9.100 to 0.9.101 by @dependabot in https://github.com/coffeebeats/gdpack/pull/142
+* chore(deps): bump tempfile from 3.10.0 to 3.10.1 by @dependabot in https://github.com/coffeebeats/gdpack/pull/143
+* chore(deps): bump walkdir from 2.4.0 to 2.5.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/144
+* feat(ci): create a GitHub action for installing `gdpack` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/145
+* chore(deps): bump mio from 0.8.10 to 0.8.11 by @dependabot in https://github.com/coffeebeats/gdpack/pull/146
+* feat(ci): add support for installing dependencies via the `gdpack` action by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/147
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.1.3...v0.1.4
+
 ## 0.1.3 (2024-02-06)
 
 ## What's Changed
