@@ -30,9 +30,11 @@ runs:
       id: cache-gdpack
       uses: actions/cache@v4
       with:
-        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}
         path: ${{ inputs.install-dir }}
-    
+        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
+        restore-keys: |
+          gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-
+
     - name: Export the 'GDPACK_HOME' environment variable
       shell: bash
       run: export GDPACK_HOME="${{ inputs.install-dir }}"
@@ -70,3 +72,8 @@ runs:
           echo "Failed to install 'gdpack'!"
           exit 1
         fi
+    
+    - name: Install project dependencies
+      if: inputs.skip-install == 'false'
+      shell: bash
+      run: gdpack --project ${{ inputs.project-dir }} -t ci
