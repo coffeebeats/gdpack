@@ -200,7 +200,6 @@ jobs:
         with:
           fail_ci_if_error: true
           files: codecov.json
-          move_coverage_to_trash: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   # Used to ensure all branch protection requirements are met. This is a workaround until
