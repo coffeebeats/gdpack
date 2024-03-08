@@ -135,6 +135,13 @@ impl<'a> Install<'a> {
         let mut to_visit = self
             .manifest
             .dependencies(path, self.dev, self.targets.iter().copied())
+            .map(|mut deps| {
+                for d in deps.iter_mut() {
+                    d.is_direct = true;
+                }
+
+                deps
+            })
             .map(VecDeque::from)
             .map_err(Error::Config)?;
 
