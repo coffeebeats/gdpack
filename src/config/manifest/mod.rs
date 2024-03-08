@@ -59,17 +59,17 @@ impl Manifest {
 # For example:
 #    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
 
-[project]
+[project.script_templates]
 # Include additional script templates from these directories into the project.
 # The directory structure within the folder pointed to by each pattern will be
 # merged into this project's 'script_templates' folder.
-include_script_templates = []
+include = []
 
 # Export non-imported script templates found in these directories.
-export_script_templates = []
+export = []
 
 [dev-addons]
-Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.1.1" }
+Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.2.1" }
 "#;
 
         Manifest(template.parse::<Document>().unwrap())

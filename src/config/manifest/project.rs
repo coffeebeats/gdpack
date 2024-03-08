@@ -4,6 +4,7 @@ use typed_builder::TypedBuilder;
 use crate::core::ScriptTemplates;
 
 pub(super) const MANIFEST_SECTION_PROJECT: &str = "project";
+pub(super) const MANIFEST_SECTION_PROJECT_SCRIPT_TEMPLATES: &str = "script_templates";
 
 /* -------------------------------------------------------------------------- */
 /*                               Struct: Project                              */
@@ -25,6 +26,8 @@ impl<'a> Project<'a> {
         self.document
             .as_table()
             .get(MANIFEST_SECTION_PROJECT)
+            .and_then(|v| v.as_table())
+            .and_then(|t| t.get(MANIFEST_SECTION_PROJECT_SCRIPT_TEMPLATES))
             .and_then(|v| v.as_table())
             .map(|t| t.clone().into_inline_table())
             .and_then(|t| ScriptTemplates::try_from(&toml_edit::value(t)).ok())
@@ -61,7 +64,7 @@ mod tests {
 
     test_de_templates!(
         test_de_templates_include_succeeds,
-        r#"{ include_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
+        r#"{ include = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
         ScriptTemplates::builder()
             .include(
                 vec!["./a.gd", "../a.gd", "a.gd", "/a.gd"]
@@ -74,7 +77,7 @@ mod tests {
 
     test_de_templates!(
         test_de_templates_export_from_inline_table_succeeds,
-        r#"{ export_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
+        r#"{ export = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
         ScriptTemplates::builder()
             .export(
                 vec!["./a.gd", "../a.gd", "a.gd", "/a.gd"]
@@ -87,7 +90,7 @@ mod tests {
 
     test_de_templates!(
         test_de_templates_include_and_export_succeeds,
-        r#"{ include_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"], export_script_templates = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
+        r#"{ include = ["./a.gd", "../a.gd", "a.gd", "/a.gd"], export = ["./a.gd", "../a.gd", "a.gd", "/a.gd"] }"#,
         ScriptTemplates::builder()
             .include(
                 vec!["./a.gd", "../a.gd", "a.gd", "/a.gd"]
