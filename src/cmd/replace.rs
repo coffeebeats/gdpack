@@ -50,6 +50,7 @@ pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<(
         .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
 
     let mut dep = Dependency::from(args.source).rooted_at(&path_project);
+    dep.is_direct = true;
     dep.replace = Some(args.addon.clone());
 
     if &args.addon == dep.addon.as_ref().ok_or(anyhow!("missing addon name"))? {

@@ -64,6 +64,14 @@ pub struct Dependency {
     #[builder(default)]
     #[serde(skip)]
     pub included_from: Option<PathBuf>,
+    /// Whether the [`Dependency`] is directly include by a project. Used to
+    /// allow insecure paths when installing.
+    ///
+    /// NOTE: This must be manually set during dependency resolution as it's
+    /// dependent on install-time context. As such, it should not be serialized.
+    #[builder(default)]
+    #[serde(skip)]
+    pub is_direct: bool,
     /// Name of an addon to replace during installation.
     ///
     /// NOTE: This value will not be propagated to consumers of this project.
@@ -90,7 +98,19 @@ impl Dependency {
                 .included_from
                 .as_ref()
                 .ok_or(Error::MissingPath)
-                .and_then(|path_root| Dependency::get_rooted_path(path_root, path)),
+                .and_then(
+                    |path_root| match Dependency::get_rooted_path(path_root, path) {
+                        Ok(p) => Ok(p),
+                        Err(Error::InsecurePath(p)) => {
+                            if self.is_direct {
+                                return Ok(p);
+                            }
+
+                            Err(Error::InsecurePath(p))
+                        }
+                        Err(e) => Err(e),
+                    },
+                ),
             Source::Release(release) => release
                 .download()
                 .and_then(|_| release.get_path())
