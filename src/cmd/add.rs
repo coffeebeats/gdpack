@@ -155,7 +155,8 @@ pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<(
     let mut m = Manifest::parse_file(&path_manifest)
         .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
 
-    let dep = Dependency::from(args.source).rooted_at(&path_project);
+    let mut dep = Dependency::from(args.source).rooted_at(&path_project);
+    dep.is_direct = true;
 
     // Determine whether an installation is required by default. This is the
     // case when there is no "addons" directory or the [`Addon`] isn't found.
