@@ -35,10 +35,10 @@ pub enum Error {
 #[derive(Clone, Debug, Default, Eq, Deserialize, PartialEq, Serialize, TypedBuilder)]
 pub struct ScriptTemplates {
     #[builder(default)]
-    #[serde(default, rename = "include_script_templates")]
+    #[serde(default, rename = "include")]
     pub include: Vec<PathBuf>,
     #[builder(default)]
-    #[serde(default, rename = "export_script_templates")]
+    #[serde(default, rename = "export")]
     pub export: Vec<PathBuf>,
 }
 
