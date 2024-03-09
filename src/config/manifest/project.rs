@@ -1,9 +1,11 @@
 use toml_edit::Document;
 use typed_builder::TypedBuilder;
 
+use crate::core::ExportFiles;
 use crate::core::ScriptTemplates;
 
 pub(super) const MANIFEST_SECTION_PROJECT: &str = "project";
+pub(super) const MANIFEST_SECTION_PROJECT_EXPORT_FILES: &str = "export_files";
 pub(super) const MANIFEST_SECTION_PROJECT_SCRIPT_TEMPLATES: &str = "script_templates";
 
 /* -------------------------------------------------------------------------- */
@@ -20,6 +22,19 @@ pub struct Project<'a> {
 /* ------------------------------ Impl: Project ----------------------------- */
 
 impl<'a> Project<'a> {
+    /// `get_export_files` returns the exported file-related configuration
+    /// within the `project` table of the [`super::Manifest`].
+    pub fn get_export_files(&self) -> Option<ExportFiles> {
+        self.document
+            .as_table()
+            .get(MANIFEST_SECTION_PROJECT)
+            .and_then(|v| v.as_table())
+            .and_then(|t| t.get(MANIFEST_SECTION_PROJECT_EXPORT_FILES))
+            .and_then(|v| v.as_table())
+            .map(|t| t.clone().into_inline_table())
+            .and_then(|t| ExportFiles::try_from(&toml_edit::value(t)).ok())
+    }
+
     /// `get_script_templates` returns the script template-related configuration
     /// within the `project` table of the [`super::Manifest`].
     pub fn get_script_templates(&self) -> Option<ScriptTemplates> {

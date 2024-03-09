@@ -1,3 +1,4 @@
+use glob::Pattern;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -24,6 +25,74 @@ pub enum Error {
     MissingDir(PathBuf),
     #[error(transparent)]
     NotRelative(std::path::StripPrefixError),
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             Struct: ExportFiles                            */
+/* -------------------------------------------------------------------------- */
+
+/// `ExportFiles` defines project configuration pertaining to the the files
+/// included when this addon is installed in another project.
+#[derive(Clone, Debug, Default, Eq, Deserialize, PartialEq, Serialize, TypedBuilder)]
+pub struct ExportFiles {
+    #[builder(default)]
+    #[serde(default, rename = "include")]
+    pub include: Vec<PathBuf>,
+    #[builder(default)]
+    #[serde(default, rename = "exclude")]
+    pub exclude: Vec<PathBuf>,
+}
+
+/* ---------------------------- Impl: ExportFiles --------------------------- */
+
+impl ExportFiles {
+    /* --------------------------- Methods: Public -------------------------- */
+
+    /// `is_excluded` returns whether or not the specified `path` matches one of
+    /// the "include" path globs.
+    pub fn is_excluded(&self, path: impl AsRef<Path>) -> bool {
+        for pattern in &self.exclude {
+            if pattern
+                .to_str()
+                .and_then(|p| Pattern::new(p).ok())
+                .is_some_and(|p| p.matches_path(path.as_ref()))
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// `is_included` returns whether or not the specified `path` matches one of
+    /// the "include" path globs.
+    pub fn is_included(&self, path: impl AsRef<Path>) -> bool {
+        for pattern in &self.include {
+            if pattern
+                .to_str()
+                .and_then(|p| Pattern::new(p).ok())
+                .is_some_and(|p| p.matches_path(path.as_ref()))
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+/* -------------------------- Impl: TryFrom<&Item> -------------------------- */
+
+impl TryFrom<&Item> for ExportFiles {
+    type Error = toml_edit::de::Error;
+
+    fn try_from(value: &Item) -> Result<Self, Self::Error> {
+        value
+            .to_string()
+            .trim()
+            .parse::<ValueDeserializer>()
+            .and_then(ExportFiles::deserialize)
+    }
 }
 
 /* -------------------------------------------------------------------------- */

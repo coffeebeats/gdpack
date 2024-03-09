@@ -496,6 +496,7 @@ dependencies = [
  "anyhow",
  "clap",
  "git2",
+ "glob",
  "openssl-sys",
  "reqwest",
  "rstest",
