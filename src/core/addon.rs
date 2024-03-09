@@ -273,7 +273,7 @@ impl Installable for Addon {
 
             // Exclude hidden files and folders.
             if include.is_none() // Don't override a config specification.
-                && src.components().any(|c| c.as_os_str().to_str().is_some_and(|s| s.starts_with(".")))
+                && src.components().any(|c| c.as_os_str().to_str().is_some_and(|s| s.starts_with('.')))
             {
                 let _ = include.insert(false);
             }
