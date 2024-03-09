@@ -78,8 +78,7 @@ runs:
         key: cache-cargo-registry-${{ runner.os }}-${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-${{ hashFiles('Cargo.lock') }}
         path: |
           ~/.cargo/git/db/
-          ~/.cargo/registry/cache/
-          ~/.cargo/registry/index/
+          ~/.cargo/registry
         restore-keys: |
           cache-cargo-registry-${{ runner.os }}-${{ steps.rs-props.outputs.platform }}-${{ steps.rs-props.outputs.rustc }}-
           cache-cargo-registry-${{ runner.os }}-${{ steps.rs-props.outputs.platform }}-
