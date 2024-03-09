@@ -160,11 +160,11 @@ impl<'a> Install<'a> {
 
             // Validate the following invariants of the dependency set:
 
-            // 1. The same addon cannot be specified 2+ times. The exception to
-            //    this are versioned plugins; the latest major-compatible
-            //    release of a plugin will be selected (under the assumption
-            //    that semantic versioning rules are upheld). if competing major
-            //    versions are found, an error will be returned.
+            // 1. The same plugin cannot be included more than once. If multiple
+            //    major-compatible versions are included, then the highest
+            //    version will be selected (under the assumption that semantic
+            //    version rules are upheld). If competing major versions are
+            //    found, an error will be returned.
             //
             //    NOTE: For non-plugins, there isn't a canonical way to
             //    determine the version of the dependency - it depends on the
@@ -207,8 +207,30 @@ impl<'a> Install<'a> {
 
                             // Only update the addon version if "current" is
                             // newer (after checking compatible major versions).
-                            if v_prev.cmp_precedence(v_next) != std::cmp::Ordering::Less {
-                                continue 'dep;
+                            match v_prev.cmp_precedence(v_next) {
+                                std::cmp::Ordering::Less => {
+                                    if dep_prev.is_exact_version_required() {
+                                        return Err(Error::ExactVersionRequired(
+                                            name,
+                                            v_prev.to_owned(),
+                                            v_next.to_owned(),
+                                        ));
+                                    }
+                                }
+                                std::cmp::Ordering::Equal => {
+                                    if dep_prev.is_direct {
+                                        continue 'dep;
+                                    }
+                                }
+                                std::cmp::Ordering::Greater => {
+                                    if dep.is_exact_version_required() {
+                                        return Err(Error::ExactVersionRequired(
+                                            name,
+                                            v_next.to_owned(),
+                                            v_prev.to_owned(),
+                                        ));
+                                    }
+                                }
                             }
                         }
                     },
@@ -263,6 +285,8 @@ pub enum Error {
     Config(crate::config::manifest::Error),
     #[error(transparent)]
     Dependency(super::dependency::Error),
+    #[error("Exact version of '{0}' required ('{1:?}'), but selected: {2:?}")]
+    ExactVersionRequired(String, Version, Version),
     #[error(transparent)]
     Io(std::io::Error),
     // TODO: Provide additional information about the dependency chain that
