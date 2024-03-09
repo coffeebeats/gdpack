@@ -21,6 +21,7 @@ pub use install::Install;
 
 mod project;
 
+pub use project::ExportFiles;
 pub use project::ScriptTemplateScan;
 pub use project::ScriptTemplates;
 
@@ -42,23 +43,30 @@ use std::path::Path;
 
 /// Clone files recursively from source to destination using the provided copy
 /// function. See https://nick.groenen.me/notes/recursively-copy-files-in-rust/.
-fn clone_recursively(
+fn clone_recursively<F: Fn(&Path, &Path) -> std::io::Result<()>>(
     src: impl AsRef<Path>,
     dst: impl AsRef<Path>,
-    copy_fn: fn(&Path, &Path) -> std::io::Result<()>,
+    copy_fn: &F,
 ) -> std::io::Result<()> {
-    std::fs::create_dir_all(&dst)?;
-
     for entry in std::fs::read_dir(src)? {
         let entry = entry?;
 
+        let target = dst.as_ref().join(entry.file_name());
+
         if entry.file_type()?.is_dir() {
-            clone_recursively(entry.path(), dst.as_ref().join(entry.file_name()), copy_fn)?;
+            clone_recursively(entry.path(), &target, copy_fn)?;
         } else {
-            copy_fn(
-                entry.path().as_ref(),
-                dst.as_ref().join(entry.file_name()).as_ref(),
-            )?;
+            std::fs::create_dir_all(&dst)?;
+
+            copy_fn(entry.path().as_ref(), &target)?;
+        }
+
+        // NOTE: This is a hack, but there's no easy way to restructure this
+        // to check before creating directories.
+        if let Some(parent) = target.parent() {
+            if std::fs::read_dir(parent).is_ok_and(|entries| entries.count() == 0) {
+                std::fs::remove_dir(parent)?;
+            }
         }
     }
 
