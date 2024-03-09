@@ -344,21 +344,9 @@ mod tests {
 
     macro_rules! assert_addons_eq {
         ($got:expr, $want:expr$(,)?) => {
-            // NOTE: Remove manifest to simplify.
             assert_eq!(
-                $got.into_iter()
-                    .map(|mut a: Addon| {
-                        a.manifest.take();
-                        a
-                    })
-                    .collect::<HashSet<Addon>>(),
-                $want
-                    .into_iter()
-                    .map(|mut a: Addon| {
-                        a.manifest.take();
-                        a
-                    })
-                    .collect::<HashSet<Addon>>(),
+                $got.into_iter().collect::<HashSet<Addon>>(),
+                $want.into_iter().collect::<HashSet<Addon>>(),
             )
         };
     }
