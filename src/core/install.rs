@@ -604,7 +604,7 @@ mod tests {
             .build()
             .resolve_addons(path_project);
 
-        // Then: An error is returned.
+        // Then: The resolved addons match expectations.
         assert_addons_eq!(
             got.unwrap(),
             vec![
@@ -660,7 +660,7 @@ mod tests {
             .build()
             .resolve_addons(path_project);
 
-        // Then: An error is returned.
+        // Then: The resolved addons match expectations.
         assert_addons_eq!(
             got.unwrap(),
             vec![
