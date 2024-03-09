@@ -59,6 +59,19 @@ impl Manifest {
 # For example:
 #    gdpack add https://github.com/bitwes/Gut --tag v9.1.1 -d
 
+[project.export_files]
+# A list of glob expressions which, when any match are matched, cause an addon
+# file to *not* be installed into a Godot project. This option is particularly
+# useful for omitting files and folders from an addon with a root 'plugin.cfg'.
+# Note that hidden files and folders and the 'gdpack.toml' manifest are excluded
+# by default.
+exclude = []
+
+# A list of glob expressions which, when any match are matched, cause an addon
+# file to be installed into a Godot project when it otherwise wouldn't be. This
+# option takes precedence over excluded files.
+include = []
+
 [project.script_templates]
 # Include additional script templates from these directories into the project.
 # The directory structure within the folder pointed to by each pattern will be
