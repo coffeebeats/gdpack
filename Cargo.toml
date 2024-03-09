@@ -11,7 +11,7 @@ rust-version = "1.75.0"
 anyhow = "1.0.80"
 clap = { version = "4.5.2", features = ["cargo", "derive"] }
 git2 = "0.18.2"
-reqwest = { version = "0.11.24", features = ["blocking"] }
+reqwest = { version = "0.11.25", features = ["blocking"] }
 rust-ini = { version = "0.20.0", features = ["inline-comment"] }
 semver = "1.0.22"
 serde = { version = "1.0.197", features = ["derive"] }
