@@ -137,7 +137,7 @@ impl Dependency {
     /// `is_exact_version_required` returns whether the dependency specification
     /// requires an exact version match to be valid.
     pub fn is_exact_version_required(&self) -> bool {
-        false
+        self.is_direct
     }
 
     /* -------------------------- Methods: Private -------------------------- */
