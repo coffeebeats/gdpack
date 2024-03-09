@@ -253,7 +253,45 @@ impl Installable for Addon {
             std::fs::remove_dir_all(&target)?;
         }
 
-        super::clone_recursively(self.path.as_path(), &target, |src, dst| {
+        super::clone_recursively(self.path.as_path(), &target, &|src, dst| {
+            let path = src.strip_prefix(self.path.as_path()).unwrap_or(src);
+
+            let export_files = self
+                .manifest
+                .as_ref()
+                .and_then(|m| m.project().get_export_files());
+
+            let mut include: Option<bool> = None;
+
+            if export_files.as_ref().is_some_and(|f| f.is_included(path)) {
+                let _ = include.insert(true);
+            }
+
+            if include.is_none() && export_files.as_ref().is_some_and(|f| f.is_excluded(path)) {
+                let _ = include.insert(false);
+            }
+
+            // Exclude hidden files and folders.
+            if include.is_none() // Don't override a config specification.
+                && src.components().any(|c| c.as_os_str().to_str().is_some_and(|s| s.starts_with(".")))
+            {
+                let _ = include.insert(false);
+            }
+
+            // Exclude the 'gdpack.toml' manifest.
+            if include.is_none()
+                && src.file_name().is_some_and(|n| {
+                    n.to_str()
+                        .is_some_and(|s| s == Manifest::file_name().unwrap())
+                })
+            {
+                let _ = include.insert(false);
+            }
+
+            if include.is_some_and(|should_include| !should_include) {
+                return Ok(());
+            }
+
             std::fs::hard_link(src, dst)
         })?;
 
