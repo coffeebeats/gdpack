@@ -134,6 +134,12 @@ impl Dependency {
         dep
     }
 
+    /// `is_exact_version_required` returns whether the dependency specification
+    /// requires an exact match to be valid.
+    pub fn is_exact_version_required(&self) -> bool {
+        self.is_direct
+    }
+
     /* -------------------------- Methods: Private -------------------------- */
 
     /// `get_rooted_path` is a convenience function for turning a potentially
