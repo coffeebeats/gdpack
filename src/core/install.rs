@@ -209,6 +209,8 @@ impl<'a> Install<'a> {
                             // newer (after checking compatible major versions).
                             match v_prev.cmp_precedence(v_next) {
                                 std::cmp::Ordering::Less => {
+                                    // Check if the dependency to be replaced
+                                    // requires an exact version.
                                     if dep_prev.is_exact_version_required() {
                                         return Err(Error::ExactVersionRequired(
                                             name,
@@ -218,11 +220,16 @@ impl<'a> Install<'a> {
                                     }
                                 }
                                 std::cmp::Ordering::Equal => {
-                                    if dep_prev.is_direct {
+                                    // Either dependency can be accepted here,
+                                    // so take the one which requires an exact
+                                    // version.
+                                    if dep_prev.is_exact_version_required() {
                                         continue 'dep;
                                     }
                                 }
                                 std::cmp::Ordering::Greater => {
+                                    // Check if the dependency to be replaced
+                                    // requires an exact version.
                                     if dep.is_exact_version_required() {
                                         return Err(Error::ExactVersionRequired(
                                             name,
@@ -230,6 +237,8 @@ impl<'a> Install<'a> {
                                             v_prev.to_owned(),
                                         ));
                                     }
+
+                                    continue 'dep;
                                 }
                             }
                         }
@@ -285,7 +294,7 @@ pub enum Error {
     Config(crate::config::manifest::Error),
     #[error(transparent)]
     Dependency(super::dependency::Error),
-    #[error("Exact version of '{0}' required ('{1:?}'), but selected: {2:?}")]
+    #[error("exact version of '{0}' required ('{1:?}'), but selected: {2:?}")]
     ExactVersionRequired(String, Version, Version),
     #[error(transparent)]
     Io(std::io::Error),
@@ -328,15 +337,28 @@ mod tests {
     use crate::core::Dependency;
     use crate::core::Source;
 
+    use super::Error;
     use super::Install;
 
     /* ------------------------------ Test: run ----------------------------- */
 
     macro_rules! assert_addons_eq {
         ($got:expr, $want:expr$(,)?) => {
+            // NOTE: Remove manifest to simplify.
             assert_eq!(
-                $got.into_iter().collect::<HashSet<Addon>>(),
-                $want.into_iter().collect::<HashSet<Addon>>(),
+                $got.into_iter()
+                    .map(|mut a: Addon| {
+                        a.manifest.take();
+                        a
+                    })
+                    .collect::<HashSet<Addon>>(),
+                $want
+                    .into_iter()
+                    .map(|mut a: Addon| {
+                        a.manifest.take();
+                        a
+                    })
+                    .collect::<HashSet<Addon>>(),
             )
         };
     }
@@ -424,7 +446,7 @@ mod tests {
         )]
         dep_type_1: DepType,
         // NOTE: Cannot use 'DepType::Assets' as that would violate the rules of
-        // [`Addon::find_in_dir()`].
+        // [`Addon::find_in_dir`].
         #[values(
             DepType::Extension,
             DepType::Plugin(Version::new(1, 0, 0)),
@@ -433,7 +455,7 @@ mod tests {
         )]
         dep_type_2: DepType,
         // NOTE: Cannot use 'DepType::Assets' as that would violate the rules of
-        // [`Addon::find_in_dir()`].
+        // [`Addon::find_in_dir`].
         #[values(
             DepType::Extension,
             DepType::Plugin(Version::new(1, 0, 0)),
@@ -488,6 +510,174 @@ mod tests {
                 Addon::try_from(&dep1).unwrap(),
                 Addon::try_from(&dep2).unwrap(),
                 Addon::try_from(&dep3).unwrap(),
+            ]
+        );
+    }
+
+    #[rstest]
+    fn test_installer_run_direct_dep_with_lower_version_fails() {
+        // Given: A temporary test directory for creating dependencies.
+        let tmp = tempfile::tempdir().unwrap();
+
+        // Given: A directory containing the test project.
+        let path_project = tmp.path();
+
+        // Given: An indirect dependency, "1".
+        let dep1_indirect = TestDep::builder()
+            .name("1")
+            .addon(DepType::Plugin(Version::new(1, 2, 3)))
+            .build()
+            .init(path_project, "./2/1/indirect")
+            .unwrap()
+            .rooted_at(tmp.path());
+
+        // Given: A new direct dependency that utilizes `dep1_indirect`.
+        let dep2 = TestDep::builder()
+            .name("2")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .deps(vec![dep1_indirect.clone()])
+            .build()
+            .init(path_project, "./2")
+            .unwrap();
+
+        // Given: A direct dependency, "1", with a lower version.
+        let dep1_direct = TestDep::builder()
+            .name("1")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .build()
+            .init(path_project, "./2/1/direct")
+            .unwrap()
+            .rooted_at(tmp.path());
+
+        // Given: A root manifest with direct dependencies.
+        let mut m = Manifest::default();
+        m.addons_mut(&Query::prod()).insert(&dep1_direct);
+        m.addons_mut(&Query::prod()).insert(&dep2);
+
+        // When: An installation is run for the default target/environment.
+        let got = Install::builder()
+            .manifest(&m)
+            .build()
+            .resolve_addons(path_project);
+
+        // Then: An error is returned.
+        assert!(got.is_err_and(|e| e.to_string()
+            == Error::ExactVersionRequired(
+                "1".to_owned(),
+                Version::new(1, 0, 0),
+                Version::new(1, 2, 3)
+            )
+            .to_string()));
+    }
+
+    #[rstest]
+    fn test_installer_run_direct_dep_with_higher_version_succeeds() {
+        // Given: A temporary test directory for creating dependencies.
+        let tmp = tempfile::tempdir().unwrap();
+
+        // Given: A directory containing the test project.
+        let path_project = tmp.path();
+
+        // Given: An indirect dependency, "1".
+        let dep1_indirect = TestDep::builder()
+            .name("1")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .build()
+            .init(path_project, "./2/1/indirect")
+            .unwrap()
+            .rooted_at(tmp.path());
+
+        // Given: A new direct dependency that utilizes `dep1_indirect`.
+        let dep2 = TestDep::builder()
+            .name("2")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .deps(vec![dep1_indirect.clone()])
+            .build()
+            .init(path_project, "./2")
+            .unwrap();
+
+        // Given: A direct dependency, "1", with a lower version.
+        let dep1_direct = TestDep::builder()
+            .name("1")
+            .addon(DepType::Plugin(Version::new(1, 2, 3)))
+            .build()
+            .init(path_project, "./2/1/direct")
+            .unwrap()
+            .rooted_at(tmp.path());
+
+        // Given: A root manifest with direct dependencies.
+        let mut m = Manifest::default();
+        m.addons_mut(&Query::prod()).insert(&dep1_direct);
+        m.addons_mut(&Query::prod()).insert(&dep2);
+
+        // When: An installation is run for the default target/environment.
+        let got = Install::builder()
+            .manifest(&m)
+            .build()
+            .resolve_addons(path_project);
+
+        // Then: An error is returned.
+        assert_addons_eq!(
+            got.unwrap(),
+            vec![
+                Addon::try_from(&dep1_direct).unwrap(),
+                Addon::try_from(&dep2).unwrap(),
+            ]
+        );
+    }
+
+    #[rstest]
+    fn test_installer_run_direct_dep_with_same_version_succeeds() {
+        // Given: A temporary test directory for creating dependencies.
+        let tmp = tempfile::tempdir().unwrap();
+
+        // Given: A directory containing the test project.
+        let path_project = tmp.path();
+
+        // Given: An indirect dependency, "1".
+        let dep1_indirect = TestDep::builder()
+            .name("1")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .build()
+            .init(path_project, "./2/1/indirect")
+            .unwrap()
+            .rooted_at(tmp.path());
+
+        // Given: A new direct dependency that utilizes `dep1_indirect`.
+        let dep2 = TestDep::builder()
+            .name("2")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .deps(vec![dep1_indirect.clone()])
+            .build()
+            .init(path_project, "./2")
+            .unwrap();
+
+        // Given: A direct dependency, "1", with a lower version.
+        let dep1_direct = TestDep::builder()
+            .name("1")
+            .addon(DepType::Plugin(Version::new(1, 0, 0)))
+            .build()
+            .init(path_project, "./2/1/direct")
+            .unwrap()
+            .rooted_at(tmp.path());
+
+        // Given: A root manifest with direct dependencies.
+        let mut m = Manifest::default();
+        m.addons_mut(&Query::prod()).insert(&dep1_direct);
+        m.addons_mut(&Query::prod()).insert(&dep2);
+
+        // When: An installation is run for the default target/environment.
+        let got = Install::builder()
+            .manifest(&m)
+            .build()
+            .resolve_addons(path_project);
+
+        // Then: An error is returned.
+        assert_addons_eq!(
+            got.unwrap(),
+            vec![
+                Addon::try_from(&dep1_direct).unwrap(),
+                Addon::try_from(&dep2).unwrap(),
             ]
         );
     }
