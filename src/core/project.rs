@@ -210,17 +210,21 @@ impl ScriptTemplates {
     /// from). This is to prevent a malicious addon from improperly accessing
     /// a user's file system.
     pub fn exported_from(&self, path: impl AsRef<Path>) -> Result<HashSet<ScriptTemplate>, Error> {
-        let path = path.as_ref();
+        let base = path.as_ref();
+        let base = base.canonicalize().map_err(|e| match e.kind() {
+            std::io::ErrorKind::NotFound => Error::MissingDir(base.to_path_buf()),
+            _ => Error::Invalid(base.to_path_buf()),
+        })?;
 
         let mut out = HashSet::new();
 
         for pattern in &self.export {
-            let root = path;
+            let root = &base;
 
             let path = if pattern.is_absolute() {
                 pattern.clone()
             } else {
-                path.join(pattern)
+                base.join(pattern)
             };
 
             let path = path.canonicalize().map_err(|e| match e.kind() {
@@ -253,7 +257,10 @@ impl ScriptTemplates {
         for t in &out {
             let p = t.get_full_path();
 
-            if !p.canonicalize().is_ok_and(|p| p.strip_prefix(path).is_ok()) {
+            if !p
+                .canonicalize()
+                .is_ok_and(|p| p.strip_prefix(&base).is_ok())
+            {
                 return Err(Error::Insecure(p.to_owned()));
             }
         }
