@@ -1,39 +1,39 @@
 [package]
-name = "gdpack"
-version = "0.1.4"
-description = "A small, single-purpose CLI application for managing Godot addons."
-edition = "2021"
-rust-version = "1.75.0"
+  name         = "gdpack"
+  version      = "0.1.4"
+  description  = "A small, single-purpose CLI application for managing Godot addons."
+  edition      = "2021"
+  rust-version = "1.75.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+  # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.80"
-clap = { version = "4.5.2", features = ["cargo", "derive"] }
-git2 = "0.18.2"
-glob = "0.3.1"
-reqwest = { version = "0.11.25", features = ["blocking"] }
-rust-ini = { version = "0.20.0", features = ["inline-comment"] }
-semver = "1.0.22"
-serde = { version = "1.0.197", features = ["derive"] }
-tempfile = "3.10.1"
-thiserror = "1.0.57"
-toml = "0.8.10"
-toml_edit = { version = "0.22.6", features = ["serde"] }
-typed-builder = "0.18.1"
-url = { version = "2.5.0", features = ["serde"] }
-walkdir = "2.5.0"
-zip = "0.6.6"
+  anyhow        = "1.0.80"
+  clap          = {version = "4.5.2", features = ["cargo", "derive"]}
+  git2          = "0.18.2"
+  globset       = "0.4.14"
+  reqwest       = {version = "0.11.25", features = ["blocking"]}
+  rust-ini      = {version = "0.20.0", features = ["inline-comment"]}
+  semver        = "1.0.22"
+  serde         = {version = "1.0.197", features = ["derive"]}
+  tempfile      = "3.10.1"
+  thiserror     = "1.0.57"
+  toml          = "0.8.10"
+  toml_edit     = {version = "0.22.6", features = ["serde"]}
+  typed-builder = "0.18.1"
+  url           = {version = "2.5.0", features = ["serde"]}
+  walkdir       = "2.5.0"
+  zip           = "0.6.6"
 
 [dev-dependencies]
-rstest = { version = "0.18.2", default-features = false }
+  rstest = {version = "0.18.2", default-features = false}
 
-# NOTE: This works around a cross-compilation issue seen in GitHub actions runs
-# where `openssl-sys` cannot find `openssl` because "pkg-config has not been
-# configured to support cross-compilation".
+  # NOTE: This works around a cross-compilation issue seen in GitHub actions runs
+  # where `openssl-sys` cannot find `openssl` because "pkg-config has not been
+  # configured to support cross-compilation".
 
 [target.'aarch64-apple-darwin'.dependencies]
-openssl-sys = { version = "*", features = ["vendored"] }
+  openssl-sys = {version = "*", features = ["vendored"]}
 
 [target.'x86_64-unknown-linux-gnu'.dependencies]
-openssl-sys = { version = "*", features = ["vendored"] }
+  openssl-sys = {version = "*", features = ["vendored"]}
