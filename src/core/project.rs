@@ -1,4 +1,4 @@
-use glob::Pattern;
+use globset::Glob;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -54,8 +54,8 @@ impl ExportFiles {
         for pattern in &self.exclude {
             if pattern
                 .to_str()
-                .and_then(|p| Pattern::new(p).ok())
-                .is_some_and(|p| p.matches_path(path.as_ref()))
+                .and_then(|p| Glob::new(p).ok())
+                .is_some_and(|m| m.compile_matcher().is_match(path.as_ref()))
             {
                 return true;
             }
@@ -70,8 +70,8 @@ impl ExportFiles {
         for pattern in &self.include {
             if pattern
                 .to_str()
-                .and_then(|p| Pattern::new(p).ok())
-                .is_some_and(|p| p.matches_path(path.as_ref()))
+                .and_then(|p| Glob::new(p).ok())
+                .is_some_and(|m| m.compile_matcher().is_match(path.as_ref()))
             {
                 return true;
             }
