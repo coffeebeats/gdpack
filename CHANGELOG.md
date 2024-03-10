@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 (2024-03-10)
+
+## What's Changed
+* fix(ci): increase timeout for building releases to 15 minutes by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/160
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.0...v0.2.1
+
 ## 0.2.0 (2024-03-10)
 
 ## What's Changed
