@@ -529,13 +529,14 @@ mod tests {
             .unwrap();
 
         // Given: A direct dependency, "1", with a lower version.
-        let dep1_direct = TestDep::builder()
+        let mut dep1_direct = TestDep::builder()
             .name("1")
             .addon(DepType::Plugin(Version::new(1, 0, 0)))
             .build()
             .init(path_project, "./2/1/direct")
             .unwrap()
             .rooted_at(tmp.path());
+        dep1_direct.hooks.post = Some("echo test".to_owned());
 
         // Given: A root manifest with direct dependencies.
         let mut m = Manifest::default();
@@ -640,14 +641,15 @@ mod tests {
             .init(path_project, "./2")
             .unwrap();
 
-        // Given: A direct dependency, "1", with a lower version.
-        let dep1_direct = TestDep::builder()
+        // Given: A direct dependency, "1", with the same version.
+        let mut dep1_direct = TestDep::builder()
             .name("1")
             .addon(DepType::Plugin(Version::new(1, 0, 0)))
             .build()
             .init(path_project, "./2/1/direct")
             .unwrap()
             .rooted_at(tmp.path());
+        dep1_direct.hooks.post = Some("echo test".to_owned());
 
         // Given: A root manifest with direct dependencies.
         let mut m = Manifest::default();

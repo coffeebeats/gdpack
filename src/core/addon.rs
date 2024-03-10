@@ -13,6 +13,7 @@ use crate::config::Parsable;
 use crate::config::ParsableError;
 
 use super::Dependency;
+use super::Hook;
 use super::Installable;
 
 /* -------------------------------------------------------------------------- */
@@ -39,6 +40,10 @@ pub struct Addon {
     /// The [`Version`] of the [`Addon`], if known.
     #[builder(default)]
     pub version: Option<semver::Version>,
+
+    /// A shell script to execute after installing the dependency.
+    #[builder(default)]
+    pub hooks: Hook,
 }
 
 /* ------------------------------- Impl: Addon ------------------------------ */
@@ -249,9 +254,12 @@ impl Installable for Addon {
             target = target.join(&self.subfolder)
         }
 
-        if target.is_dir() {
-            std::fs::remove_dir_all(&target)?;
+        match target.is_dir() {
+            true => std::fs::remove_dir_all(&target)?,
+            false => std::fs::create_dir_all(&target)?,
         }
+
+        self.hooks.run_pre(&target)?;
 
         super::clone_recursively(self.path.as_path(), &target, &|src, dst| {
             let path_in_addon = src.strip_prefix(self.path.as_path()).unwrap_or(src);
@@ -302,6 +310,8 @@ impl Installable for Addon {
             std::fs::hard_link(src, dst)
         })?;
 
+        self.hooks.run_post(&target)?;
+
         // Set `target` as the project's 'script_templates' directory.
         let target = target
             .parent()
@@ -348,6 +358,13 @@ impl TryFrom<&Dependency> for Addon {
             .ok_or(anyhow!("cannot determine addon name"))?;
 
         let mut addon = Addon::find_in_dir(root, name)?;
+
+        if let Some(s) = value.hooks.pre.as_deref() {
+            let _ = addon.hooks.pre.insert(s.to_owned());
+        }
+        if let Some(s) = value.hooks.post.as_deref() {
+            let _ = addon.hooks.post.insert(s.to_owned());
+        }
 
         // In the event that this isn't a [`Plugin`], try to parse the version
         // from a 'git' tag.
