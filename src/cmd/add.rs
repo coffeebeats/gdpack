@@ -148,12 +148,17 @@ impl From<GitRevArgs> for Option<git::Reference> {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<()> {
+pub fn handle(project: Option<impl AsRef<Path>>, mut args: Args) -> anyhow::Result<()> {
     let path_project = super::parse_project(project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
     let mut m = Manifest::parse_file(&path_manifest)
         .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
+
+    args.source
+        .uri
+        .relative_to(&path_manifest)
+        .map_err(|e| anyhow!(e))?;
 
     let mut dep = Dependency::from(args.source).rooted_at(&path_project);
     dep.is_direct = true;
@@ -252,7 +257,7 @@ pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<(
 /* -------------------------------------------------------------------------- */
 
 /// Uri contains a specification of where the addon source code is located.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Uri {
     Url(Url),
     Path(PathBuf),
@@ -261,6 +266,8 @@ pub enum Uri {
 /* -------------------------------- Impl: Uri ------------------------------- */
 
 impl Uri {
+    /* --------------------------- Methods: Public -------------------------- */
+
     /// Parse either a [`Url`] or a [`PathBuf`] from the provided [`str`].
     pub fn parse(s: &str) -> Result<Uri, UriError> {
         // NOTE: Parse a `Url` first as it's more specific than a `PathBuf`.
@@ -278,16 +285,59 @@ impl Uri {
                 return Err(UriError::NotADir(s.to_owned()));
             }
 
-            return Ok(Uri::Path(p));
+            if let Ok(p) = p.canonicalize() {
+                return Ok(Uri::Path(p));
+            }
         }
 
         Err(UriError::Invalid(s.to_owned()))
+    }
+
+    /// Update the underlying [`Uri::Path`] variant to be relative to the
+    /// specified directory, if possible.
+    pub fn relative_to(&mut self, base: impl AsRef<Path>) -> std::io::Result<()> {
+        let path = match self {
+            Uri::Path(p) => p.canonicalize()?,
+            Uri::Url(_) => {
+                return Ok(());
+            }
+        };
+
+        let mut out = PathBuf::new();
+
+        let mut path_common_ancestor = base.as_ref().canonicalize()?;
+        if path_common_ancestor.is_file() {
+            path_common_ancestor = path_common_ancestor
+                .parent()
+                .ok_or(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "no parent directory",
+                ))?
+                .to_path_buf();
+        }
+
+        loop {
+            match path.strip_prefix(&path_common_ancestor) {
+                Err(_) => {
+                    out = out.join("..");
+                }
+                Ok(path_addon) => {
+                    *self = Uri::Path(out.join(path_addon));
+                    return Ok(());
+                }
+            }
+
+            path_common_ancestor = match path_common_ancestor.parent() {
+                Some(parent) => parent.to_path_buf(),
+                None => return Ok(()), // No common ancestor; exit without updating.
+            };
+        }
     }
 }
 
 /* ----------------------------- Enum: UriError ----------------------------- */
 
-#[derive(Clone, Debug, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq, thiserror::Error)]
 pub enum UriError {
     #[error("could not parse uri: {0}")]
     Invalid(String),
@@ -299,4 +349,62 @@ pub enum UriError {
     Path(<PathBuf as FromStr>::Err),
     #[error(transparent)]
     Url(url::ParseError),
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 Mod: Tests                                 */
+/* -------------------------------------------------------------------------- */
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+    use std::io::Write;
+    use std::path::PathBuf;
+
+    use super::Uri;
+
+    macro_rules! write_file {
+        ($path:expr, $content:expr$(,)?) => {
+            std::fs::create_dir_all($path.parent().expect("invalid path"))
+                .expect("failed to create directory");
+
+            std::fs::File::create($path)
+                .and_then(|mut f| f.write_all($content.as_bytes()))
+                .expect("failed to create file");
+        };
+    }
+
+    /* ----------------------- Test: Uri::relative_to ----------------------- */
+
+    #[rstest]
+    #[case("a", "b", "a")]
+    #[case("a/b/c", "a/d/e", "../b/c")]
+    #[case("a/b/c", "d", "a/b/c")]
+    fn test_uri_relative_to_returns_correct_path(
+        #[case] target: &str,
+        #[case] from: &str,
+        #[case] expected: &str,
+    ) -> std::io::Result<()> {
+        // Given: A temporary test directory for writing files.
+        let tmp = tempfile::tempdir().unwrap();
+        let base = tmp.into_path();
+
+        // Given: Two files that exist within the temporary directory.
+        let target = base.join(target);
+        write_file!(&target, "");
+
+        let from = base.join(from);
+        write_file!(&from, "");
+
+        // Given: A `Uri::Path`.
+        let mut path = Uri::Path(target);
+
+        // When: That `Uri::Path` is made relative to another.
+        path.relative_to(from)?;
+
+        // Then: The `Uri::Path` contains the correct relative path.
+        assert_eq!(path, Uri::Path(PathBuf::from(expected)));
+
+        Ok(())
+    }
 }
