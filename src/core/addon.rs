@@ -381,12 +381,18 @@ impl TryFrom<&Dependency> for Addon {
 #[cfg(test)]
 mod tests {
     use semver::Version;
+    use std::collections::HashSet;
+    use std::collections::VecDeque;
     use std::fs::create_dir_all;
     use std::fs::File;
     use std::io::Write;
+    use std::path::PathBuf;
     use tempfile::tempdir;
 
+    use crate::config::Manifest;
+    use crate::config::Parsable;
     use crate::core::Addon;
+    use crate::core::Installable;
 
     macro_rules! write_file {
         ($path:expr, $content:expr$(,)?) => {
@@ -407,8 +413,51 @@ mod tests {
         };
     }
 
+    macro_rules! assert_files_in_dir {
+        ($path_dir:expr, $files:expr$(,)?) => {
+            let mut actual = HashSet::<PathBuf>::new();
+
+            let mut to_visit = std::fs::read_dir(&$path_dir)
+                .expect("failed to read directory")
+                .into_iter()
+                .flatten()
+                .map(|d| d.path())
+                .collect::<VecDeque<PathBuf>>();
+
+            while let Some(p) = to_visit.pop_front() {
+                if p.is_dir() {
+                    to_visit.append(
+                        &mut std::fs::read_dir(p)
+                            .expect("failed to read directory")
+                            .into_iter()
+                            .flatten()
+                            .map(|d| d.path())
+                            .collect::<VecDeque<PathBuf>>(),
+                    );
+
+                    continue;
+                }
+
+                actual.insert(
+                    p.strip_prefix(&$path_dir)
+                        .expect("failed tp strip prefix")
+                        .to_path_buf(),
+                );
+            }
+
+            let expected = $files
+                .into_iter()
+                .map(PathBuf::from)
+                .collect::<HashSet<PathBuf>>();
+
+            assert_eq!(actual, expected);
+        };
+    }
+
+    /* ---------------------- Test: Addon::find_in_dir ---------------------- */
+
     #[test]
-    fn test_addons_find_in_dir_fails_if_mismatching_plugin() {
+    fn test_addon_find_in_dir_fails_if_mismatching_plugin() {
         let tmp = tempdir().expect("failed to make temporary directory");
 
         let invalid = "[plugin]\nname='invalid'\nversion='1.2.3'";
@@ -418,7 +467,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_fails_if_mismatching_extension() {
+    fn test_addon_find_in_dir_fails_if_mismatching_extension() {
         let tmp = tempdir().expect("failed to make temporary directory");
 
         write_file!(&tmp.path().join("invalid.gdextension"), "");
@@ -427,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_with_root_plugin() {
+    fn test_addon_find_in_dir_with_root_plugin() {
         let tmp = tempdir().expect("failed to make temporary directory");
         let path = tmp.path().join("plugin.cfg");
 
@@ -445,7 +494,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_with_root_ext() {
+    fn test_addon_find_in_dir_with_root_ext() {
         let tmp = tempdir().expect("failed to make temporary directory");
         let path = tmp.path().join("addon.ext");
 
@@ -461,7 +510,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_with_plugin_in_addons() {
+    fn test_addon_find_in_dir_with_plugin_in_addons() {
         let tmp = tempdir().expect("failed to make temporary directory");
         let path = tmp.path().join("addons/addon/plugin.cfg");
 
@@ -479,7 +528,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_with_extension_in_addons() {
+    fn test_addon_find_in_dir_with_extension_in_addons() {
         let tmp = tempdir().expect("failed to make temporary directory");
         let path = tmp.path().join("addons/addon/addon.gdextension");
 
@@ -495,7 +544,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_with_static_in_addons() {
+    fn test_addon_find_in_dir_with_static_in_addons() {
         let tmp = tempdir().expect("failed to make temporary directory");
         let path = tmp.path().join("addons/addon/project.godot");
 
@@ -511,7 +560,7 @@ mod tests {
     }
 
     #[test]
-    fn test_addons_find_in_dir_with_static_root() {
+    fn test_addon_find_in_dir_with_static_root() {
         let tmp = tempdir().expect("failed to make temporary directory");
 
         assert_eq_addon!(
@@ -521,5 +570,122 @@ mod tests {
                 .subfolder(String::from("addon"))
                 .build()
         );
+    }
+
+    /* ----------------------- Test: Addon::install_to ---------------------- */
+
+    #[test]
+    fn test_addon_install_to_filters_hidden_files() -> std::io::Result<()> {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        let path_addon = tmp.path().join("addon");
+        write_file!(&path_addon.join(".hidden"), "");
+        write_file!(&path_addon.join("file.txt"), "");
+
+        let path_project = tmp.path().join("project");
+
+        let addon = Addon::builder()
+            .path(path_addon)
+            .subfolder("addon".to_owned())
+            .build();
+
+        addon.install_to(&path_project)?;
+
+        assert_files_in_dir!(path_project, vec!["addons/addon/file.txt"]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_addon_install_to_filters_manifest() -> std::io::Result<()> {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        let path_addon = tmp.path().join("addon");
+        write_file!(&path_addon.join("gdpack.toml"), "");
+        write_file!(&path_addon.join("file.txt"), "");
+
+        let path_project = tmp.path().join("project");
+
+        let addon = Addon::builder()
+            .path(path_addon)
+            .subfolder("addon".to_owned())
+            .build();
+
+        addon.install_to(&path_project)?;
+
+        assert_files_in_dir!(path_project, vec!["addons/addon/file.txt"]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_addon_install_to_adds_script_templates() -> std::io::Result<()> {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        let path_addon = tmp.path().join("addon");
+        write_file!(&path_addon.join("templates/template1.gd"), "");
+        write_file!(&path_addon.join("templates/gdpack__template2.gd"), "");
+
+        let path_project = tmp.path().join("project");
+
+        let m = Manifest::parse("project.script_templates.export = [\"templates\"]")
+            .expect("failed to parse manifest");
+
+        let addon = Addon::builder()
+            .path(path_addon)
+            .subfolder("addon".to_owned())
+            .manifest(Some(m))
+            .build();
+
+        addon.install_to(&path_project)?;
+
+        assert_files_in_dir!(
+            path_project,
+            vec![
+                "addons/addon/templates/template1.gd",
+                "addons/addon/templates/gdpack__template2.gd",
+                "script_templates/gdpack__template1.gd",
+            ],
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_addon_install_to_excludes_and_includes_files() -> std::io::Result<()> {
+        let tmp = tempdir().expect("failed to make temporary directory");
+
+        let path_addon = tmp.path().join("addon");
+        write_file!(&path_addon.join(".hidden"), "");
+        write_file!(&path_addon.join("templates/template1.gd"), "");
+        write_file!(&path_addon.join("templates/gdpack__template2.gd"), "");
+
+        let path_project = tmp.path().join("project");
+
+        let m = Manifest::parse(
+            r#"
+project.script_templates.export = ["templates"]
+project.export_files.include = [".hidden"]
+project.export_files.exclude = ["templates/*"]"#,
+        )
+        .expect("failed to parse manifest");
+
+        let addon = Addon::builder()
+            .path(path_addon)
+            .subfolder("addon".to_owned())
+            .manifest(Some(m))
+            .build();
+
+        addon.install_to(&path_project)?;
+
+        assert_files_in_dir!(
+            path_project,
+            vec![
+                "addons/addon/.hidden",
+                "script_templates/gdpack__template1.gd",
+            ],
+        );
+
+        Ok(())
     }
 }
