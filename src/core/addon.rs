@@ -254,7 +254,7 @@ impl Installable for Addon {
         }
 
         super::clone_recursively(self.path.as_path(), &target, &|src, dst| {
-            let path = src.strip_prefix(self.path.as_path()).unwrap_or(src);
+            let path_in_addon = src.strip_prefix(self.path.as_path()).unwrap_or(src);
 
             let export_files = self
                 .manifest
@@ -263,24 +263,31 @@ impl Installable for Addon {
 
             let mut include: Option<bool> = None;
 
-            if export_files.as_ref().is_some_and(|f| f.is_included(path)) {
+            if export_files
+                .as_ref()
+                .is_some_and(|f| f.is_included(path_in_addon))
+            {
                 let _ = include.insert(true);
             }
 
-            if include.is_none() && export_files.as_ref().is_some_and(|f| f.is_excluded(path)) {
+            if include.is_none()
+                && export_files
+                    .as_ref()
+                    .is_some_and(|f| f.is_excluded(path_in_addon))
+            {
                 let _ = include.insert(false);
             }
 
             // Exclude hidden files and folders.
             if include.is_none() // Don't override a config specification.
-                && src.components().any(|c| c.as_os_str().to_str().is_some_and(|s| s.starts_with('.')))
+                && path_in_addon.components().any(|c| c.as_os_str().to_str().is_some_and(|s| s.starts_with('.')))
             {
                 let _ = include.insert(false);
             }
 
             // Exclude the 'gdpack.toml' manifest.
             if include.is_none()
-                && src.file_name().is_some_and(|n| {
+                && path_in_addon.file_name().is_some_and(|n| {
                     n.to_str()
                         .is_some_and(|s| s == Manifest::file_name().unwrap())
                 })
