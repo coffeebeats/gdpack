@@ -42,12 +42,17 @@ pub struct Args {
 /*                              Function: handle                              */
 /* -------------------------------------------------------------------------- */
 
-pub fn handle(project: Option<impl AsRef<Path>>, args: Args) -> anyhow::Result<()> {
+pub fn handle(project: Option<impl AsRef<Path>>, mut args: Args) -> anyhow::Result<()> {
     let path_project = super::parse_project(project)?;
 
     let path_manifest = path_project.join(Manifest::file_name().unwrap());
     let mut m = Manifest::parse_file(&path_manifest)
         .map_err(|_| anyhow!("missing 'gdpack.toml' manifest; try calling 'gdpack init'"))?;
+
+    args.source
+        .uri
+        .relative_to(&path_manifest)
+        .map_err(|e| anyhow!(e))?;
 
     let mut dep = Dependency::from(args.source).rooted_at(&path_project);
     dep.is_direct = true;
