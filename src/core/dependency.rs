@@ -8,6 +8,8 @@ use typed_builder::TypedBuilder;
 
 use crate::git;
 
+use super::Hook;
+
 /* -------------------------------------------------------------------------- */
 /*                                 Enum: Error                                */
 /* -------------------------------------------------------------------------- */
@@ -81,6 +83,10 @@ pub struct Dependency {
     #[builder(setter(into))]
     #[serde(flatten)]
     pub source: Source,
+    /// A shell script to execute after installing the dependency.
+    #[builder(default)]
+    #[serde(flatten)]
+    pub hooks: Hook,
 }
 
 /* ---------------------------- Impl: Dependency ---------------------------- */
@@ -137,7 +143,7 @@ impl Dependency {
     /// `is_exact_version_required` returns whether the dependency specification
     /// requires an exact match to be valid.
     pub fn is_exact_version_required(&self) -> bool {
-        self.is_direct
+        (self.hooks.post.is_some() || self.hooks.pre.is_some()) && self.is_direct
     }
 
     /* -------------------------- Methods: Private -------------------------- */
