@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.0 (2024-03-10)
+
+## What's Changed
+* chore(deps): bump clap from 4.5.1 to 4.5.2 by @dependabot in https://github.com/coffeebeats/gdpack/pull/148
+* feat(deps): allow insecure paths for direct dependencies by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/149
+* refactor(manifest): move script template config under `project.script_templates` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/150
+* chore(deps): bump reqwest from 0.11.24 to 0.11.25 by @dependabot in https://github.com/coffeebeats/gdpack/pull/152
+* feat!: add support for included and excluded addon files by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/153
+* fix(install): improve handling of version mismatches by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/154
+* fix(ci): cache the entire cargo registry by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/155
+* fix(addon): correctly filter files during addon installation by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/157
+* feat(cmd): handle relative paths to local dependencies by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/156
+* fix(core): migrate to `globset` lib by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/158
+* feat(manifest): add support for pre- and post-install hooks by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/159
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.1.4...v0.2.0
+
 ## 0.1.4 (2024-03-06)
 
 ## What's Changed
