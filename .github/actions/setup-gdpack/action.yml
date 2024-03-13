@@ -63,7 +63,7 @@ runs:
     - name: Update the 'PATH' environment variable
       if: inputs.modify-path == 'true'
       shell: bash
-      run: export PATH="$GDPACK_HOME/bin:$PATH"
+      run: echo "$GDPACK_HOME/bin" >> $GITHUB_PATH
 
     - name: Validate that the 'gdpack' executable was installed
       shell: bash
