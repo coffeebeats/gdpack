@@ -37,7 +37,7 @@ runs:
 
     - name: Export the 'GDPACK_HOME' environment variable
       shell: bash
-      run: export GDPACK_HOME="${{ inputs.install-dir }}"
+      run: echo "GDPACK_HOME=${{ inputs.install-dir }}" >> $GITHUB_ENV
 
     # See https://github.com/coffeebeats/gdpack/blob/main/docs/installation.md#linuxmacos.
     - name: Install 'gdpack' (latest)
