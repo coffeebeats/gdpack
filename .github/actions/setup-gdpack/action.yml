@@ -9,7 +9,7 @@ inputs:
   install-dir:
     description: "The 'gdpack' installation directory."
     required: false
-    default: "~/.gdpack"
+    default: "$HOME/.gdpack"
   modify-path:
     description: "Whether to add the 'gdpack' command to 'PATH'."
     required: false
@@ -76,4 +76,4 @@ runs:
     - name: Install project dependencies
       if: inputs.skip-install == 'false'
       shell: bash
-      run: gdpack --project ${{ inputs.project-dir }} -t ci
+      run: gdpack install --project ${{ inputs.project-dir }} -t ci
