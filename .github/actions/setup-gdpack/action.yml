@@ -26,19 +26,19 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Cache the 'gdpack' home directory
-      id: cache-gdpack
-      uses: actions/cache@v4
-      with:
-        path: ${{ inputs.install-dir }}
-        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
-        restore-keys: |
-          gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-
-
     - name: Export the 'GDPACK_HOME' environment variable
       shell: bash
       run: echo "GDPACK_HOME=${{ inputs.install-dir }}" >> $GITHUB_ENV
 
+    - name: Cache the 'gdpack' home directory
+      id: cache-gdpack
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.GDPACK_HOME }}
+        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
+        restore-keys: |
+          gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-
+    
     # See https://github.com/coffeebeats/gdpack/blob/main/docs/installation.md#linuxmacos.
     - name: Install 'gdpack' (latest)
       if: steps.cache-gdpack.outputs.cache-hit != 'true' && inputs.version == 'latest'
