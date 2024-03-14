@@ -35,9 +35,9 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ env.GDPACK_HOME }}
-        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
+        key: gdpack-${{ runner.os }}-${{ inputs.version }}-${{ env.GDPACK_HOME }}-${{ hashFiles(format('{0}/**/*', inputs.project-dir)) }}
         restore-keys: |
-          gdpack-${{ runner.os }}-${{ inputs.version }}-${{ inputs.install-dir }}-
+          gdpack-${{ runner.os }}-${{ inputs.version }}-${{ env.GDPACK_HOME }}-
     
     # See https://github.com/coffeebeats/gdpack/blob/main/docs/installation.md#linuxmacos.
     - name: Install 'gdpack' (latest)
