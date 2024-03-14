@@ -68,8 +68,16 @@ runs:
     - name: Validate that the 'gdpack' executable was installed
       shell: bash
       run: |
-        if ! command -v gdpack >/dev/null; then
+        if ! command -v $GDPACK_HOME/bin/gdpack >/dev/null; then
           echo "Failed to install 'gdpack'!"
+          exit 1
+        fi
+
+        if [[ \
+          "${{ inputs.modify-path }}" == "true" && \
+          "$(command -v gdpack >/dev/null 2>&1; echo $?)" -ne 0 \
+        ]]; then
+          echo "Failed to add 'gdpack' to \$PATH!"
           exit 1
         fi
     
