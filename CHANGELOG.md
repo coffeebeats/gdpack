@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.2 (2024-03-14)
+
+## What's Changed
+* chore(deps): bump toml from 0.8.10 to 0.8.11 by @dependabot in https://github.com/coffeebeats/gdpack/pull/162
+* chore(deps): bump anyhow from 1.0.80 to 1.0.81 by @dependabot in https://github.com/coffeebeats/gdpack/pull/164
+* chore(deps): bump reqwest from 0.11.25 to 0.11.26 by @dependabot in https://github.com/coffeebeats/gdpack/pull/165
+* chore(deps): bump thiserror from 1.0.57 to 1.0.58 by @dependabot in https://github.com/coffeebeats/gdpack/pull/166
+* fix: correctly set default version in `install.sh` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/167
+* fix(ci): correctly update `PATH` in setup action by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/169
+* fix(ci): correctly export environment variable in setup action by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/170
+* fix(ci): correctly reference home directory in action; add missing `gdpack` command by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/171
+* fix(ci): correctly use environment variable in cache path by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/173
+* chore(deps): bump rust-ini from 0.20.0 to 0.21.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/172
+* fix(ci): use correct path in cache key by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/174
+* fix(ci): conditionally check for executable on path during setup by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/175
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.1...v0.2.2
+
 ## 0.2.1 (2024-03-10)
 
 ## What's Changed
