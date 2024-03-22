@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.3 (2024-03-22)
+
+## What's Changed
+* chore(deps): bump clap from 4.5.2 to 4.5.3 by @dependabot in https://github.com/coffeebeats/gdpack/pull/176
+* chore(deps): bump toml from 0.8.11 to 0.8.12 by @dependabot in https://github.com/coffeebeats/gdpack/pull/177
+* chore(deps): bump git2 from 0.18.2 to 0.18.3 by @dependabot in https://github.com/coffeebeats/gdpack/pull/180
+* chore(deps): bump reqwest from 0.11.26 to 0.11.27 by @dependabot in https://github.com/coffeebeats/gdpack/pull/181
+* chore(deps): bump toml_edit from 0.22.8 to 0.22.9 by @dependabot in https://github.com/coffeebeats/gdpack/pull/182
+* chore(deps): bump tj-actions/changed-files from 42 to 43 by @dependabot in https://github.com/coffeebeats/gdpack/pull/179
+* chore(deps): bump reqwest from 0.11.27 to 0.12.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/183
+* fix(ci): ensure last remote ref is always used when detecting changes by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/185
+* fix(ci): fetch full history to enable correct change detection by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/186
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.2...v0.2.3
+
 ## 0.2.2 (2024-03-14)
 
 ## What's Changed
