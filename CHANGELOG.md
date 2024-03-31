@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.6 (2024-03-31)
+
+## What's Changed
+* chore: upgrade rust to `1.77.1` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/198
+* fix(ci): use correct syntax for `Cross.toml` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/200
+* chore: ignore new linter warning by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/201
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.5...v0.2.6
+
 ## 0.2.5 (2024-03-31)
 
 ## What's Changed
