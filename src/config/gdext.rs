@@ -11,6 +11,7 @@ const GDEXTENSION_FILE_EXTENSION: &str = "gdextension";
 /*                              Struct: Extension                             */
 /* -------------------------------------------------------------------------- */
 
+#[allow(dead_code)]
 #[derive(Clone, Debug, Default)]
 pub struct Extension(Ini);
 
