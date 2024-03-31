@@ -68,6 +68,10 @@ jobs:
             target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             use_cross: true
+          - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-linux-arm64.tar.gz
+            target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            use_cross: true
 
           # Windows
           - archive: gdpack-${{ needs.release-please.outputs.release-tag }}-windows-x86_64.zip
