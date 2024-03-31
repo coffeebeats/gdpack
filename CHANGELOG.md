@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.5 (2024-03-31)
+
+## What's Changed
+* fix(ci): vendor openssl-sys for `aarch64-unknown-linux-gnu` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/195
+* chore(config): migrate from `toml_edit::Document` to `toml_edit::DocumentMut` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/194
+* fix(ci): build `aarch64-unknown-linux-gnu` binaries with older glibc by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/197
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.4...v0.2.5
+
 ## 0.2.4 (2024-03-31)
 
 ## What's Changed
