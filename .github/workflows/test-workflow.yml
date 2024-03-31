@@ -1,0 +1,35 @@
+name: "🧪 gdbuild: Placeholder workflow for testing"
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        type: string
+        description: "The runner's operating system."
+        required: false
+        default: ubuntu-latest
+      timeout:
+        type: number
+        description: "The workflow's maximum allowed run duration (in minutes)."
+        required: false
+        default: 60
+
+jobs:
+  todo:
+    uses: "./.github/workflows/build-gdpack.yml"
+    with:
+      archive-name: ${{ matrix.archive }}
+      target: ${{ matrix.target }}
+      os: ${{ matrix.os }}
+      use_cross: ${{ matrix.use_cross == true }}
+      timeout: ${{ inputs.timeout }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Linux
+          - archive: gdpack-latest-linux-x86_64.tar.gz
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            use_cross: true
