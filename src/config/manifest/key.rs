@@ -1,4 +1,4 @@
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 use toml_edit::Item;
 use typed_builder::TypedBuilder;
 
@@ -27,20 +27,20 @@ impl<'a> Key<'a> {
 
     /// Retrieve the [`toml_edit::Item`] for the addon specified by the [`Key`],
     /// if it exists.
-    pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
+    pub(super) fn get<'b>(&self, doc: &'b DocumentMut) -> Option<&'b Item> {
         self.query.get(doc).and_then(|t| t.get(self.name))
     }
 
     /// Retrieve a mutable [`toml_edit::Item`] for the addon specified by the
     /// [`Key`], if it exists.
     #[allow(dead_code)]
-    pub(super) fn get_mut<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
+    pub(super) fn get_mut<'b>(&self, doc: &'b mut DocumentMut) -> Option<&'b mut Item> {
         self.query.get_mut(doc).and_then(|t| t.get_mut(self.name))
     }
 
     /// Insert the provided [`toml_edit::Item`] into the provided
-    /// [`toml_edit::Document`] under the path corresponding to the [`Key`].
-    pub(super) fn insert(&self, doc: &mut Document, value: Item) -> Option<Item> {
+    /// [`toml_edit::DocumentMut`] under the path corresponding to the [`Key`].
+    pub(super) fn insert(&self, doc: &mut DocumentMut, value: Item) -> Option<Item> {
         self.query
             .insert(doc)
             .and_then(|t| t.as_table_like_mut())
@@ -48,8 +48,8 @@ impl<'a> Key<'a> {
     }
 
     /// Remove the [`toml_edit::Item`] at the path corresponding to [`Key`] from
-    /// the provided [`toml_edit::Document`] and return it, if it exists.
-    pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
+    /// the provided [`toml_edit::DocumentMut`] and return it, if it exists.
+    pub(super) fn remove(&self, doc: &mut DocumentMut) -> Option<Item> {
         self.query
             .get_mut(doc)
             .and_then(|t| t.as_table_like_mut())
@@ -100,7 +100,7 @@ impl Query {
 
     /* -------------------------- Methods: Private -------------------------- */
 
-    pub(super) fn get<'b>(&self, doc: &'b Document) -> Option<&'b Item> {
+    pub(super) fn get<'b>(&self, doc: &'b DocumentMut) -> Option<&'b Item> {
         match self.target.as_ref() {
             None => doc.get(self.key_addons()),
             Some(target) => doc
@@ -112,7 +112,7 @@ impl Query {
         }
     }
 
-    pub(super) fn get_mut<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
+    pub(super) fn get_mut<'b>(&self, doc: &'b mut DocumentMut) -> Option<&'b mut Item> {
         match self.target.as_ref() {
             None => doc.get_mut(self.key_addons()),
             Some(target) => doc
@@ -124,14 +124,14 @@ impl Query {
         }
     }
 
-    pub(super) fn is_empty(&self, doc: &Document) -> bool {
+    pub(super) fn is_empty(&self, doc: &DocumentMut) -> bool {
         self.get(doc)
             .and_then(|v| v.as_table_like())
             .map(|t| t.is_empty())
             .unwrap_or(true)
     }
 
-    pub(super) fn insert<'b>(&self, doc: &'b mut Document) -> Option<&'b mut Item> {
+    pub(super) fn insert<'b>(&self, doc: &'b mut DocumentMut) -> Option<&'b mut Item> {
         match self.target.as_ref() {
             None => Some(doc.entry(self.key_addons()).or_insert(toml_edit::table())),
             Some(t) => {
@@ -139,7 +139,7 @@ impl Query {
                     .entry(MANIFEST_SECTION_TARGET)
                     .or_insert(toml_edit::table())
                     .as_table_like_mut()
-                    .expect("missing table"); // Document is assumed to be valid.
+                    .expect("missing table"); // DocumentMut is assumed to be valid.
 
                 if !targets.is_dotted() {
                     targets.set_dotted(true);
@@ -149,7 +149,7 @@ impl Query {
                     .entry(t)
                     .or_insert(toml_edit::table())
                     .as_table_like_mut()
-                    .expect("missing table"); // Document is assumed to be valid.
+                    .expect("missing table"); // DocumentMut is assumed to be valid.
 
                 if !target.is_dotted() {
                     target.set_dotted(true);
@@ -164,7 +164,7 @@ impl Query {
         }
     }
 
-    pub(super) fn remove(&self, doc: &mut Document) -> Option<Item> {
+    pub(super) fn remove(&self, doc: &mut DocumentMut) -> Option<Item> {
         match self.target.as_ref() {
             None => doc.remove(self.key_addons()),
             Some(target) => {

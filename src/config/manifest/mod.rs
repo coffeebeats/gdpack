@@ -25,7 +25,7 @@ use anyhow::anyhow;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::Path;
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 use crate::core::Dependency;
 
@@ -39,11 +39,11 @@ const MANIFEST_FILENAME: &str = "gdpack.toml";
 /*                              Struct: Manifest                              */
 /* -------------------------------------------------------------------------- */
 
-/// A wrapper around a formatted [`toml_edit::Document`] that provides
+/// A wrapper around a formatted [`toml_edit::DocumentMut`] that provides
 /// operations to manage [`Dependency`] and configuration information for a
 /// Godot project.
 #[derive(Clone, Debug)]
-pub struct Manifest(Document);
+pub struct Manifest(DocumentMut);
 
 /* ----------------------------- Impl: Manifest ----------------------------- */
 
@@ -85,7 +85,7 @@ export = []
 Gut = { git = "https://github.com/bitwes/Gut.git", tag = "v9.2.1" }
 "#;
 
-        Manifest(template.parse::<Document>().unwrap())
+        Manifest(template.parse::<DocumentMut>().unwrap())
     }
 
     /// Returns an _immutable_ view of the addons recorded for the provided
@@ -350,7 +350,7 @@ impl Configuration for Manifest {
 impl Parsable for Manifest {
     fn parse(contents: &str) -> Result<Self, ParsableError> {
         let doc = contents
-            .parse::<Document>()
+            .parse::<DocumentMut>()
             .map_err(|e| ParsableError::Parse(anyhow!(e)))?;
 
         // TODO: Add validation to ensure sections are correct.
@@ -400,10 +400,10 @@ impl From<&Manifest> for String {
     }
 }
 
-/* -------------------------- Impl: From<Document> -------------------------- */
+/* ------------------------- Impl: From<DocumentMut> ------------------------ */
 
-impl From<Document> for Manifest {
-    fn from(value: Document) -> Self {
+impl From<DocumentMut> for Manifest {
+    fn from(value: DocumentMut) -> Self {
         Manifest(value)
     }
 }
@@ -412,7 +412,7 @@ impl From<Document> for Manifest {
 
 impl Default for Manifest {
     fn default() -> Self {
-        Manifest(Document::new())
+        Manifest(DocumentMut::new())
     }
 }
 
