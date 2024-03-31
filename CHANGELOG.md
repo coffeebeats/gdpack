@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.4 (2024-03-31)
+
+## What's Changed
+* chore(deps): bump clap from 4.5.3 to 4.5.4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/188
+* chore(deps): bump reqwest from 0.12.1 to 0.12.2 by @dependabot in https://github.com/coffeebeats/gdpack/pull/189
+* chore(deps): bump openssl-sys from 0.9.101 to 0.9.102 by @dependabot in https://github.com/coffeebeats/gdpack/pull/191
+* chore(deps): bump dependabot/fetch-metadata from 1 to 2 by @dependabot in https://github.com/coffeebeats/gdpack/pull/190
+* feat: pre-build `arm64` on `linux` binaries by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/193
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.3...v0.2.4
+
 ## 0.2.3 (2024-03-22)
 
 ## What's Changed
