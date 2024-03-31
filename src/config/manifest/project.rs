@@ -1,4 +1,4 @@
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 use typed_builder::TypedBuilder;
 
 use crate::core::ExportFiles;
@@ -13,10 +13,10 @@ pub(super) const MANIFEST_SECTION_PROJECT_SCRIPT_TEMPLATES: &str = "script_templ
 /* -------------------------------------------------------------------------- */
 
 /// [`Project`] is used to immutably view the project configuration within the
-/// provided [`toml_edit::Document`].
+/// provided [`toml_edit::DocumentMut`].
 #[derive(Debug, TypedBuilder)]
 pub struct Project<'a> {
-    document: &'a Document,
+    document: &'a DocumentMut,
 }
 
 /* ------------------------------ Impl: Project ----------------------------- */

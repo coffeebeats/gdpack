@@ -1,6 +1,6 @@
 use serde::Serialize;
 use toml_edit::ser::ValueSerializer;
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 use typed_builder::TypedBuilder;
 
 use crate::core::Dependency;
@@ -13,10 +13,10 @@ use super::Query;
 /* -------------------------------------------------------------------------- */
 
 /// [`Addons`] is used to immutably view the collection of addons within the
-/// provided [`toml_edit::Document`] for the specified [`Query`].
+/// provided [`toml_edit::DocumentMut`] for the specified [`Query`].
 #[derive(Debug, TypedBuilder)]
 pub struct Addons<'a> {
-    document: &'a Document,
+    document: &'a DocumentMut,
     query: &'a Query,
 }
 
@@ -67,10 +67,10 @@ impl<'a> IntoIterator for Addons<'a> {
 /* -------------------------------------------------------------------------- */
 
 /// [`AddonsMut`] is used to manage the collection of addons within the provided
-/// [`toml_edit::Document`] for the specified [`Query`].
+/// [`toml_edit::DocumentMut`] for the specified [`Query`].
 #[derive(Debug, TypedBuilder)]
 pub struct AddonsMut<'a> {
-    document: &'a mut Document,
+    document: &'a mut DocumentMut,
     query: &'a Query,
 }
 
