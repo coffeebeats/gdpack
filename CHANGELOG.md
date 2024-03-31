@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.8 (2024-03-31)
+
+## What's Changed
+* fix(ci): check for boolean value correctly by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/205
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.7...v0.2.8
+
 ## 0.2.7 (2024-03-31)
 
 ## What's Changed
