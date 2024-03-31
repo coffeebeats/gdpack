@@ -48,7 +48,7 @@ jobs:
       archive-name: ${{ matrix.archive }}
       target: ${{ matrix.target }}
       os: ${{ matrix.os }}
-      use_cross: ${{ fromJson(matrix.use_cross == 'true') }}
+      use_cross: ${{ matrix.use_cross == true }}
       timeout: 15
 
     strategy:
