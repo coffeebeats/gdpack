@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.9 (2024-03-31)
+
+## What's Changed
+* chore(ci): add placeholder workflow for testing by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/207
+* chore(ci): remove test workflow by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/209
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.8...v0.2.9
+
 ## 0.2.8 (2024-03-31)
 
 ## What's Changed
