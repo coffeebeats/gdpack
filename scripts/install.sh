@@ -110,7 +110,7 @@ parse_params "$@"
 
 # ------------------------------ Define: Version ----------------------------- #
 
-GDPACK_VERSION="${GDPACK_VERSION:-0.2.4}" # x-release-please-version
+GDPACK_VERSION="${GDPACK_VERSION:-0.2.5}" # x-release-please-version
 GDPACK_VERSION="v${GDPACK_VERSION#v}"
 
 # ----------------------------- Define: Platform ----------------------------- #
