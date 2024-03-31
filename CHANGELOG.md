@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.7 (2024-03-31)
+
+## What's Changed
+* fix(ci): set `fail-fast` to true; pass `use_cross` as `boolean` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/202
+* chore(ci): add `aarch64-unknown-linux-gnu` as a target option for building `gdpack` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/204
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.6...v0.2.7
+
 ## 0.2.6 (2024-03-31)
 
 ## What's Changed
