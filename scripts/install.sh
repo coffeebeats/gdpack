@@ -133,7 +133,7 @@ GDPACK_ARCH="$(echo ${GDPACK_ARCH=$(uname -m)} | tr '[:upper:]' '[:lower:]')"
 case "$GDPACK_ARCH" in
 aarch64 | arm64)
     GDPACK_ARCH="arm64"
-    if [ "$GDENV_CLI_OS" != "macos" && "$GDENV_CLI_OS" != "linux" ]; then
+    if [ "$GDPACK_OS" != "macos" ] && [ "$GDPACK_OS" != "linux" ]; then
         fatal "no prebuilt '$GDPACK_ARCH' binaries available for operating system: $GDPACK_OS"
     fi
 
