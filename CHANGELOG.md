@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.10 (2024-04-06)
+
+## What's Changed
+* fix(scripts): unblock downloads of new `arm64` on `linux` target by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/210
+* fix(scripts): use correct compound condition syntax by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/212
+* fix(scripts): use correct variable name by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/213
+* chore(deps): bump h2 from 0.4.3 to 0.4.4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/215
+* chore(deps): bump reqwest from 0.12.2 to 0.12.3 by @dependabot in https://github.com/coffeebeats/gdpack/pull/216
+* chore(deps): bump tj-actions/changed-files from 43 to 44 by @dependabot in https://github.com/coffeebeats/gdpack/pull/214
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.9...v0.2.10
+
 ## 0.2.9 (2024-03-31)
 
 ## What's Changed
