@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.11 (2024-04-09)
+
+## What's Changed
+* chore: update dependencies and target version `2.23`of `glibc` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/217
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.10...v0.2.11
+
 ## 0.2.10 (2024-04-06)
 
 ## What's Changed
