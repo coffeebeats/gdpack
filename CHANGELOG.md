@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 (2024-04-09)
+
+## What's Changed
+* fix(ci): raise minimum supported `glibc` to `2.27` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/219
+* chore(ci)!: only build linux binaries with latest `glibc` by @coffeebeats in https://github.com/coffeebeats/gdpack/pull/221
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.2.11...v0.3.0
+
 ## 0.2.11 (2024-04-09)
 
 ## What's Changed
