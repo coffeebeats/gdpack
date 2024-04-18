@@ -19,7 +19,7 @@
   tempfile      = "3.10.1"
   thiserror     = "1.0.58"
   toml          = "0.8.12"
-  toml_edit     = {version = "0.22.9", features = ["serde"]}
+  toml_edit     = {version = "0.22.10", features = ["serde"]}
   typed-builder = "0.18.2"
   url           = {version = "2.5.0", features = ["serde"]}
   walkdir       = "2.5.0"
