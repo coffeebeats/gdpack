@@ -12,7 +12,7 @@
   clap          = {version = "4.5.4", features = ["cargo", "derive"]}
   git2          = "0.18.3"
   globset       = "0.4.14"
-  reqwest       = {version = "0.12.3", features = ["blocking"]}
+  reqwest       = {version = "0.12.4", features = ["blocking"]}
   rust-ini      = {version = "0.21.0", features = ["inline-comment"]}
   semver        = "1.0.22"
   serde         = {version = "1.0.198", features = ["derive"]}
