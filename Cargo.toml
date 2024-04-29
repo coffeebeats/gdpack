@@ -23,7 +23,7 @@
   typed-builder = "0.18.2"
   url           = {version = "2.5.0", features = ["serde"]}
   walkdir       = "2.5.0"
-  zip           = "1.1.1"
+  zip           = "1.1.2"
 
 [dev-dependencies]
   rstest = {version = "0.18.2", default-features = false}
