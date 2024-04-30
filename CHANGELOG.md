@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.1 (2024-04-30)
+
+## What's Changed
+* chore(deps): bump anyhow from 1.0.81 to 1.0.82 by @dependabot in https://github.com/coffeebeats/gdpack/pull/223
+* chore(deps): bump typed-builder from 0.18.1 to 0.18.2 by @dependabot in https://github.com/coffeebeats/gdpack/pull/225
+* chore(deps): bump serde from 1.0.197 to 1.0.198 by @dependabot in https://github.com/coffeebeats/gdpack/pull/224
+* chore(deps): bump toml_edit from 0.22.9 to 0.22.10 by @dependabot in https://github.com/coffeebeats/gdpack/pull/226
+* chore(deps): bump toml_edit from 0.22.10 to 0.22.12 by @dependabot in https://github.com/coffeebeats/gdpack/pull/227
+* chore(deps): bump reqwest from 0.12.3 to 0.12.4 by @dependabot in https://github.com/coffeebeats/gdpack/pull/228
+* chore(deps): bump thiserror from 1.0.58 to 1.0.59 by @dependabot in https://github.com/coffeebeats/gdpack/pull/229
+* chore(deps): bump zip from 0.6.6 to 1.1.1 by @dependabot in https://github.com/coffeebeats/gdpack/pull/230
+* chore(deps): bump zip from 1.1.1 to 1.1.2 by @dependabot in https://github.com/coffeebeats/gdpack/pull/232
+* chore(deps): bump serde from 1.0.198 to 1.0.199 by @dependabot in https://github.com/coffeebeats/gdpack/pull/233
+* chore(deps): bump rstest from 0.18.2 to 0.19.0 by @dependabot in https://github.com/coffeebeats/gdpack/pull/222
+
+
+**Full Changelog**: https://github.com/coffeebeats/gdpack/compare/v0.3.0...v0.3.1
+
 ## 0.3.0 (2024-04-09)
 
 ## What's Changed
